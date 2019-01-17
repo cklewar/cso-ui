@@ -1,0 +1,31 @@
+<div class="item" id="{{ card_id }}" data-id="{{ card_id }}">
+    <div class="item-content">
+        <div class="card card-border">
+            <img class="card-img-top" src="static/images/{{ card.image }}" alt="{{ card_id }} login">
+            <div class="card-body">
+                <h5 class="card-title">{{ card.title }}</h5>
+                <p class="card-text">{{ card.description }}</p>
+            </div>
+            <div class="card-footer">
+                <a class="btn btn-primary" href="{{ card.url }}" role="button"
+                   target="_blank">Deploy</a>
+                <div class="dropdown dropup float-right">
+                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                            id="dropdownMenuCard_{{ card_id }}" data-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ card_id }}">
+                        <button class="dropdown-item" type="button" data-toggle="modal"
+                                data-target="#cardSettingsModal_{{ card_id }}">Settings
+                        </button>
+                        <button class="dropdown-item btnCardDelete" type="button"
+                                data-source="{{ card_id }}">Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

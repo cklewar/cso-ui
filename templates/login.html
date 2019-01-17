@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../../favicon.ico">
+    <title>CSO – SD-WAN POC Demo Use Case Runner</title>
+    <!-- Bootstrap core CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="/static/css/signin.css" rel="stylesheet">
+</head>
+<body>
+
+<div id="login">
+    <h2 class="text-center pt-5">CSO SD-WAN POC Demo</h2>
+    <img class="img-fluid rounded mx-auto d-block" src="/static/images/juniper_logo.png" alt="Juniper Logo" height="100" width="300">
+    <div class="container">
+        <div id="login-row" class="row justify-content-center align-items-center">
+            <div id="login-column" class="col-md-6">
+                <div class="login-box col-12">
+                    <form id="login-form" class="form" action="/auth/login" method="post">
+                        <p class="text-center pt-5">{{ data.msg }}</p>
+                        <input type="hidden" name="from_page" value="{{ data.from_page }}"/>
+                        <div class="form-group">
+                            <label for="username">Username:</label>
+                            <input type="text" name="username" id="username" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" name="password" id="password" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-secondary">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center align-items-center">
+        <div class="col-12">
+            <p class="text-center">Copyright &copy; 2019 &mdash; Juniper Networks</p>
+        </div>
+    </div>
+    </div>
+</div>
+</body>
+<script src="/static/js/jquery-3.3.1.min.js"></script>
+<script src="/static/js/popper.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+</html>

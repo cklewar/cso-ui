@@ -1,0 +1,15 @@
+useCase1:
+  title: Use Case 1 - Local Break Out at Spoke
+  playbook: pb.yml
+  directory: telnet_junos_get_config/
+  description: Local Break Out at Spoke
+  image: dummy.png
+  delete: false
+
+useCase2:
+  title: Use Case 2 - MultiHoming
+  playbook: pb.yml
+  directory: telnet_junos_get_config/
+  description: MultiHoming
+  image: dummy.png
+  delete: false

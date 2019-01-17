@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="static/images/favicon.ico">
+    <title>CSO – SD-WAN POC Demo Use Case Runner</title>
+    <!-- Bootstrap core CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link href="/static/css/font-awesome.all.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.2.7/css/select.dataTables.min.css">
+    <!-- UI CSS -->
+    <link href="/static/css/ui.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark justify-content-center">
+    <a class="navbar-brand  mr-0" href="#">CSO – SD-WAN POC Demo Use Case Runner</a>
+    <button class="navbar-toggler ml-1" type="button" data-toggle="collapse" data-target="#collapsingNavbarHibiki">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-collapse collapse justify-content-between align-items-center w-100" id="collapsingNavbarHibiki">
+        <ul class="navbar-nav mx-auto text-center">
+            <li class="nav-item">
+                <a class="nav-link" data-target="#modalPocRefImg" data-toggle="modal" href="#modalPocRefImg">Demo
+                    Reference Setup</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ data.jtr_url }}" target="_blank">Demo Reference Document</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ data.jtac_url }}" target="_blank">Juniper Technical Assistance Center</a>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav flex-row justify-content-center flex-nowrap">
+            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#modalAddCard"><i
+                    class="fas fa-plus"></i></a></li>
+            <li class="nav-item"><a class="nav-link" href="auth/logout"><i class="fas fa-sign-out-alt"></i></a></li>
+        </ul>
+    </div>
+</nav>
+<main role="main" class="container-fluid h-100 scrolly">
+    <div class="row align-items-center">
+        <div class="col-12 mx-auto">
+            <div class="jumbotron">
+                <div class="grid">
+                    {% for item, value in data.cards.items() %}
+                    <div class="item" id="{{ item }}" data-id="{{ item }}">
+                        <div class="item-content">
+                            <div class="card card-border">
+                                <img class="card-img-top" src="static/images/{{ value.image }}" alt="{{ item }} login">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ value.title }}</h5>
+                                    <p class="card-text">{{ value.description }}</p>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary" role="button" data-target="#modalDeployStatus"
+                                            data-toggle="modal" data-usecase="{{ item }}" id="btnDeployUseCase">Deploy
+                                    </button>
+                                    <div class="dropdown dropup float-right">
+                                        <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
+                                                aria-haspopup="true"
+                                                aria-expanded="false">
+                                            <i class="fas fa-cogs"></i>
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ item }}">
+                                            <button class="dropdown-item" type="button" data-toggle="modal"
+                                                    data-target="#cardSettingsModal_{{ item }}">Settings
+                                            </button>
+                                            <button class="dropdown-item btnCardDelete" type="button"
+                                                    data-source="{{ item }}">Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+{% for item, value in data.cards.items() %}
+<div class="modal fade" id="cardSettingsModal_{{ item }}" tabindex="-1" role="dialog"
+     aria-labelledby="cardSettingsModal_{{ item }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cardSettingsModalTitle_{{ item }}">{{ value.title }} Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="save_card_settings">
+                <input class="form-control" id="card_{{ item }}" name="card" type="hidden" value="{{ item }}"/>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="title_{{ item }}">Title</label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="title_{{ item }}" name="title" type="text"
+                                               value="{{ value.title }}"/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="playbook_{{ item }}">Playbook</label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="playbook_{{ item }}" name="playbook" type="text"
+                                               value="{{ value.playbook }}"/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="directory_{{ item }}">Directory</label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="directory_{{ item }}" name="directory"
+                                               type="text" value="{{ value.directory }}"/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="cardModDescription">Description</label>
+                                    <div class="col-9">
+                                        <textarea class="form-control" id="cardModDescription" name="description"
+                                                  rows="3">{{ value.description }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+<div class="modal fade" id="modalAddCard" tabindex="-1" role="dialog"
+     aria-labelledby="cardSettingsModal_{{ item }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add new use case</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="formAddCard">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label requiredField" for="cardName">Name
+                                        <span class="asteriskField">*</span>
+                                    </label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="cardName" name="name" type="text" value=""/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label requiredField" for="cardTitle">Title
+                                        <span class="asteriskField">*</span>
+                                    </label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="cardTitle" name="title" type="text" value=""/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label requiredField" for="cardPb">Playbook
+                                        <span class="asteriskField">*</span>
+                                    </label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="cardPb" name="url" type="text"
+                                               value=""/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label requiredField" for="cardPbDir">Directory
+                                        <span class="asteriskField">*</span>
+                                    </label>
+                                    <div class="col-9">
+                                        <input class="form-control" id="cardPbDir" name="url" type="text"
+                                               value=""/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="cardDescription">Description</label>
+                                    <div class="col-9">
+                                        <textarea class="form-control" id="cardDescription" name="description"
+                                                  rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-3 col-form-label" for="cardImageFile">Image</label>
+                                    <div class="col-9">
+                                        <input id="cardImageFile" type="file" name="imageFile">
+                                    </div>
+                                </div>
+                                <div class="progress">
+                                    <div id="dynamic"
+                                         class="progress-bar progress-bar-success progress-bar-striped active"
+                                         role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                                         style="width: 0%">
+                                        <span id="current-progress"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btnCardAdd">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modalPocRefImg" tabindex="-1" role="dialog">
+    <div class="modal-dialog mw-100 w-75 h-75" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">POC Reference Setup</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img src="static/images/cso_poc_reference.png">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modalDeployStatus" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalDeployStatusTitle" class="modal-title">UseCase Deployment status</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body h-50">
+                <table id="t_deploy_status" class="display" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Task</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="/static/js/jquery-3.3.1.min.js"></script>
+<script src="/static/js/popper.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/web-animations-next-lite.min.js"></script>
+<script src="/static/js/hammer.min.js"></script>
+<script src="/static/js/muuri.min.js"></script>
+<script src="/static/js/jquery.ui.widget.js"></script>
+<script src="/static/js/jquery.iframe-transport.js"></script>
+<script src="/static/js/jquery.fileupload.js"></script>
+<script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/select/1.2.7/js/dataTables.select.min.js"></script>
+<script src="/static/js/ui.js"></script>
+<script>
+    var clientname = "{{ data.clientname }}";
+
+</script>
+</html>

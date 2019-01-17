@@ -1,0 +1,8 @@
+CherryPy
+jinja2
+six
+requests
+ruamel.yaml
+salt
+ansible
+ws4py

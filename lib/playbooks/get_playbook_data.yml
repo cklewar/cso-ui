@@ -1,0 +1,15 @@
+---
+- name: "Fetch SD-WAN UseCase 1 data"
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: "Fetch use case data"
+      git:
+        repo: 'http://127.0.0.1:9999/cso_ops/usecases'
+        dest: /tmp/usecases
+
+    - name: "END"
+      debug:
+        msg: "END"

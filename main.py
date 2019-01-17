@@ -252,17 +252,13 @@ class Deploy(object):
     @cherrypy.tools.json_out()
     def POST(self):
 
-        print(cherrypy.request.json)
         action = cherrypy.request.json['action']
         use_case_name = cherrypy.request.json['use_case_name']
-        tempfile.tempdir = "/tmp"
+        tempfile.tempdir = "/tmp/cso-ui"
 
         if action == 'fetch':
 
             fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
-            print("fd: {}, tmpfile: {}".format(fd, tmp_file))
-            print("tmpfile still exists: {}".format(os.path.exists(tmp_file)))
-            # os.unlink(tmpfile)
 
             # Clone data
             ret_code = self.driver.deploy(
@@ -271,6 +267,7 @@ class Deploy(object):
             with open(fd, 'r') as fp1:
                 uuid = fp1.readline()
 
+            os.unlink(tmp_file)
             if ret_code == 0:
                 return {'result': 'OK', 'uuid': uuid}
             if ret_code > 0:
@@ -279,8 +276,6 @@ class Deploy(object):
         elif action == 'run':
 
             fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
-            print("fd: {}, tmpfile: {}".format(fd, tmp_file))
-            print("tmpfile still exists: {}".format(os.path.exists(tmp_file)))
 
             # Run Use Case Playbook
             ret_code = self.driver.deploy(playbook='{0}/pb.yml'.format(use_case_name), temp_file=tmp_file)

@@ -114,7 +114,8 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_task_start(self, task, is_conditional):
         #print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
         data = task.serialize()
-        message = {'action': 'v2_playbook_on_task_start', 'host': 'None', 'task': data['name'], 'status': 'running',
+        #print(data)
+        message = {'action': 'v2_playbook_on_task_start', 'host': 'none', 'task': data['name'], 'status': 'running',
                    'uuid': data['uuid']}
         self.emit_message(message=message)
 

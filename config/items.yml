@@ -1,7 +1,7 @@
 useCase0:
   title: Use Case 0 - Base
   playbook: pb.yml
-  directory: useCase0/
+  directory: useCase0
   description: Demonstrate Application detection for SD-WAN and Static SD-WAN policy and Dynamic SD-WAN policy
   image: dummy.png
   delete: false
@@ -9,7 +9,7 @@ useCase0:
 useCase1:
   title: Use Case 1 - Local Break Out at Spoke
   playbook: pb.yml
-  directory: useCase1/
+  directory: useCase1
   description: Demonstrate ability of the site to breakout internet traffic form the site itself
   image: dummy.png
   delete: false
@@ -17,7 +17,7 @@ useCase1:
 useCase2:
   title: Use Case 2 - MultiHoming
   playbook: pb.yml
-  directory: useCase2/
+  directory: useCase2
   description: MultiHoming
   image: dummy.png
   delete: false
@@ -25,7 +25,7 @@ useCase2:
 useCase3:
   title: Use Case 3 - Spoke Redundancy
   playbook: pb.yml
-  directory: useCase3/
+  directory: useCase3
   description: Demonstrate spoke redundancy
   image: dummy.png
   delete: false
@@ -33,7 +33,7 @@ useCase3:
 useCase4:
   title: Use Case 4 - Device RMA
   playbook: pb.yml
-  directory: useCase4/
+  directory: useCase4
   description: Demonstrate return merchandise authorization
   image: dummy.png
   delete: false
@@ -41,7 +41,7 @@ useCase4:
 useCase5:
   title: Use Case 5 - Realtime optimized
   playbook: pb.yml
-  directory: useCase5/
+  directory: useCase5
   description: Demonstrate realtime traffic optimization
   image: dummy.png
   delete: false
@@ -49,7 +49,7 @@ useCase5:
 useCase6:
   title: Use Case 6 - Full Mesh
   playbook: pb.yml
-  directory: useCase6/
+  directory: useCase6
   description: Demonstrate Full Mesh
   image: dummy.png
   delete: false
@@ -57,7 +57,7 @@ useCase6:
 useCase7:
   title: Use Case 7 - VNF Integration
   playbook: pb.yml
-  directory: useCase7/
+  directory: useCase7
   description: Demonstrate simple VNF integration
   image: dummy.png
   delete: false
@@ -65,7 +65,7 @@ useCase7:
 useCase8:
   title: Use Case 8 - Multicloud
   playbook: pb.yml
-  directory: useCase8/
+  directory: useCase8
   description: MultiCloud with AWS
   image: dummy.png
   delete: false

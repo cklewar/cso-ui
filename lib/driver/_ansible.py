@@ -46,6 +46,8 @@ class AnsibleDriver(Base):
 
     def deploy(self, playbook=None, temp_file=None, w_dir=None, p_dir=None):
 
+
+        print(w_dir)
         old = os.getcwd()
         os.chdir(w_dir)
         pb = '{0}/{1}'.format(p_dir, playbook)
@@ -53,8 +55,8 @@ class AnsibleDriver(Base):
         command = "ansible-playbook {0} --extra-vars={1}:{2}".format(pb, "tmp_file", temp_file)
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
-        data = json.loads(output.decode('utf-8'))
-        print(data)
+        #data = json.loads(output.decode('utf-8'))
+        #print(data)
         ret_code = process.returncode
         os.chdir(old)
 

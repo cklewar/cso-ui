@@ -107,11 +107,11 @@ class Root(object):
             data['cards'] = dict()
             # data['cards'] = self.driver.load_use_cases()[1]
             data['clientname'] = "Client%d" % random.randint(0, 100)
+            data['demo_ref_doc_url'] = config['demo_ref_doc_url']
+            data['jtac_url'] = config['jtac_url']
 
             with open("config/items.yml", 'r') as fp:
                 yaml = YAML(typ='rt')
-                data['demo_ref_doc_url'] = config['demo_ref_doc_url']
-                data['jtac_url'] = config['jtac_url']
                 data['cards'] = yaml.load(fp)
 
             index = tmpl.render(data=data)
@@ -204,6 +204,7 @@ class Cards(object):
             # return self.index()
 
         elif action == 'save':
+
             data = cherrypy.request.json
             with open('config/items.yml', 'r') as ifp:
                 yaml = YAML(typ='rt')
@@ -265,7 +266,6 @@ class Deploy(object):
             # Clone data
             w_dir = '{0}/lib'.format(os.getcwd())
             p_dir = '{0}'.format('playbooks')
-
             ret_code = self.driver.deploy(playbook='get_playbook_data.yml', temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
             print(ret_code)
 
@@ -281,10 +281,19 @@ class Deploy(object):
 
         elif action == 'run':
 
+            with open("config/items.yml", 'r') as fp:
+                yaml = YAML(typ='rt')
+                use_cases = yaml.load(fp)
+
+            use_case = use_cases[use_case_name]
+            w_dir = '/tmp/cso-ui/usecases/ansible'
+            p_dir = use_case['directory']
+            pb = use_case['playbook']
+
             fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
 
             # Run Use Case Playbook
-            ret_code = self.driver.deploy(playbook='{0}/pb.yml'.format(use_case_name), temp_file=tmp_file)
+            ret_code = self.driver.deploy(playbook=pb, temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
 
             with open(fd, 'r') as fp1:
                 uuid = fp1.readline()

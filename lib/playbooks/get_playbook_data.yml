@@ -9,7 +9,4 @@
       git:
         repo: 'http://127.0.0.1:9999/cso_ops/usecases'
         dest: /tmp/cso-ui/usecases
-
-    - name: "END"
-      debug:
-        msg: "END"
+        force: yes

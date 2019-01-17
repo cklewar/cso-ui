@@ -57,7 +57,7 @@ DEAMONIZE = False
 Run following commands on docker box:
 ```bash
 docker build -t cso-ui .
-docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8888:8080 --name cso-ui cso-ui
+docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
 ```
 
 ### Landing Page Cards ###

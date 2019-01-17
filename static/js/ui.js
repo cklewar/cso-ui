@@ -7,7 +7,7 @@ $( document ).ready(function() {
     initGrid();
 
     //var wsurl = scheme + "://" + host + ":" + port + "/yapt/ws?clientname=" + clientname;
-    var wsurl =  "ws://127.0.0.1:8080/ws?clientname=" + clientname;
+    var wsurl =  "ws://127.0.0.1:8670/ws?clientname=" + clientname;
     var ws;
     console.log(wsurl);
 
@@ -104,8 +104,8 @@ $( document ).ready(function() {
                 "defaultContent": ""
             },
         ],
-        //"scrollY": "300px",
-        //"scrollCollapse": true
+        "scrollY": "300px",
+        "scrollCollapse": true
     });
 
 
@@ -239,8 +239,7 @@ function deleteCard(cardData){
 }
 
 function deploy(data){
-    console.log(data);
-
+    //console.log(data);
     data.action = 'fetch';
 
     $.ajax({
@@ -253,7 +252,7 @@ function deploy(data){
         contentType: 'application/json',
         success: function (response) {
             $("#loader").hide();
-            console.log(response);
+            //console.log(response);
             var tmp = t_deploy_status.row('#'+response.uuid).data();
             tmp.status = response.result;
             t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
@@ -272,9 +271,9 @@ function deploy(data){
                     success: function (response) {
                         $("#loader").hide();
                         console.log(response);
-                        //var tmp = t_deploy_status.row('#'+response.uuid).data();
-                        //tmp.status = response.result;
-                        //t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
+                        var tmp = t_deploy_status.row('#'+response.uuid).data();
+                        tmp.status = response.result;
+                        t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
                     },
                     error : function (data, errorText) {
                         $("#errormsg").html(errorText).show();

@@ -1,3 +1,8 @@
 driver: ansible
 demo_ref_doc_url: static/docs/ASTT-Solutions_-_CSO_generic-testlab-HS26.pdf
 jtac_url: https://support.juniper.net/support/
+ws_client_url: ws://127.0.0.1:8670/ws
+git_protocol: http
+git_host: 192.168.10.5
+git_port: 9080
+git_repo_url: cso_ops/usecases

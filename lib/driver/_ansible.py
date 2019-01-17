@@ -46,13 +46,11 @@ class AnsibleDriver(Base):
 
     def deploy(self, playbook=None, temp_file=None, w_dir=None, p_dir=None):
 
-
-        print(w_dir)
         old = os.getcwd()
         os.chdir(w_dir)
         pb = '{0}/{1}'.format(p_dir, playbook)
 
-        command = "ansible-playbook {0} --extra-vars={1}:{2}".format(pb, "tmp_file", temp_file)
+        command = "ansible-playbook {0} -e {1}:{2} git_protocol:{3} git_host:{4} git_port:{5} git_repo:{6}".format(pb, "tmp_file", temp_file, )
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
         #data = json.loads(output.decode('utf-8'))

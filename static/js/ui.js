@@ -34,12 +34,12 @@ $( document ).ready(function() {
     ws.onmessage = function(ev){
 
         var json = JSON.parse(ev.data);
-        console.log(json);
+        //console.log(json);
 
         if (json.action === 'v2_playbook_on_play_start'){
 
             rowNode = t_deploy_status.row.add( {
-                "host":   json.host,
+                "target":   json.host,
                 "task":   json.task,
                 "status": json.status,
             } ).draw().node()
@@ -54,7 +54,7 @@ $( document ).ready(function() {
         } else if (json.action === 'v2_playbook_on_task_start'){
 
             rowNode = t_deploy_status.row.add(  {
-                "host": json.host,
+                "target": json.host,
                 "task": json.task,
                 "status": json.status,
             } ).draw().node();
@@ -62,7 +62,7 @@ $( document ).ready(function() {
             $(rowNode).attr("id", json.uuid);
 
         } else if (json.action === 'v2_runner_on_ok'){
-
+            //console.log(json);
             var temp = t_deploy_status.row('#'+json.uuid).data();
             temp.status = json.status;
             t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
@@ -70,7 +70,7 @@ $( document ).ready(function() {
         } else if (json.action === 'v2_runner_on_failed'){
 
             var temp = t_deploy_status.row('#'+json.uuid).data();
-            temp.host = json.host;
+            temp.target = json.host;
             temp.status = json.status;
             t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
         }
@@ -92,7 +92,7 @@ $( document ).ready(function() {
         "destroy": true,
         "columns": [
             {
-                "data": "host",
+                "data": "target",
                 "defaultContent": ""
             },
             {

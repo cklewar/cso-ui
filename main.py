@@ -514,6 +514,13 @@ if __name__ == '__main__':
         yaml = YAML(typ='safe')
         config = yaml.load(_config)
 
+    print(config)
+    os.environ["CSO_WS_URL"] = config["ws_client_url"]
+    os.environ["CSO_GIT_PROTOCOL"] = config["git_protocol"]
+    os.environ["CSO_GIT_HOST"] = config["git_host"]
+    os.environ["CSO_GIT_PORT"] = str(config["git_port"])
+    os.environ["CSO_GIT_REPO_URL"] = config["git_repo_url"]
+
     _driver = None
 
     if config['driver'] == c.DRIVER_SALTSTACK:

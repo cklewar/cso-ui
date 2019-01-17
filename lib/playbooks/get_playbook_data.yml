@@ -5,8 +5,11 @@
   gather_facts: no
 
   tasks:
+    - name: Debug URL
+      debug:
+        msg: "{{ lookup('env', 'CSO_GIT_PROTOCOL') }}://{{ lookup('env', 'CSO_GIT_HOST') }}:{{ lookup('env', 'CSO_GIT_PORT') }}/{{ lookup('env', 'CSO_GIT_REPO_URL') }}"
     - name: "Fetch use case data"
       git:
-        repo: 'http://127.0.0.1:9999/cso_ops/usecases'
+        repo: "{{ lookup('env', 'CSO_GIT_PROTOCOL') }}://{{ lookup('env', 'CSO_GIT_HOST') }}:{{ lookup('env', 'CSO_GIT_PORT') }}/{{ lookup('env', 'CSO_GIT_REPO_URL') }}"
         dest: /tmp/cso-ui/usecases
         force: yes

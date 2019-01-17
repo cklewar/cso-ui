@@ -8,7 +8,7 @@
     - name: "Fetch use case data"
       git:
         repo: 'http://127.0.0.1:9999/cso_ops/usecases'
-        dest: /tmp/usecases
+        dest: /tmp/cso-ui/usecases
 
     - name: "END"
       debug:

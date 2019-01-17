@@ -20,6 +20,7 @@
 #
 
 import os
+import json
 import pprint
 import subprocess
 from ruamel.yaml import YAML
@@ -43,13 +44,17 @@ class AnsibleDriver(Base):
     def authenticate(self):
         return True
 
-    def deploy(self, playbook=None, temp_file=None):
+    def deploy(self, playbook=None, temp_file=None, w_dir=None, p_dir=None):
 
         old = os.getcwd()
-        os.chdir('{0}/lib'.format(os.getcwd()))
-        command = "ansible-playbook {0} --extra-vars={1}:{2}".format(playbook, "tmp_file", temp_file)
+        os.chdir(w_dir)
+        pb = '{0}/{1}'.format(p_dir, playbook)
+
+        command = "ansible-playbook {0} --extra-vars={1}:{2}".format(pb, "tmp_file", temp_file)
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
+        data = json.loads(output.decode('utf-8'))
+        print(data)
         ret_code = process.returncode
         os.chdir(old)
 

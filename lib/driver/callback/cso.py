@@ -28,6 +28,7 @@ except ImportError:
     cli = None
 from ansible.plugins.callback import CallbackBase
 from ws4py.client.threadedclient import WebSocketClient
+from ansible.playbook.play import Play
 
 DOCUMENTATION = """
     callback: cso
@@ -84,14 +85,15 @@ class CallbackModule(CallbackBase):
                 print(se.filename, se.strerror, se.args, se.errno)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        print('v2_runner_on_failed: {0}'.format(result.task_name))
+        #print('v2_runner_on_failed: {0}'.format(result.task_name))
         data = result._task.serialize()
+        #print(data)
         message = {'action': 'v2_runner_on_failed', 'host': result._host.get_name(), 'task': result.task_name.strip(),
                    'status': 'FAILED', 'uuid': data['uuid']}
         self.emit_message(message=message)
 
     def v2_runner_on_ok(self, result):
-        print('v2_runner_on_ok: {0}'.format(result.task_name))
+        #print('v2_runner_on_ok: {0}'.format(result.task_name))
         data = result._task.serialize()
         message = {'action': 'v2_runner_on_ok', 'host': result._host.get_name(), 'task': result.task_name.strip(),
                    'status': 'OK', 'uuid': data['uuid']}
@@ -110,7 +112,7 @@ class CallbackModule(CallbackBase):
         print('v2_playbook_on_no_hosts_remaining')
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
+        #print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
         data = task.serialize()
         message = {'action': 'v2_playbook_on_task_start', 'host': 'None', 'task': data['name'], 'status': 'running',
                    'uuid': data['uuid']}
@@ -123,7 +125,7 @@ class CallbackModule(CallbackBase):
         print('v2_playbook_on_handler_task_start')
 
     def v2_playbook_on_play_start(self, play):
-        print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
+        #print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
         data = play.serialize()
         extra_vars = self._options.extra_vars
 
@@ -154,12 +156,15 @@ class CallbackModule(CallbackBase):
         pass
 
     def v2_playbook_on_stats(self, stats):
-        print('v2_playbook_on_stats')
-        pass
+        message = {'action': 'v2_playbook_on_stats', 'stats': ''}
+        self.emit_message(message=message)
 
     def v2_playbook_on_start(self, playbook):
-        print('v2_playbook_on_start')
-        pass
+        #print('v2_playbook_on_start')
+        from os.path import basename
+        #print(basename(playbook._file_name))
+        message = {'action': 'v2_playbook_on_start', 'file_name': basename(playbook._file_name)}
+        self.emit_message(message=message)
 
     def v2_runner_retry(self, result):
         print('v2_runner_retry')
@@ -185,7 +190,8 @@ class WSClient(WebSocketClient):
         self._clientName = name
 
     def opened(self):
-        print('opened connection')
+        pass
+        #print('opened connection')
 
     def closed(self, code, reason=None):
         if code != 1000:

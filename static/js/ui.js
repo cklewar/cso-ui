@@ -118,9 +118,7 @@ $( document ).ready(function() {
         deleteCard($(this).data('source'));
     });
 
-    $('#btnDeployUseCase').on('click', function (event) {
-        console.log('deployUseCase');
-        console.log(($(this).data('usecase')));
+    $('.btnDeployUseCase').on('click', function (event) {
         var data = {};
         data.use_case_name = ($(this).data('usecase'));
         deploy(data);

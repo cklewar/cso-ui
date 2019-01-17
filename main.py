@@ -263,13 +263,17 @@ class Deploy(object):
             fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
 
             # Clone data
-            ret_code = self.driver.deploy(
-                playbook='{0}/lib/playbooks/get_playbook_data.yml'.format(os.getcwd()), temp_file=tmp_file)
+            w_dir = '{0}/lib'.format(os.getcwd())
+            p_dir = '{0}'.format('playbooks')
+
+            ret_code = self.driver.deploy(playbook='get_playbook_data.yml', temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
+            print(ret_code)
 
             with open(fd, 'r') as fp1:
                 uuid = fp1.readline()
 
             os.unlink(tmp_file)
+
             if ret_code == 0:
                 return {'result': 'OK', 'uuid': uuid}
             if ret_code > 0:

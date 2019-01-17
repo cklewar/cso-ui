@@ -15,7 +15,7 @@ We need __Python 3.7__
 - Clone git repo 
 
 ```bash
-git clone git.juniper.net/cklewar/cso-ui.git
+git clone https://github.com/cklewar/cso-ui.git
 ```
 - Change directory into new cloned directory
 
@@ -48,7 +48,7 @@ python3.7 main.py
 This will fork and run as daemon. Currently no startup script for Systemd or SysV Init.
 
 ### Docker ###
-If you want to run hibiki landing page in docker environment turn of deamon mode in __constants.py__ by setting option 
+If you want to run cso-ui use case runner in docker environment turn of deamon mode in __constants.py__ by setting option 
 __DEAMONIZE__ to __False__.
 
 ```python

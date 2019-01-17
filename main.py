@@ -19,7 +19,7 @@
 # Author: cklewar
 #
 
-import constants as c
+import lib.constants as c
 import os
 import cherrypy
 import six
@@ -32,7 +32,7 @@ import random
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ruamel.yaml import YAML
-from auth import AuthController, require, member_of, name_is
+from lib.auth import AuthController, require, member_of, name_is
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from lib.driver._ansible import AnsibleDriver
 from lib.driver._saltstack import SaltDriver

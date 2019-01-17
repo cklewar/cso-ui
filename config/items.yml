@@ -23,10 +23,10 @@ useCase2:
   delete: false
 
 useCase3:
-  title: Use Case 3 - Spoke Redundancy / Dual Spoke
+  title: Use Case 3 - Spoke Redundancy
   playbook: pb.yml
   directory: useCase3/
-  description: MultiHoming
+  description: Demonstrate spoke redundancy
   image: dummy.png
   delete: false
 
@@ -34,38 +34,38 @@ useCase4:
   title: Use Case 4 - Device RMA
   playbook: pb.yml
   directory: useCase4/
-  description: MultiHoming
+  description: Demonstrate return merchandise authorization
   image: dummy.png
   delete: false
 
 useCase5:
   title: Use Case 5 - Realtime optimized
   playbook: pb.yml
-  directory: useCase4/
-  description: MultiHoming
+  directory: useCase5/
+  description: Demonstrate realtime traffic optimization
   image: dummy.png
   delete: false
 
 useCase6:
   title: Use Case 6 - Full Mesh
   playbook: pb.yml
-  directory: useCase4/
-  description: MultiHoming
+  directory: useCase6/
+  description: Demonstrate Full Mesh
   image: dummy.png
   delete: false
 
 useCase7:
   title: Use Case 7 - VNF Integration
   playbook: pb.yml
-  directory: useCase4/
-  description: MultiHoming
+  directory: useCase7/
+  description: Demonstrate simple VNF integration
   image: dummy.png
   delete: false
 
 useCase8:
-  title: Use Case 7 - Multicloud
+  title: Use Case 8 - Multicloud
   playbook: pb.yml
-  directory: useCase4/
-  description: MultiHoming
+  directory: useCase8/
+  description: MultiCloud with AWS
   image: dummy.png
   delete: false

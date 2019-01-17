@@ -110,6 +110,8 @@ class Root(object):
 
             with open("config/items.yml", 'r') as fp:
                 yaml = YAML(typ='rt')
+                data['demo_ref_doc_url'] = config['demo_ref_doc_url']
+                data['jtac_url'] = config['jtac_url']
                 data['cards'] = yaml.load(fp)
 
             index = tmpl.render(data=data)

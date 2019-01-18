@@ -106,11 +106,13 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'v2_runner_on_failed'){
-
+            console.log(json.target);
+            console.log(json.uuid);
             var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
-            t_deploy_status.row('#' + json.host + '_' + json.uuid).data(temp).invalidate();
+            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
+
         } else if (json.action === 'v2_play_on_end'){
             var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;

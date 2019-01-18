@@ -23,6 +23,7 @@ import os
 import socket
 import json
 import pprint
+import uuid
 
 try:
     from __main__ import cli
@@ -68,6 +69,9 @@ class CallbackModule(CallbackBase):
         self.ws_client = None
         self.ws_url = None
         self._play = None
+        self._target = None
+        self._targets = dict()
+        self._target_group_name = None
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
         super(CallbackModule, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
@@ -92,38 +96,31 @@ class CallbackModule(CallbackBase):
         print('v2_runner_on_ok: {0}'.format(result.task_name))
         task_data = result._task.serialize()
         play_data = self._play.serialize()
-        pp = pprint.PrettyPrinter(indent='2')
-        pp.pprint(task_data)
-        # print('Task Data --> UUID: {0}'.format(task_data['uuid']))
-        # print('Play Data --> UUID: {0} ## HOSTS: {1}'.format(play_data['uuid'], play_data['hosts']))
+        self._target = result._host.get_name()
 
         if task_data['name'] == 'COMPLETE':
-            message = {'action': 'v2_play_on_end', 'target': result._host.get_name(), 'task': result.task_name.strip(),
+            message = {'action': 'v2_play_on_end', 'target': self._target, 'task': result.task_name.strip(),
                        'status': 'OK', 'uuid': play_data['uuid']}
 
         else:
-
-            message = {'action': 'v2_runner_on_ok', 'target': result._host.get_name(), 'task': result.task_name.strip(),
-                       'status': 'OK', 'uuid': task_data['uuid']}
+            if self._target in self._targets:
+                message = {'action': 'v2_runner_on_ok', 'target': self._target, 'task': result.task_name.strip(),
+                           'status': 'OK', 'uuid': str(self._targets[self._target])}
+            else:
+                message = {'action': 'v2_runner_on_ok', 'target': self._target, 'task': result.task_name.strip(),
+                           'status': 'OK', 'uuid': task_data['uuid']}
 
         self.emit_message(message=message)
 
-    '''
-    elif :
-
-        message = {'action': 'v2_runner_on_ok', 'target': result._host.get_name(), 'task': result.task_name.strip(),
-                   'status': 'OK', 'uuid': '{0}_{1}'.format(result._host.get_name(), task_data['uuid'])}
-    '''
-
-    '''
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        #print('v2_runner_on_failed: {0}'.format(result.task_name))
+        # print('v2_runner_on_failed: {0}'.format(result.task_name))
         data = result._task.serialize()
-        #print(data)
+
         message = {'action': 'v2_runner_on_failed', 'target': result._host.get_name(), 'task': result.task_name.strip(),
                    'status': 'FAILED', 'uuid': data['uuid']}
         self.emit_message(message=message)
 
+    '''
     def v2_runner_on_skipped(self, result):
         print('v2_runner_on_skipped')
 
@@ -141,22 +138,24 @@ class CallbackModule(CallbackBase):
         print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
         self._play = play
         play_data = self._play.serialize()
-        # inventory = [os.path.abspath(i) for i in self._options.inventory]
+
+        if isinstance(play_data['hosts'], list):
+            self._target = play_data['hosts'][0]
+        else:
+            self._target = play_data['hosts'][0]
 
         if 'localhost' not in play_data['hosts']:
+
             targets = self._read_inventory(fname='hosts', group=play_data['hosts'][0])
-            # print('Play Data --> UUID: {0} ## HOSTS: {1} ## INVENTORY: {2} ## HOSTS: {3}'.format(play_data['uuid'],
-            #                                                                                     play_data['hosts'],
-            #                                                                                     inventory, targets))
+
+            for target in targets:
+                self._targets.update({target: str(uuid.uuid4())})
+
             message = {'action': 'v2_playbook_on_play_start', 'target': play_data['hosts'],
                        'task': play.get_name().strip(),
-                       'status': 'running', 'uuid': play_data['uuid'], 'targets': targets}
+                       'status': 'running', 'uuid': play_data['uuid'], 'targets': self._targets}
         else:
 
-            # print('Play Data --> UUID: {0} ## HOSTS: {1} ## INVENTORY: {2} ## HOSTS: {3}'.format(play_data['uuid'],
-            #                                                                                     play_data['hosts'],
-            #                                                                                     inventory,
-            #                                                                                     play_data['hosts']))
             message = {'action': 'v2_playbook_on_play_start', 'target': play_data['hosts'],
                        'task': play.get_name().strip(),
                        'status': 'running', 'uuid': play_data['uuid'], 'targets': None}
@@ -164,19 +163,17 @@ class CallbackModule(CallbackBase):
         extra_vars = self._options.extra_vars
 
         with open(extra_vars[0].split(':')[1], 'w') as fp:
-            json.dump({"uuid": play_data['uuid'], "status": 'running', 'name': play.get_name().strip()}, fp)
+            json.dump({"uuid": play_data['uuid'], "status": 'running', 'target': self._target}, fp)
 
         self.emit_message(message=message)
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
         task_data = task.serialize()
-        play_data = self._play.serialize()
-        # print('Task Data --> UUID: {0}'.format(task_data['uuid']))
-        # print('Play Data --> UUID: {0} ## HOSTS: {1}'.format(play_data['uuid'], play_data['hosts']))
-
-        if task_data['name'] != 'COMPLETE':
-            message = {'action': 'v2_playbook_on_task_start', 'target': 'none', 'task': task_data['name'],
+        # play_data = self._play.serialize()
+        # play_data['hosts'][0]
+        if task_data['name'] != 'COMPLETE' and self._target == 'localhost':
+            message = {'action': 'v2_playbook_on_task_start', 'target': self._target, 'task': task_data['name'],
                        'status': 'running',
                        'uuid': task_data['uuid']}
             self.emit_message(message=message)

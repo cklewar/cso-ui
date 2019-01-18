@@ -48,12 +48,25 @@ python3.7 main.py
 This will fork and run as daemon. Currently no startup script for Systemd or SysV Init.
 
 ### Docker ###
-If you want to run cso-ui use case runner in docker environment turn of deamon mode in __constants.py__ by setting option 
+If you want to run cso-ui use case runner in docker environment turn of deamon mode in __config/config.yml__ by setting option 
 __DEAMONIZE__ to __False__.
 
 ```python
 DEAMONIZE = False
 ``` 
+
+Set Websocket client IP to docker host IP. Change GIT settings to fit your environment.
+
+```yaml
+ws_client_protocol: ws
+ws_client_ip: 10.10.11.223
+ws_client_port: 8670
+git_protocol: http
+git_host: 192.168.10.5
+git_port: 9080
+git_repo_url: cso_ops/usecases
+```
+
 Run following commands on docker box:
 ```bash
 docker build -t cso-ui .

@@ -31,6 +31,8 @@ except ImportError:
 from ansible.plugins.callback import CallbackBase
 from ws4py.client.threadedclient import WebSocketClient
 from ansible.playbook.play import Play
+from ansible.parsing.dataloader import DataLoader
+from ansible.inventory.manager import InventoryManager
 
 DOCUMENTATION = """
     callback: cso
@@ -55,7 +57,6 @@ DOCUMENTATION = """
 
 
 class CallbackModule(CallbackBase):
-
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'notification'
     CALLBACK_NAME = 'default'
@@ -87,21 +88,40 @@ class CallbackModule(CallbackBase):
             except socket.error as se:
                 print(se.filename, se.strerror, se.args, se.errno)
 
+    def v2_runner_on_ok(self, result):
+        print('v2_runner_on_ok: {0}'.format(result.task_name))
+        task_data = result._task.serialize()
+        play_data = self._play.serialize()
+        pp = pprint.PrettyPrinter(indent='2')
+        pp.pprint(task_data)
+        # print('Task Data --> UUID: {0}'.format(task_data['uuid']))
+        # print('Play Data --> UUID: {0} ## HOSTS: {1}'.format(play_data['uuid'], play_data['hosts']))
+
+        if task_data['name'] == 'COMPLETE':
+            message = {'action': 'v2_play_on_end', 'target': result._host.get_name(), 'task': result.task_name.strip(),
+                       'status': 'OK', 'uuid': play_data['uuid']}
+
+        else:
+
+            message = {'action': 'v2_runner_on_ok', 'target': result._host.get_name(), 'task': result.task_name.strip(),
+                       'status': 'OK', 'uuid': task_data['uuid']}
+
+        self.emit_message(message=message)
+
+    '''
+    elif :
+
+        message = {'action': 'v2_runner_on_ok', 'target': result._host.get_name(), 'task': result.task_name.strip(),
+                   'status': 'OK', 'uuid': '{0}_{1}'.format(result._host.get_name(), task_data['uuid'])}
+    '''
+
+    '''
     def v2_runner_on_failed(self, result, ignore_errors=False):
         #print('v2_runner_on_failed: {0}'.format(result.task_name))
         data = result._task.serialize()
         #print(data)
-        message = {'action': 'v2_runner_on_failed', 'host': result._host.get_name(), 'task': result.task_name.strip(),
+        message = {'action': 'v2_runner_on_failed', 'target': result._host.get_name(), 'task': result.task_name.strip(),
                    'status': 'FAILED', 'uuid': data['uuid']}
-        self.emit_message(message=message)
-
-    def v2_runner_on_ok(self, result):
-        print('v2_runner_on_ok: {0}'.format(result.task_name))
-        data = result._task.serialize()
-        #pp = pprint.PrettyPrinter(indent=2)
-        #pp.pprint(data)
-        message = {'action': 'v2_runner_on_ok', 'host': result._host.get_name(), 'task': result.task_name.strip(),
-                   'status': 'OK', 'uuid': data['uuid']}
         self.emit_message(message=message)
 
     def v2_runner_on_skipped(self, result):
@@ -115,43 +135,58 @@ class CallbackModule(CallbackBase):
 
     def v2_playbook_on_no_hosts_remaining(self):
         print('v2_playbook_on_no_hosts_remaining')
+    '''
+
+    def v2_playbook_on_play_start(self, play):
+        print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
+        self._play = play
+        play_data = self._play.serialize()
+        # inventory = [os.path.abspath(i) for i in self._options.inventory]
+
+        if 'localhost' not in play_data['hosts']:
+            targets = self._read_inventory(fname='hosts', group=play_data['hosts'][0])
+            # print('Play Data --> UUID: {0} ## HOSTS: {1} ## INVENTORY: {2} ## HOSTS: {3}'.format(play_data['uuid'],
+            #                                                                                     play_data['hosts'],
+            #                                                                                     inventory, targets))
+            message = {'action': 'v2_playbook_on_play_start', 'target': play_data['hosts'],
+                       'task': play.get_name().strip(),
+                       'status': 'running', 'uuid': play_data['uuid'], 'targets': targets}
+        else:
+
+            # print('Play Data --> UUID: {0} ## HOSTS: {1} ## INVENTORY: {2} ## HOSTS: {3}'.format(play_data['uuid'],
+            #                                                                                     play_data['hosts'],
+            #                                                                                     inventory,
+            #                                                                                     play_data['hosts']))
+            message = {'action': 'v2_playbook_on_play_start', 'target': play_data['hosts'],
+                       'task': play.get_name().strip(),
+                       'status': 'running', 'uuid': play_data['uuid'], 'targets': None}
+
+        extra_vars = self._options.extra_vars
+
+        with open(extra_vars[0].split(':')[1], 'w') as fp:
+            json.dump({"uuid": play_data['uuid'], "status": 'running', 'name': play.get_name().strip()}, fp)
+
+        self.emit_message(message=message)
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
-        data = task.serialize()
-        #print(data)
-        #pp = pprint.PrettyPrinter(indent=2)
-        #pp.pprint(self._play.serialize())
-        #print(self._play.get_name())
-        message = {'action': 'v2_playbook_on_task_start', 'host': 'none', 'task': data['name'], 'status': 'running',
-                   'uuid': data['uuid']}
-        self.emit_message(message=message)
+        task_data = task.serialize()
+        play_data = self._play.serialize()
+        # print('Task Data --> UUID: {0}'.format(task_data['uuid']))
+        # print('Play Data --> UUID: {0} ## HOSTS: {1}'.format(play_data['uuid'], play_data['hosts']))
 
+        if task_data['name'] != 'COMPLETE':
+            message = {'action': 'v2_playbook_on_task_start', 'target': 'none', 'task': task_data['name'],
+                       'status': 'running',
+                       'uuid': task_data['uuid']}
+            self.emit_message(message=message)
+
+    '''
     def v2_playbook_on_cleanup_task_start(self, task):
         print('v2_playbook_on_cleanup_task_start')
 
     def v2_playbook_on_handler_task_start(self, task):
         print('v2_playbook_on_handler_task_start')
-
-    def v2_playbook_on_play_start(self, play):
-        print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
-        self._play = play
-        invocation_items = []
-        inventory = [os.path.abspath(i) for i in self._options.inventory]
-        invocation_items.append('Inventory:  %s' % ', '.join(inventory))
-        print(invocation_items)
-
-        data = play.serialize()
-        extra_vars = self._options.extra_vars
-        #pp = pprint.PrettyPrinter(indent=4)
-        #pp.pprint(data)
-
-        with open(extra_vars[0].split(':')[1], 'w') as fp:
-            json.dump({"uuid": data['uuid'], "status": 'running'}, fp)
-
-        message = {'action': 'v2_playbook_on_play_start', 'host': data['hosts'], 'task': play.get_name().strip(),
-                   'status': 'running', 'uuid': data['uuid']}
-        self.emit_message(message=message)
 
     def v2_on_file_diff(self, result):
         print('v2_on_file_diff: {0}'.format(result.task_name))
@@ -190,25 +225,34 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_notify(self, handler, host):
         print('v2_playbook_on_notify')
         pass
+    '''
 
     def emit_message(self, message=None):
 
         if message is not None:
             self.ws_client.send(json.dumps(message))
-            #self.ws_client.close()
+            # self.ws_client.close()
         else:
             print('empty message')
+
+    def _read_inventory(self, fname=None, group=None):
+
+        data_loader = DataLoader()
+        inventory = InventoryManager(loader=data_loader,
+                                     sources=[fname])
+
+        if group in inventory.groups:
+            return inventory.get_groups_dict()[group]
 
 
 class WSClient(WebSocketClient):
     def __init__(self, name=None, url=None):
-
         super(WSClient, self).__init__(url=url, protocols=['http-only', 'chat'])
         self._clientName = name
 
     def opened(self):
         pass
-        #print('opened connection')
+        # print('opened connection')
 
     def closed(self, code, reason=None):
         if code != 1000:

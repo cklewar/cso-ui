@@ -45,22 +45,26 @@ $( document ).ready(function() {
                     "status": json.status,
                 } ).draw().node()
 
-                $(rowNode).attr("id", json.uuid);
+                $(rowNode).attr("id", json.target + '_' + json.uuid);
 
                 $( rowNode )
                 .css( 'color', 'black' )
                 .css( 'background-color', '#b7b7b7')
                 .animate( { color: 'black' } );
 
-                $.each( json.targets, function( key, target ) {
-                    //console.log( key + ": " + value );
+                $.each( json.targets, function( target, uuid ) {
+                    console.log( target + ": " + uuid );
                     rowNode = t_deploy_status.row.add( {
                         "target":   target,
                         "task":   json.task,
                         "status": json.status,
                     } ).draw().node()
 
-                    $(rowNode).attr("id", + target + '_' + json.uuid);
+                    $(rowNode).attr("id", target + '_' + uuid);
+                    $( rowNode )
+                    .css( 'color', 'black' )
+                    .css( 'background-color', '#d6d6d6')
+                    .animate( { color: 'black' } );
                 });
 
             } else {
@@ -71,7 +75,7 @@ $( document ).ready(function() {
                     "status": json.status,
                 } ).draw().node()
 
-                $(rowNode).attr("id", json.uuid);
+                $(rowNode).attr("id", json.target + '_' + json.uuid);
 
                 $( rowNode )
                 .css( 'color', 'black' )
@@ -87,7 +91,7 @@ $( document ).ready(function() {
                 "status": json.status,
             } ).draw().node();
 
-            $(rowNode).attr("id", json.uuid);
+            $(rowNode).attr("id", json.target + '_' + json.uuid);
 
             $( rowNode )
             .css( 'color', 'black' )
@@ -95,22 +99,23 @@ $( document ).ready(function() {
             .animate( { color: 'black' } );
 
         } else if (json.action === 'v2_runner_on_ok'){
-            var temp = t_deploy_status.row('#' + json.uuid).data();
+            console.log('#' + json.target + '_' + json.uuid);
+            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
-            t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
+            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'v2_runner_on_failed'){
 
-            var temp = t_deploy_status.row('#'+json.uuid).data();
+            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
             t_deploy_status.row('#' + json.host + '_' + json.uuid).data(temp).invalidate();
         } else if (json.action === 'v2_play_on_end'){
-            var temp = t_deploy_status.row('#'+json.uuid).data();
+            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
-            t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
+            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
         }
     };
 
@@ -322,9 +327,9 @@ function deploy(data){
         success: function (response) {
             //$("#loader").hide();
             console.log(response);
-            var tmp = t_deploy_status.row('#'+response.uuid).data();
+            var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
             tmp.status = response.result;
-            t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
+            t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
 
             if (response.result === 'OK') {
                 data.action = 'run';
@@ -340,9 +345,9 @@ function deploy(data){
                     success: function (response) {
                         //$("#loader").hide();
                         console.log(response);
-                        var tmp = t_deploy_status.row('#'+response.uuid).data();
+                        var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
                         tmp.status = response.result;
-                        t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
+                        t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
                     },
                     error : function (data, errorText) {
                         $("#errormsg").html(errorText).show();

@@ -250,14 +250,14 @@ class Deploy(object):
                                           p_dir=p_dir)
 
             with open(fd, 'r') as fp1:
-                ret =json.load(fp1)
+                ret = json.load(fp1)
 
             os.unlink(tmp_file)
 
             if ret_code == 0:
-                return {'result': 'OK', 'uuid': ret['uuid']}
+                return {'result': 'OK', 'uuid': ret['uuid'], 'target': ret['target']}
             if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': ret['uuid']}
+                return {'result': 'FAILED', 'uuid': ret['uuid'], 'target': ret['target']}
 
         elif action == 'run':
 
@@ -281,9 +281,9 @@ class Deploy(object):
             os.unlink(tmp_file)
 
             if ret_code == 0:
-                return {'result': 'OK', 'uuid': ret['uuid']}
+                return {'result': 'OK', 'uuid': ret['uuid'], 'target': ret['target']}
             if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': ret['uuid']}
+                return {'result': 'FAILED', 'uuid': ret['uuid'], 'target': ret['target']}
 
 
 class Api(object):

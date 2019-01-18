@@ -19,8 +19,10 @@
 # Author: cklewar
 #
 
+import os
 import socket
 import json
+import pprint
 
 try:
     from __main__ import cli
@@ -64,6 +66,7 @@ class CallbackModule(CallbackBase):
         self._options = cli.options
         self.ws_client = None
         self.ws_url = None
+        self._play = None
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
         super(CallbackModule, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
@@ -93,8 +96,10 @@ class CallbackModule(CallbackBase):
         self.emit_message(message=message)
 
     def v2_runner_on_ok(self, result):
-        #print('v2_runner_on_ok: {0}'.format(result.task_name))
+        print('v2_runner_on_ok: {0}'.format(result.task_name))
         data = result._task.serialize()
+        #pp = pprint.PrettyPrinter(indent=2)
+        #pp.pprint(data)
         message = {'action': 'v2_runner_on_ok', 'host': result._host.get_name(), 'task': result.task_name.strip(),
                    'status': 'OK', 'uuid': data['uuid']}
         self.emit_message(message=message)
@@ -112,9 +117,12 @@ class CallbackModule(CallbackBase):
         print('v2_playbook_on_no_hosts_remaining')
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        #print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
+        print('v2_playbook_on_task_start: {0}'.format(task.get_name().strip()))
         data = task.serialize()
         #print(data)
+        #pp = pprint.PrettyPrinter(indent=2)
+        #pp.pprint(self._play.serialize())
+        #print(self._play.get_name())
         message = {'action': 'v2_playbook_on_task_start', 'host': 'none', 'task': data['name'], 'status': 'running',
                    'uuid': data['uuid']}
         self.emit_message(message=message)
@@ -126,12 +134,20 @@ class CallbackModule(CallbackBase):
         print('v2_playbook_on_handler_task_start')
 
     def v2_playbook_on_play_start(self, play):
-        #print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
+        print('v2_playbook_on_play_start: {0}'.format(play.get_name().strip()))
+        self._play = play
+        invocation_items = []
+        inventory = [os.path.abspath(i) for i in self._options.inventory]
+        invocation_items.append('Inventory:  %s' % ', '.join(inventory))
+        print(invocation_items)
+
         data = play.serialize()
         extra_vars = self._options.extra_vars
+        #pp = pprint.PrettyPrinter(indent=4)
+        #pp.pprint(data)
 
         with open(extra_vars[0].split(':')[1], 'w') as fp:
-            fp.write(data['uuid'])
+            json.dump({"uuid": data['uuid'], "status": 'running'}, fp)
 
         message = {'action': 'v2_playbook_on_play_start', 'host': data['hosts'], 'task': play.get_name().strip(),
                    'status': 'running', 'uuid': data['uuid']}

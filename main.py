@@ -250,14 +250,14 @@ class Deploy(object):
                                           p_dir=p_dir)
 
             with open(fd, 'r') as fp1:
-                uuid = fp1.readline()
+                ret =json.load(fp1)
 
             os.unlink(tmp_file)
 
             if ret_code == 0:
-                return {'result': 'OK', 'uuid': uuid}
+                return {'result': 'OK', 'uuid': ret['uuid']}
             if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': uuid}
+                return {'result': 'FAILED', 'uuid': ret['uuid']}
 
         elif action == 'run':
 
@@ -276,12 +276,14 @@ class Deploy(object):
             ret_code = self.driver.deploy(playbook=pb, temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
 
             with open(fd, 'r') as fp1:
-                uuid = fp1.readline()
+                ret = json.load(fp1)
+
+            os.unlink(tmp_file)
 
             if ret_code == 0:
-                return {'result': 'OK', 'uuid': uuid}
+                return {'result': 'OK', 'uuid': ret['uuid']}
             if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': uuid}
+                return {'result': 'FAILED', 'uuid': ret['uuid']}
 
 
 class Api(object):

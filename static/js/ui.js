@@ -37,38 +37,78 @@ $( document ).ready(function() {
 
         if (json.action === 'v2_playbook_on_play_start'){
 
-            rowNode = t_deploy_status.row.add( {
-                "target":   json.host,
-                "task":   json.task,
-                "status": json.status,
-            } ).draw().node()
+            if (json.targets) {
 
-            $(rowNode).attr("id", json.uuid);
+                rowNode = t_deploy_status.row.add( {
+                    "target":   json.target,
+                    "task":   json.task,
+                    "status": json.status,
+                } ).draw().node()
 
-            $( rowNode )
-            .css( 'color', 'grey' )
-            .animate( { color: 'black' } );
+                $(rowNode).attr("id", json.uuid);
+
+                $( rowNode )
+                .css( 'color', 'black' )
+                .css( 'background-color', '#b7b7b7')
+                .animate( { color: 'black' } );
+
+                $.each( json.targets, function( key, target ) {
+                    //console.log( key + ": " + value );
+                    rowNode = t_deploy_status.row.add( {
+                        "target":   target,
+                        "task":   json.task,
+                        "status": json.status,
+                    } ).draw().node()
+
+                    $(rowNode).attr("id", + target + '_' + json.uuid);
+                });
+
+            } else {
+
+                rowNode = t_deploy_status.row.add( {
+                    "target":   json.target,
+                    "task":   json.task,
+                    "status": json.status,
+                } ).draw().node()
+
+                $(rowNode).attr("id", json.uuid);
+
+                $( rowNode )
+                .css( 'color', 'black' )
+                .css( 'background-color', '#b7b7b7')
+                .animate( { color: 'black' } );
+            }
 
         } else if (json.action === 'v2_playbook_on_task_start'){
 
             rowNode = t_deploy_status.row.add(  {
-                "target": json.host,
+                "target": json.target,
                 "task": json.task,
                 "status": json.status,
             } ).draw().node();
 
             $(rowNode).attr("id", json.uuid);
 
+            $( rowNode )
+            .css( 'color', 'black' )
+            .css( 'background-color', '#d6d6d6')
+            .animate( { color: 'black' } );
+
         } else if (json.action === 'v2_runner_on_ok'){
-            var temp = t_deploy_status.row('#'+json.uuid).data();
-            temp.target = json.host;
+            var temp = t_deploy_status.row('#' + json.uuid).data();
+            temp.target = json.target;
             temp.status = json.status;
             t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'v2_runner_on_failed'){
 
             var temp = t_deploy_status.row('#'+json.uuid).data();
-            temp.target = json.host;
+            temp.target = json.target;
+            temp.status = json.status;
+            t_deploy_status.row('#' + json.host + '_' + json.uuid).data(temp).invalidate();
+        } else if (json.action === 'v2_play_on_end'){
+            var temp = t_deploy_status.row('#'+json.uuid).data();
+            temp.target = json.target;
             temp.status = json.status;
             t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
         }
@@ -101,7 +141,6 @@ $( document ).ready(function() {
                 "defaultContent": ""
             },
         ],
-        "destroy": true,
         "ordering": false,
         "paging": false,
         "scrollY": "350px",
@@ -148,13 +187,13 @@ $( document ).ready(function() {
     });
 
     $('.btnDeployUseCase').on('click', function (event) {
-        t_deploy_status.clear();
         var data = {};
         data.use_case_name = ($(this).data('usecase'));
         deploy(data);
     });
 
     $('#modalDeployStatus').on('shown.bs.modal', function (e) {
+        t_deploy_status.clear();
         t_deploy_status.columns.adjust();
     });
 
@@ -282,7 +321,7 @@ function deploy(data){
         contentType: 'application/json',
         success: function (response) {
             //$("#loader").hide();
-
+            console.log(response);
             var tmp = t_deploy_status.row('#'+response.uuid).data();
             tmp.status = response.result;
             t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
@@ -300,7 +339,7 @@ function deploy(data){
                     contentType: 'application/json',
                     success: function (response) {
                         //$("#loader").hide();
-
+                        console.log(response);
                         var tmp = t_deploy_status.row('#'+response.uuid).data();
                         tmp.status = response.result;
                         t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();

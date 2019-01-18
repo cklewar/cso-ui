@@ -497,8 +497,8 @@ if __name__ == '__main__':
     if config['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
 
-    os.environ["CSO_WS_URL"] = '{0}://{1}:{2}/ws'.format(config["ws_client_protocol"], config["ws_client_ip"],
-                                                         config["ws_client_port"], )
+    os.environ["CSO_WS_URL"] = '{0}://{1}:{2}/ws'.format(config['ws_client_protocol'], '127.0.0.1',
+                                                         config['ws_client_port'])
     os.environ["CSO_GIT_PROTOCOL"] = config["git_protocol"]
     os.environ["CSO_GIT_HOST"] = config["git_host"]
     os.environ["CSO_GIT_PORT"] = str(config["git_port"])

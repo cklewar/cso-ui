@@ -21,13 +21,5 @@
 
 DRIVER_SALTSTACK = 'saltstack'
 DRIVER_ANSIBLE = 'ansible'
-
-IS_SSL = False
-DEAMONIZE = False
-UI_ADDRESS = '0.0.0.0'
-UI_PORT = 8670
 ADMIN_USERS = ('admin', 'root')
 ADMIN_USER_PW = 'juniper123'
-JSNS_URL = 'https://forums.juniper.net/t5/Security/bg-p/networkingnow'
-JTR_URL = 'https://apacjuniper.net/theshield/'
-JTAC_URL = 'https://support.juniper.net/support/'

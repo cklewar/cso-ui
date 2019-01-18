@@ -6,3 +6,5 @@ ruamel.yaml
 salt
 ansible
 ws4py
+junos-eznc
+jxmlease

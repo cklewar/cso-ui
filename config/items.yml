@@ -2,7 +2,8 @@ useCase0:
   title: Use Case 0 - Base
   playbook: pb.yml
   directory: useCase0
-  description: Demonstrate Application detection for SD-WAN and Static SD-WAN policy and Dynamic SD-WAN policy
+  description: Demonstrate Application detection for SD-WAN and Static SD-WAN policy
+    and Dynamic SD-WAN policy
   image: dummy.png
   delete: false
 
@@ -10,7 +11,8 @@ useCase1:
   title: Use Case 1 - Local Break Out at Spoke
   playbook: pb.yml
   directory: useCase1
-  description: Demonstrate ability of the site to breakout internet traffic form the site itself
+  description: Demonstrate ability of the site to breakout internet traffic form the
+    site itself
   image: dummy.png
   delete: false
 
@@ -69,3 +71,4 @@ useCase8:
   description: MultiCloud with AWS
   image: dummy.png
   delete: false
+

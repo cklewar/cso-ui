@@ -106,6 +106,10 @@ class Root(object):
             data = dict()
             data['cards'] = dict()
             # data['cards'] = self.driver.load_use_cases()[1]
+
+            data['protocol'] = config["ws_client_protocol"]
+            data['ip'] = config["ws_client_ip"]
+            data['port'] = config["ws_client_port"]
             data['clientname'] = "Client%d" % random.randint(0, 100)
             data['demo_ref_doc_url'] = config['demo_ref_doc_url']
             data['jtac_url'] = config['jtac_url']
@@ -122,29 +126,6 @@ class Root(object):
             error = '{0}'.format(ioe.filename if ioe.filename else ioe)
             print(error)
             return error
-
-    @cherrypy.expose
-    @require()
-    def save_card_settings(self, card=None, user=None, password=None, url=None):
-
-        if cherrypy.request.method == 'POST':
-
-            with open('config/items.yml', 'r') as ifp:
-                yaml = YAML(typ='rt')
-                cards = yaml.load(ifp)
-
-                update_card = cards[card]
-                update_card['user'] = user
-                update_card['password'] = password
-
-                if url:
-                    update_card['url'] = url
-                    cards[card] = update_card
-
-            with open('config/items.yml', 'w') as ofp:
-                yaml.dump(cards, ofp)
-
-            return self.index()
 
     @cherrypy.expose
     def ws(self, clientname):
@@ -179,6 +160,7 @@ class Cards(object):
                     else:
                         new_card.update({_tmp[0]: _tmp[1]})
 
+                new_card['delete'] = True
                 cards[card_name] = new_card
 
             with open('config/items.yml', 'w+') as ofp:
@@ -201,29 +183,27 @@ class Cards(object):
             with open('config/items.yml', 'w') as ofp:
                 yaml.dump(cards, ofp)
 
-            # return self.index()
+            return True
 
         elif action == 'save':
 
             data = cherrypy.request.json
+
             with open('config/items.yml', 'r') as ifp:
                 yaml = YAML(typ='rt')
                 cards = yaml.load(ifp)
 
-                # update_card = cards[card]
-                # update_card['user'] = user
-                # update_card['password'] = password
-
-                # if url:
-                #    update_card['url'] = url
-                #    cards[card] = update_card
-                # else:
-                #    update_card['url'] = {'EMEA': url_EMEA, 'AMER': url_AMER, 'APAC': url_APAC}
+                update_card = cards[data['cardId']]
+                update_card['title'] = data['title']
+                update_card['playbook'] = data['playbook']
+                update_card['directory'] = data['directory']
+                update_card['description'] = data['description']
+                cards[data['cardId']] = update_card
 
             with open('config/items.yml', 'w') as ofp:
                 yaml.dump(cards, ofp)
 
-            # return self.index()
+            return True
 
 
 @cherrypy.expose
@@ -266,8 +246,8 @@ class Deploy(object):
             # Clone data
             w_dir = '{0}/lib'.format(os.getcwd())
             p_dir = '{0}'.format('playbooks')
-            ret_code = self.driver.deploy(playbook='get_playbook_data.yml', temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
-            print(ret_code)
+            ret_code = self.driver.deploy(playbook='get_playbook_data.yml', temp_file=tmp_file, w_dir=w_dir,
+                                          p_dir=p_dir)
 
             with open(fd, 'r') as fp1:
                 uuid = fp1.readline()
@@ -459,17 +439,23 @@ class WSHandler(WebSocket):
 
 
 if __name__ == '__main__':
-    print('Starting UI at http(s)://{0}:{1}'.format(c.UI_ADDRESS, c.UI_PORT))
+
+    with open('config/config.yml', 'r') as fp:
+        _config = fp.read()
+        yaml = YAML(typ='safe')
+        config = yaml.load(_config)
+
+    print('Starting UI at http(s)://{0}:{1}'.format(config['UI_ADDRESS'], config['UI_PORT']))
     cherrypy.config.update({'log.screen': True,
                             'log.access_file': '',
                             'log.error_file': '',
                             'engine.autoreload_on': False,
-                            'server.socket_host': c.UI_ADDRESS,
-                            'server.socket_port': c.UI_PORT,
+                            'server.socket_host': config['UI_ADDRESS'],
+                            'server.socket_port': config['UI_PORT'],
                             'server.max_request_body_size': 0,
                             }, )
 
-    if c.IS_SSL:
+    if config['IS_SSL']:
         ssl_config = {
             'server.ssl_module': 'builtin',
             'server.ssl_certificate': 'config/ssl/cert.pem',
@@ -506,16 +492,11 @@ if __name__ == '__main__':
         },
     }
 
-    if c.DEAMONIZE:
+    if config['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
 
-    with open('config/config.yml', 'r') as fp:
-        _config = fp.read()
-        yaml = YAML(typ='safe')
-        config = yaml.load(_config)
-
-    print(config)
-    os.environ["CSO_WS_URL"] = config["ws_client_url"]
+    os.environ["CSO_WS_URL"] = '{0}://{1}:{2}/ws'.format(config["ws_client_protocol"], config["ws_client_ip"],
+                                                         config["ws_client_port"], )
     os.environ["CSO_GIT_PROTOCOL"] = config["git_protocol"]
     os.environ["CSO_GIT_HOST"] = config["git_host"]
     os.environ["CSO_GIT_PORT"] = str(config["git_port"])

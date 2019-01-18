@@ -71,9 +71,15 @@
                                             <button class="dropdown-item" type="button" data-toggle="modal"
                                                     data-target="#cardSettingsModal_{{ item }}">Settings
                                             </button>
+                                            {% if value.delete %}
                                             <button class="dropdown-item btnCardDelete" type="button"
                                                     data-source="{{ item }}">Delete
                                             </button>
+                                            {% else %}
+                                            <button class="dropdown-item btnCardDelete" type="button"
+                                                    data-source="{{ item }}" disabled>Delete
+                                            </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -86,7 +92,7 @@
         </div>
     </div>
 </main>
-<!-- Modal -->
+<!-- Modal edit card settings -->
 {% for item, value in data.cards.items() %}
 <div class="modal fade" id="cardSettingsModal_{{ item }}" tabindex="-1" role="dialog"
      aria-labelledby="cardSettingsModal_{{ item }}"
@@ -99,7 +105,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="post" action="save_card_settings">
+            <form id='formSaveCardSettings' method="post" action="{{ item }}">
                 <input class="form-control" id="card_{{ item }}" name="card" type="hidden" value="{{ item }}"/>
                 <div class="modal-body">
                     <div class="container-fluid">
@@ -146,6 +152,8 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- Modal Add new card-->
 <div class="modal fade" id="modalAddCard" tabindex="-1" role="dialog"
      aria-labelledby="cardSettingsModal_{{ item }}"
      aria-hidden="true">
@@ -249,6 +257,7 @@
     </div>
 </div>
 
+<!-- Modal Deploy-->
 <div class="modal" id="modalDeployStatus" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -293,7 +302,9 @@
         src="https://cdn.datatables.net/select/1.2.7/js/dataTables.select.min.js"></script>
 <script src="/static/js/ui.js"></script>
 <script>
+    var ws_client_protocol = "{{ data.protocol }}";
+    var ws_client_ip = "{{ data.ip }}";
+    var ws_client_port = "{{ data.port }}";
     var clientname = "{{ data.clientname }}";
-
 </script>
 </html>

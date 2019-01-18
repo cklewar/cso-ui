@@ -39,7 +39,6 @@ class AnsibleDriver(Base):
         self.git_ref = None
         self.git_path = None
         self.git_base_url = None
-        self.results_callback = None
 
     def authenticate(self):
         return True
@@ -49,8 +48,7 @@ class AnsibleDriver(Base):
         old = os.getcwd()
         os.chdir(w_dir)
         pb = '{0}/{1}'.format(p_dir, playbook)
-
-        command = "ansible-playbook {0} -e {1}:{2} git_protocol:{3} git_host:{4} git_port:{5} git_repo:{6}".format(pb, "tmp_file", temp_file, )
+        command = "ansible-playbook {0} -e {1}:{2}".format(pb, "tmp_file", temp_file, )
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
         #data = json.loads(output.decode('utf-8'))

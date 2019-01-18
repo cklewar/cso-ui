@@ -1,6 +1,6 @@
 git_protocol: http
 git_ip: 127.0.0.1
-git_port: 9998
+git_port: 9999
 git_user: admin
 git_pw: password
 git_ref: master

@@ -6,8 +6,7 @@ $( document ).ready(function() {
     console.log( "ready function in ui.js" );
     initGrid();
 
-    //var wsurl = scheme + "://" + host + ":" + port + "/yapt/ws?clientname=" + clientname;
-    var wsurl =  "ws://127.0.0.1:8670/ws?clientname=" + clientname;
+    var wsurl = ws_client_protocol + "://" + ws_client_ip + ":" + ws_client_port + "/ws?clientname=" + clientname;
     var ws;
     console.log(wsurl);
 
@@ -34,7 +33,7 @@ $( document ).ready(function() {
     ws.onmessage = function(ev){
 
         var json = JSON.parse(ev.data);
-        //console.log(json);
+        console.log(json);
 
         if (json.action === 'v2_playbook_on_play_start'){
 
@@ -46,10 +45,9 @@ $( document ).ready(function() {
 
             $(rowNode).attr("id", json.uuid);
 
-            /*$( rowNode )
-            .css( 'color', 'red' )
+            $( rowNode )
+            .css( 'color', 'grey' )
             .animate( { color: 'black' } );
-            */
 
         } else if (json.action === 'v2_playbook_on_task_start'){
 
@@ -62,8 +60,8 @@ $( document ).ready(function() {
             $(rowNode).attr("id", json.uuid);
 
         } else if (json.action === 'v2_runner_on_ok'){
-            //console.log(json);
             var temp = t_deploy_status.row('#'+json.uuid).data();
+            temp.target = json.host;
             temp.status = json.status;
             t_deploy_status.row('#'+json.uuid).data(temp).invalidate();
 
@@ -89,7 +87,6 @@ $( document ).ready(function() {
     };
 
     t_deploy_status = $('#t_deploy_status').DataTable({
-        "destroy": true,
         "columns": [
             {
                 "data": "target",
@@ -104,7 +101,10 @@ $( document ).ready(function() {
                 "defaultContent": ""
             },
         ],
-        "scrollY": "300px",
+        "destroy": true,
+        "ordering": false,
+        "paging": false,
+        "scrollY": "350px",
         "scrollCollapse": true
     });
 
@@ -118,7 +118,37 @@ $( document ).ready(function() {
         deleteCard($(this).data('source'));
     });
 
+    $("#formSaveCardSettings").submit(function(event) {
+        event.preventDefault();
+
+        var $form = $( this ),
+          cardId = $form.attr('action');
+          title = $form.find('input[name="title"]').val(),
+          playbook = $form.find('input[name="playbook"]').val(),
+          directory = $form.find('input[name="directory"]').val(),
+          description = $form.find('textarea[name="description"]').val();
+
+        var cardData = {"cardId": cardId, "title": title, "playbook": playbook, "directory": directory, "description": description}
+
+        $.ajax({
+            url: '/api/cards?action=save',
+            type: 'POST',
+            data: JSON.stringify(cardData),
+            cache: false,
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (response) {
+                console.log(response);
+                $('#cardSettingsModal_' + cardId).modal('hide');
+            },
+            error : function (data, errorText) {
+                $("#errormsg").html(errorText).show();
+            }
+        });
+    });
+
     $('.btnDeployUseCase').on('click', function (event) {
+        t_deploy_status.clear();
         var data = {};
         data.use_case_name = ($(this).data('usecase'));
         deploy(data);
@@ -239,7 +269,7 @@ function deleteCard(cardData){
 }
 
 function deploy(data){
-    //console.log(data);
+
     data.action = 'fetch';
 
     $.ajax({
@@ -251,8 +281,8 @@ function deploy(data){
         dataType: 'json',
         contentType: 'application/json',
         success: function (response) {
-            $("#loader").hide();
-            //console.log(response);
+            //$("#loader").hide();
+
             var tmp = t_deploy_status.row('#'+response.uuid).data();
             tmp.status = response.result;
             t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();
@@ -269,8 +299,8 @@ function deploy(data){
                     dataType: 'json',
                     contentType: 'application/json',
                     success: function (response) {
-                        $("#loader").hide();
-                        console.log(response);
+                        //$("#loader").hide();
+
                         var tmp = t_deploy_status.row('#'+response.uuid).data();
                         tmp.status = response.result;
                         t_deploy_status.row('#'+response.uuid).data(tmp).invalidate();

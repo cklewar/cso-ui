@@ -53,7 +53,7 @@ $( document ).ready(function() {
                 .animate( { color: 'black' } );
 
                 $.each( json.targets, function( target, uuid ) {
-                    console.log( target + ": " + uuid );
+
                     rowNode = t_deploy_status.row.add( {
                         "target":   target,
                         "task":   json.task,
@@ -99,15 +99,12 @@ $( document ).ready(function() {
             .animate( { color: 'black' } );
 
         } else if (json.action === 'v2_runner_on_ok'){
-            console.log('#' + json.target + '_' + json.uuid);
             var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'v2_runner_on_failed'){
-            console.log(json.target);
-            console.log(json.uuid);
             var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
             temp.target = json.target;
             temp.status = json.status;
@@ -118,6 +115,31 @@ $( document ).ready(function() {
             temp.target = json.target;
             temp.status = json.status;
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
+
+        } else if (json.action === 'update_session_output'){
+            $("#session_output").append(json.msg);
+            $('#session_output').trigger("change");
+
+        } else if (json.action === 'add_tasks'){
+            t_deploy_status.clear().draw();
+
+            $.each(json.data, function( index, target) {
+                $.each(target.tasks, function(k , v) {
+
+                    rowNode = t_deploy_status.row.add(  {
+                        "target": target.name,
+                        "task": v.name,
+                        "status": v.status ,
+                    }).draw().node();
+                    $(rowNode).attr("id", v.uuid);
+                });
+
+            });
+        } else if (json.action === 'update_task_status') {
+
+            var temp = t_deploy_status.row('#' + json.uuid).data();
+            temp.status = json.status;
+            t_deploy_status.row('#' + json.uuid).data(temp).invalidate();
         }
     };
 
@@ -148,6 +170,7 @@ $( document ).ready(function() {
                 "defaultContent": ""
             },
         ],
+        "info": false,
         "ordering": false,
         "paging": false,
         "scrollY": "350px",
@@ -222,7 +245,16 @@ $( document ).ready(function() {
             }
         });
     });
+
+    $("#session_output").on('change', function(){
+        scrollToBottom();
+    });
 });
+
+function scrollToBottom() {
+  $('#session_output').scrollTop($('#session_output')[0].scrollHeight);
+}
+
 
 function initGrid() {
   grid = new Muuri('.grid', {
@@ -329,9 +361,9 @@ function deploy(data){
         success: function (response) {
             //$("#loader").hide();
             console.log(response);
-            var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
-            tmp.status = response.result;
-            t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
+            //var tmp = t_deploy_status.row('#' response.uuid).data();
+            //tmp.status = response.result;
+            //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
 
             if (response.result === 'OK') {
                 data.action = 'run';
@@ -347,9 +379,9 @@ function deploy(data){
                     success: function (response) {
                         //$("#loader").hide();
                         console.log(response);
-                        var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
-                        tmp.status = response.result;
-                        t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
+                        //var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
+                        //tmp.status = response.result;
+                        //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
                     },
                     error : function (data, errorText) {
                         $("#errormsg").html(errorText).show();

@@ -20,38 +20,31 @@
 #
 
 import abc
+import json
+import lib.constants as c
 
 
 class Base(object):
 
-    def __init__(self):
+    def __init__(self, ws_client=None):
         self.status = None
+        self.ws_client = ws_client
+        self.tmp_dir = c.CONFIG['tmp_dir']
+        self._use_case_name = None
+        self._use_case_data = None
+        self.usecases_dir = c.CONFIG['usecases_dir']
 
     @abc.abstractmethod
     def authenticate(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def deploy(self):
-        raise NotImplementedError()
-
-    '''
-    @abc.abstractmethod
-    def load_use_cases(self):
+    def fetch(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_use_case(self, data=None):
+    def run(self, use_case=None):
         raise NotImplementedError()
-
-    @abc.abstractmethod
-    def del_use_case(self, data=None):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def update_use_case(self, data=None):
-        raise NotImplementedError()
-    '''
 
     @abc.abstractmethod
     def get_status_update(self):
@@ -60,3 +53,11 @@ class Base(object):
     @abc.abstractmethod
     def load_settings(self):
         raise NotImplementedError()
+
+    def emit_message(self, message=None):
+
+        if message is not None:
+            self.ws_client.send(json.dumps(message))
+            # self.ws_client.close()
+        else:
+            print('empty message')

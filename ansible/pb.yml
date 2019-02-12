@@ -1,0 +1,11 @@
+---
+name: "UseCase1"
+targets:
+  vsrx01:
+    address: 10.11.111.251
+    port: 32771
+    mode: telnet
+tasks:
+  #Zerorize: false
+  #Configure: true
+  #Copy: false

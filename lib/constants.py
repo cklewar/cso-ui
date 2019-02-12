@@ -21,5 +21,7 @@
 
 DRIVER_SALTSTACK = 'saltstack'
 DRIVER_ANSIBLE = 'ansible'
+DRIVER_PYEZ = 'pyez'
 ADMIN_USERS = ('admin', 'root')
 ADMIN_USER_PW = 'juniper123'
+CONFIG = None

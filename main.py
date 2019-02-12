@@ -21,9 +21,9 @@
 
 import lib.constants as c
 import os
+import socket
 import cherrypy
 import six
-import tempfile
 import pprint
 import json
 import threading
@@ -33,9 +33,11 @@ from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ruamel.yaml import YAML
 from lib.auth import AuthController, require, member_of, name_is
+from ws4py.client.threadedclient import WebSocketClient
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from lib.driver._ansible import AnsibleDriver
 from lib.driver._saltstack import SaltDriver
+from lib.driver._pyez import PyEzDriver
 
 
 def cors_tool():
@@ -69,6 +71,23 @@ def cors_tool():
         if cherrypy.request.config.get('tools.sessions.on', False):
             cherrypy.session['token'] = True
         return True
+
+
+class WSClient(WebSocketClient):
+    def __init__(self, name=None, url=None):
+        super(WSClient, self).__init__(url=url, protocols=['http-only', 'chat'])
+        self._clientName = name
+
+    def opened(self):
+        pass
+        # print('opened connection')
+
+    def closed(self, code, reason=None):
+        if code != 1000:
+            print('WSClient: Connection closed. Code <{0}>, Reason: <{1}>'.format(code, reason))
+
+    def received_message(self, m):
+        print('WSClient: Client received data. That\'s not what we want at this stage')
 
 
 class RestrictedArea(object):
@@ -107,12 +126,12 @@ class Root(object):
             data['cards'] = dict()
             # data['cards'] = self.driver.load_use_cases()[1]
 
-            data['protocol'] = config["ws_client_protocol"]
-            data['ip'] = config["ws_client_ip"]
-            data['port'] = config["ws_client_port"]
+            data['protocol'] = c.CONFIG["ws_client_protocol"]
+            data['ip'] = c.CONFIG["ws_client_ip"]
+            data['port'] = c.CONFIG["ws_client_port"]
             data['clientname'] = "Client%d" % random.randint(0, 100)
-            data['demo_ref_doc_url'] = config['demo_ref_doc_url']
-            data['jtac_url'] = config['jtac_url']
+            data['demo_ref_doc_url'] = c.CONFIG['demo_ref_doc_url']
+            data['jtac_url'] = c.CONFIG['jtac_url']
 
             with open("config/items.yml", 'r') as fp:
                 yaml = YAML(typ='rt')
@@ -237,53 +256,26 @@ class Deploy(object):
 
         action = cherrypy.request.json['action']
         use_case_name = cherrypy.request.json['use_case_name']
-        tempfile.tempdir = "/tmp/cso-ui"
 
         if action == 'fetch':
+            ret = self.driver.fetch()
+            return ret
+            #return {'result': 'OK'}
 
-            fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
+        if action == 'run':
 
-            # Clone data
-            w_dir = '{0}/lib'.format(os.getcwd())
-            p_dir = '{0}'.format('playbooks')
-            ret_code = self.driver.deploy(playbook='get_playbook_data.yml', temp_file=tmp_file, w_dir=w_dir,
-                                          p_dir=p_dir)
+            yaml = YAML(typ='rt')
 
-            with open(fd, 'r') as fp1:
-                ret = json.load(fp1)
+            with open('config/items.yml', 'r') as ifp:
+                use_cases = yaml.load(ifp)
+                use_case = use_cases[use_case_name]
 
-            os.unlink(tmp_file)
+            ret = self.driver.run(use_case_name=use_case_name, use_case_data=use_case)
 
-            if ret_code == 0:
-                return {'result': 'OK', 'uuid': ret['uuid'], 'target': ret['target']}
-            if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': ret['uuid'], 'target': ret['target']}
+            #for item in ret:
+            #    print(item)
 
-        elif action == 'run':
-
-            with open("config/items.yml", 'r') as fp:
-                yaml = YAML(typ='rt')
-                use_cases = yaml.load(fp)
-
-            use_case = use_cases[use_case_name]
-            w_dir = '/tmp/cso-ui/usecases/ansible'
-            p_dir = use_case['directory']
-            pb = use_case['playbook']
-
-            fd, tmp_file = tempfile.mkstemp(prefix='cso-ui_')
-
-            # Run Use Case Playbook
-            ret_code = self.driver.deploy(playbook=pb, temp_file=tmp_file, w_dir=w_dir, p_dir=p_dir)
-
-            with open(fd, 'r') as fp1:
-                ret = json.load(fp1)
-
-            os.unlink(tmp_file)
-
-            if ret_code == 0:
-                return {'result': 'OK', 'uuid': ret['uuid'], 'target': ret['target']}
-            if ret_code > 0:
-                return {'result': 'FAILED', 'uuid': ret['uuid'], 'target': ret['target']}
+            return True
 
 
 class Api(object):
@@ -445,19 +437,19 @@ if __name__ == '__main__':
     with open('config/config.yml', 'r') as fp:
         _config = fp.read()
         yaml = YAML(typ='safe')
-        config = yaml.load(_config)
+        c.CONFIG = yaml.load(_config)
 
-    print('Starting UI at http(s)://{0}:{1}'.format(config['UI_ADDRESS'], config['UI_PORT']))
+    print('Starting UI at http(s)://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
     cherrypy.config.update({'log.screen': True,
                             'log.access_file': '',
                             'log.error_file': '',
                             'engine.autoreload_on': False,
-                            'server.socket_host': config['UI_ADDRESS'],
-                            'server.socket_port': config['UI_PORT'],
+                            'server.socket_host': c.CONFIG['UI_ADDRESS'],
+                            'server.socket_port': c.CONFIG['UI_PORT'],
                             'server.max_request_body_size': 0,
                             }, )
 
-    if config['IS_SSL']:
+    if c.CONFIG['IS_SSL']:
         ssl_config = {
             'server.ssl_module': 'builtin',
             'server.ssl_certificate': 'config/ssl/cert.pem',
@@ -494,27 +486,27 @@ if __name__ == '__main__':
         },
     }
 
-    if config['DEMONIZE']:
+    if c.CONFIG['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
-
-    os.environ["CSO_WS_URL"] = '{0}://{1}:{2}/ws'.format(config['ws_client_protocol'], '127.0.0.1',
-                                                         config['ws_client_port'])
-    os.environ["CSO_GIT_PROTOCOL"] = config["git_protocol"]
-    os.environ["CSO_GIT_HOST"] = config["git_host"]
-    os.environ["CSO_GIT_PORT"] = str(config["git_port"])
-    os.environ["CSO_GIT_REPO_URL"] = config["git_repo_url"]
 
     _driver = None
 
-    if config['driver'] == c.DRIVER_SALTSTACK:
-        _driver = SaltDriver()
-    elif config['driver'] == c.DRIVER_ANSIBLE:
-        _driver = AnsibleDriver()
+    cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
+                                           c.CONFIG['ws_client_port'])
+    url = '{0}?clientname=server'.format(cso_ws_url)
+    print(url)
+    ws_client = WSClient(name='server', url=url)
+
+    if c.CONFIG['driver'] == c.DRIVER_SALTSTACK:
+        _driver = SaltDriver(ws_client=ws_client)
+    elif c.CONFIG['driver'] == c.DRIVER_ANSIBLE:
+        _driver = AnsibleDriver(ws_client=ws_client)
+    elif c.CONFIG['driver'] == c.DRIVER_PYEZ:
+        _driver = PyEzDriver(ws_client=ws_client)
 
     if _driver:
         WSPlugin(cherrypy.engine).subscribe()
         cherrypy.tools.websocket = WebSocketTool()
-
         cherrypy.tree.mount(Root(driver=_driver), '/', config=ui_conf)
         cherrypy.tree.mount(Api(driver=_driver), '/api', config=api_conf)
         cherrypy.engine.start()

@@ -8,3 +8,5 @@ ansible
 ws4py
 junos-eznc
 jxmlease
+python-gitlab
+gitpython

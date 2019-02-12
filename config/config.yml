@@ -1,18 +1,22 @@
-driver: ansible
+driver: pyez
 demo_ref_doc_url: static/docs/ASTT-Solutions_-_CSO_generic-testlab-HS26.pdf
 jtac_url: https://support.juniper.net/support/
 ws_client_protocol: ws
-ws_client_ip: 10.10.11.223
+ws_client_ip: 127.0.0.1
 ws_client_port: 8670
 git_protocol: http
-git_host: 192.168.10.5
+git_host: 127.0.0.1
 git_port: 9999
+git_login_url: /oauth/token
 git_repo_url: cso_ops/usecases
-
+git_user: root
+git_password: password
+tmp_dir: /tmp/cso-ui
+usecases_dir: usecases
 
 IS_SSL: False
 DEMONIZE: False
-UI_ADDRESS: '0.0.0.0'
+UI_ADDRESS: '127.0.0.1'
 UI_PORT: 8670
 
 JSNS_URL: https://forums.juniper.net/t5/Security/bg-p/networkingnow

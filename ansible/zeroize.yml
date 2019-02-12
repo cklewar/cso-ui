@@ -1,0 +1,26 @@
+---
+- name: Get Device Facts
+  hosts: localhost
+  roles:
+    - Juniper.junos
+  connection: local
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: "/usr/local/bin/python3.7"
+    provider_info:
+      user: "root"
+      password: "juniper123"
+      mode: "serial"
+      port: "/dev/cu.usbserial"
+      baud: 9600
+
+  tasks:
+
+    - name: Retrieve facts from devices running Junos OS
+      juniper_junos_facts:
+        provider: "{{ provider_info }}"
+        savedir: "{{ playbook_dir }}"
+
+    - name: Print version
+      debug:
+        var: junos.version

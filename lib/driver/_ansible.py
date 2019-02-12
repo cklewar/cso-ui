@@ -21,8 +21,9 @@
 
 import os
 import json
-import pprint
+import tempfile
 import subprocess
+import lib.constants  as c
 from ruamel.yaml import YAML
 from lib.driver.driver import Base
 
@@ -31,6 +32,7 @@ class AnsibleDriver(Base):
 
     def __init__(self):
         super(AnsibleDriver, self).__init__()
+        print('Loading Ansible driver')
         self.git_protocol = None
         self.git_ip = None
         self.git_port = None
@@ -39,23 +41,52 @@ class AnsibleDriver(Base):
         self.git_ref = None
         self.git_path = None
         self.git_base_url = None
+        tempfile.tempdir = self.tmp_dir
+        self.fd, self.tmp_file = tempfile.mkstemp(prefix='cso-ui_')
+        os.environ["CSO_WS_URL"] = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], '127.0.0.1',
+                                                             c.CONFIG['ws_client_port'])
+        os.environ["CSO_GIT_PROTOCOL"] = c.CONFIG["git_protocol"]
+        os.environ["CSO_GIT_HOST"] = c.CONFIG["git_host"]
+        os.environ["CSO_GIT_PORT"] = str(c.CONFIG["git_port"])
+        os.environ["CSO_GIT_REPO_URL"] = c.CONFIG["git_repo_url"]
 
     def authenticate(self):
         return True
 
-    def deploy(self, playbook=None, temp_file=None, w_dir=None, p_dir=None):
+    def fetch(self):
+
+        w_dir = '{0}/lib'.format(os.getcwd())
+        p_dir = '{0}'.format('playbooks')
+        ret_code = self.__deploy(playbook='get_playbook_data.yml', temp_file=self.tmp_file, w_dir=w_dir,
+                                 p_dir=p_dir)
+
+        with open(self.fd, 'r') as fp1:
+            ret = json.load(fp1)
+
+        if ret_code == 0:
+            return {'result': 'OK', 'uuid': ret['uuid'], 'target': ret['target']}
+        if ret_code > 0:
+            return {'result': 'FAILED', 'uuid': ret['uuid'], 'target': ret['target']}
+
+    def run(self, use_case=None):
+        self.__deploy(playbook=use_case, temp_file=self.tmp_file, w_dir=self.tmp_dir, p_dir='usecases')
+
+    def __deploy(self, playbook=None, temp_file=None, w_dir=None, p_dir=None):
+
         old = os.getcwd()
         os.chdir(w_dir)
         pb = '{0}/{1}'.format(p_dir, playbook)
-        command = "ansible-playbook {0} -e {1}:{2}".format(pb, "tmp_file", temp_file, )
+        command = "ansible-playbook {0} -e {1}:{2}".format(pb, "tmp_file", temp_file)
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
-        # data = json.loads(output.decode('utf-8'))
-        # print(data)
         ret_code = process.returncode
+        os.unlink(self.tmp_file)
         os.chdir(old)
 
         return ret_code
+
+    def get_status_update(self):
+        pass
 
     def load_settings(self):
         with open('config/driver/ansible.yml', 'r') as fp:

@@ -227,12 +227,13 @@ class PyEzDriver(Base):
             config = template.render(data)
 
         try:
-            # adding some timeout for telnet session to close properly
-            #time.sleep(10)
 
             dev = Device(host=target['address'], user=self.user, passwd=self.pw, mode=target['mode'],
                          port=target['port'], console_has_banner=True)
-            result = dev.probe(timeout=30)
+
+            result = dev.probe(timeout=60)
+            # adding some timeout for telnet session to close properly. Need a better approach here!
+            time.sleep(120)
 
             if result:
 

@@ -31,8 +31,8 @@ import socket
 import yaml
 import uuid
 import shutil
-import subprocess
 
+from lxml import etree
 from git import Repo
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
@@ -97,7 +97,8 @@ class PyEzDriver(Base):
 
     def fetch(self, use_case_name=None, use_case_data=None):
 
-        URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], '2222', c.CONFIG['git_repo_url'])
+        URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
+                                                 c.CONFIG['git_repo_url'])
         print(URL)
         PATH = '{0}'.format(c.CONFIG['tmp_dir'])
         # repo = Repo.init(PATH, bare=True)
@@ -167,41 +168,32 @@ class PyEzDriver(Base):
 
         try:
 
-            with Device(host=target['address'], user=self.user, passwd=self.pw, mode=target['mode'],
-                        port=target['port']) as dev:
+            try:
+                dev = Device(host=target['address'], mode=target['mode'], port=target['port'])
+                dev.open()
+                resp = dev.zeroize()
 
-                try:
-                    resp = dev.rpc.request_system_zeroize()
-                    print(resp)
-                    message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': resp}
-                    self.emit_message(message=message)
+            except (RuntimeError, OSError) as err:
+                print(err)
 
-                except RpcError as rpce:
-                    print('loosing connection...')
-                    print(rpce.message)
-                    message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': rpce.message}
-                    self.emit_message(message=message)
-
-        except (RuntimeError, OSError) as err:
-            print(err)
-
-        try:
-
-            tn = telnetlib.Telnet(host=target['address'], port=target['port'])
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'zeroize initialized'}
+            self.emit_message(message=message)
 
             while True:
 
-                data = tn.read_until("\r\n".encode('utf-8'))
+                #data = tn.read_until("\r\n".encode('utf-8'))
+                data = dev._tty._tn.read_until(b"\r\n")
+                print(str(data, 'utf-8'))
+                #print(data.decode('utf-8').strip())
 
-                if data.decode('utf-8').strip() == "Amnesiac (ttyu0)":
-                    print("Box is rebooted since we see: <Amnesiac (ttyu0)>")
+                if data.decode('utf-8').strip() in c.TERM_STRINGS:
+                    print("Device <{0}> is rebooted. Waiting for daemons to come up.".format(target['name']))
                     message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
                     self.emit_message(message=message)
-                    tn.close()
+                    dev.close(skip_logout=True)
                     break
 
-                message = {'action': 'update_session_output', 'target': '10.1.1.1', 'task': 'test123',
-                           'status': 'running', 'uuid': 'uuid', 'msg': data.decode('utf-8')}
+                message = {'action': 'update_session_output', 'uuid': task['uuid'], 'status': 'zeroizing...'}
                 self.emit_message(message=message)
                 time.sleep(0.2)
 
@@ -209,6 +201,7 @@ class PyEzDriver(Base):
             print(err)
 
     def commit_config(self, target=None, task=None):
+
         print('Pushing configuration to device <{0}>'.format(target['name']))
 
         try:
@@ -232,10 +225,10 @@ class PyEzDriver(Base):
                          port=target['port'], console_has_banner=True)
 
             result = dev.probe(timeout=60)
-            # adding some timeout for telnet session to close properly. Need a better approach here!
-            time.sleep(120)
 
             if result:
+                # adding some timeout for telnet session to close properly. Need a better approach here!
+                time.sleep(60)
 
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
                 self.emit_message(message=message)
@@ -262,8 +255,7 @@ class PyEzDriver(Base):
             return False, err
 
     def copy(self, target=None, task=None):
-        print(task)
-        print('copy file to device <{0}>'.format(target['name']))
+        print('Copy file to device <{0}>'.format(target['name']))
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
 

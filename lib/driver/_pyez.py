@@ -26,19 +26,18 @@ import lib.constants as c
 import requests
 import json
 import time
-import telnetlib
 import socket
 import yaml
 import uuid
 import shutil
 
-from lxml import etree
 from git import Repo
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
 from jnpr.junos.exception import ConfigLoadError, CommitError
 from jnpr.junos.exception import RpcError
+from gitlab.exceptions import GitlabError, GitlabDeleteError, GitlabConnectionError, GitlabCreateError
 from ruamel.yaml import YAML
 from lib.driver.driver import Base
 
@@ -61,7 +60,7 @@ class PyEzDriver(Base):
     def authenticate(self):
 
         URL = '{0}://{1}:{2}'.format(c.CONFIG['git_protocol'], c.CONFIG['git_host'],
-                                     c.CONFIG['git_port'])
+                                     c.CONFIG['git_http_port'])
         LOGIN_URL = '{0}{1}'.format(URL, c.CONFIG['git_login_url'])
 
         payload = {
@@ -139,7 +138,8 @@ class PyEzDriver(Base):
 
             for task, state in play_data['tasks'].items():
                 print(task, state)
-                if task:
+
+                if state:
                     _tmp['tasks'].append({'name': task, 'status': 'waiting', 'uuid': str(uuid.uuid4())})
 
             self._data.append(_tmp)
@@ -150,12 +150,66 @@ class PyEzDriver(Base):
         for target in self._data:
             for task in target['tasks']:
 
-                if task['name'] == 'Zerorize':
+                if task['name'] == 'Render':
+                    self.render(target=target, task=task)
+                elif task['name'] == 'Zerorize':
                     self.zeroize(target=target, task=task)
                 elif task['name'] == 'Configure':
                     self.commit_config(target=target, task=task)
                 elif task['name'] == 'Copy':
                     self.copy(target=target, task=task)
+
+    def render(self, target=None, task=None):
+        print('Render device <{0}> configuration and push to git'.format(target['name']))
+        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Render template'}
+        self.emit_message(message=message)
+
+        try:
+
+            env = Environment(autoescape=False,
+                              loader=FileSystemLoader(self._path), trim_blocks=True, lstrip_blocks=True)
+
+            template = env.get_template(target['template'])
+
+        except (TemplateNotFound, IOError) as err:
+            print('Error({0}): {1} --> {2})'.format(err.errno, err.strerror, err.filename))
+            return False, err
+
+        with open('{0}/{1}'.format(self._path, target['template_data'])) as fd:
+            data = yaml.safe_load(fd)
+            config = template.render(data)
+
+        status = self.authenticate()
+
+        if status:
+
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Push config'}
+            self.emit_message(message=message)
+
+            try:
+
+                project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
+                file_path = '{0}/{1}/{2}'.format(self._use_case_name, 'config', target['name'])
+
+                file_body = {
+                    "file_path": file_path,
+                    "branch": "master",
+                    "content": config,
+                    "commit_message": "Device config {0}".format(target['name'])
+                }
+
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
+                self.emit_message(message=message)
+
+            except (GitlabConnectionError, GitlabError) as gle:
+                return False, 'Failed to get project with error: <0>'.format(gle.message)
+
+            try:
+                f = project.files.create(file_body)
+                return status, f
+
+            except GitlabCreateError as gce:
+                return False, 'Failed to add device config with error: <{0}>'.format(gce)
 
     def zeroize(self, target=None, task=None):
 

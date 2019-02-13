@@ -2,14 +2,15 @@
 name: "UseCase2"
 targets:
   vsrx01:
+    mode: telnet
     address: 10.11.111.251
     port: 32771
     user: root
     password: juniper123
-    mode: telnet
     template: vsrx01.j2
     template_data: vsrx01.yml
 tasks:
-  Zerorize: True
-  Configure: True
-  Copy: True
+  Render: True
+  Zerorize: False
+  Configure: False
+  Copy: False

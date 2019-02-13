@@ -9,8 +9,21 @@ targets:
     password: juniper123
     template: vsrx01.j2
     template_data: vsrx01.yml
+
 tasks:
-  Render: True
-  Zerorize: False
-  Configure: False
-  Copy: False
+  Render:
+    enabled: True
+  Zerorize:
+    enabled: False
+  Configure:
+    enabled: False
+    merge: True
+    replace: False
+    confirmed: False
+  Pull:
+    enabled: False
+    file: phcd-ca.crt
+  Copy:
+    enabled: True
+    src: phcd-ca.crt
+    dst: /tmp/phcd-ca.crt

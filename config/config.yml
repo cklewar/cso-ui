@@ -10,9 +10,10 @@ git_http_port: 9999
 git_ssh_port: 2222
 git_login_url: /oauth/token
 git_repo_url: cso_ops/usecases
+git_device_conf_dir: config
 git_user: root
 git_password: password
-tmp_dir: /tmp/cso-data
+tmp_dir: /tmp/cso-ui/data
 usecases_dir: usecases
 
 IS_SSL: False

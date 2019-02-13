@@ -225,6 +225,9 @@ $( document ).ready(function() {
     $('#modalDeployStatus').on('shown.bs.modal', function (e) {
         t_deploy_status.clear();
         t_deploy_status.columns.adjust();
+        $("#session_output").val('');
+        $('#session_output').trigger("change");
+
     });
 
     $(function () {

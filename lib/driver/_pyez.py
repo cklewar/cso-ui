@@ -134,7 +134,8 @@ class PyEzDriver(Base):
         for target, value in play_data['targets'].items():
 
             _tmp = {'name': target, 'address': value['address'], 'port': value['port'], 'mode': value['mode'],
-                    'user': value['user'], 'password': value['password'], 'tasks': list()}
+                    'user': value['user'], 'password': value['password'], 'template': value['template'],
+                    'template_data': value['template_data'], 'tasks': list()}
 
             for task, state in play_data['tasks'].items():
                 print(task, state)
@@ -159,7 +160,7 @@ class PyEzDriver(Base):
     def zeroize(self, target=None, task=None):
 
         print('Zerorize device <{0}>'.format(target['name']))
-        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'zeroizing'}
+        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Zeroize initializing'}
         self.emit_message(message=message)
 
         try:
@@ -178,7 +179,6 @@ class PyEzDriver(Base):
 
             while True:
 
-                # data = tn.read_until("\r\n".encode('utf-8'))
                 data = dev._tty._tn.read_until(b"\r\n")
                 print(str(data, 'utf-8'))
 
@@ -206,13 +206,13 @@ class PyEzDriver(Base):
             env = Environment(autoescape=False,
                               loader=FileSystemLoader(self._path), trim_blocks=True, lstrip_blocks=True)
 
-            template = env.get_template(self._use_case_name + '.j2')
+            template = env.get_template(target['template'])
 
         except (TemplateNotFound, IOError) as err:
             print('Error({0}): {1} --> {2})'.format(err.errno, err.strerror, err.filename))
             return False, err
 
-        with open('{0}/{1}.yml'.format(self._path, self._use_case_name)) as fd:
+        with open('{0}/{1}'.format(self._path, target['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
 
@@ -221,13 +221,13 @@ class PyEzDriver(Base):
             dev = Device(host=target['address'], user=self.user, passwd=self.pw, mode=target['mode'],
                          port=target['port'], console_has_banner=True)
             message = {'action': 'update_task_status', 'uuid': task['uuid'],
-                       'status': 'Waiting for daemons to come up...'}
+                       'status': 'Waiting for daemons to be ready...'}
             self.emit_message(message=message)
             result = dev.probe(timeout=60)
 
             if result:
                 # adding some timeout for telnet session to close properly. Need a better approach here!
-                time.sleep(60)
+                time.sleep(90)
 
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
                 self.emit_message(message=message)

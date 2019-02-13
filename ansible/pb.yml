@@ -8,6 +8,7 @@ targets:
     password: juniper123
     mode: telnet
     template: vsrx01.j2
+    template_data: vsrx01.yml
 tasks:
   Zerorize: True
   Configure: True

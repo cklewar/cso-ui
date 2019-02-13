@@ -268,12 +268,9 @@ class Deploy(object):
 
             with open('config/items.yml', 'r') as ifp:
                 use_cases = yaml.load(ifp)
-                use_case = use_cases[use_case_name]
+                use_case_data = use_cases[use_case_name]
 
-            ret = self.driver.run(use_case_name=use_case_name, use_case_data=use_case)
-
-            #for item in ret:
-            #    print(item)
+            ret = self.driver.run(use_case_name=use_case_name, use_case_data=use_case_data)
 
             return True
 

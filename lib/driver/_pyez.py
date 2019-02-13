@@ -95,20 +95,17 @@ class PyEzDriver(Base):
             print(response.status_code, response.headers, response)
             return False, "GIT AUTH FAILED"
 
-    def fetch(self, use_case_name=None, use_case_data=None):
-
+    def fetch(self):
         URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
                                                  c.CONFIG['git_repo_url'])
-        print(URL)
+        print('Fetch use case data from repo <{0}>'.format(URL))
         PATH = '{0}'.format(c.CONFIG['tmp_dir'])
-        # repo = Repo.init(PATH, bare=True)
-        # cr = repo.clone(URL, '{0}/'.format(PATH))
 
         if os.path.exists(PATH):
             shutil.rmtree(PATH)
 
-        test123 = Repo.clone_from(URL, PATH)
-
+        resp = Repo.clone_from(URL, PATH)
+        print(resp)
         ret_code = 0
 
         if ret_code == 0:
@@ -117,8 +114,7 @@ class PyEzDriver(Base):
             return {'result': 'FAILED', 'uuid': str(uuid.uuid4()), 'target': '1'}
 
     def run(self, use_case_name=None, use_case_data=None):
-
-        print(use_case_data)
+        print('Deploy use case <{0}>'.format(use_case_name))
 
         self._data = list()
         self._use_case_name = use_case_name
@@ -131,17 +127,17 @@ class PyEzDriver(Base):
 
         self._path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
         play = '{0}/{1}'.format(self._path, self._use_case_data['playbook'])
-        print(play)
 
         with open(play, 'r') as fd:
-            data = yaml.safe_load(fd)
+            play_data = yaml.safe_load(fd)
 
-        for target, value in data['targets'].items():
+        for target, value in play_data['targets'].items():
 
             _tmp = {'name': target, 'address': value['address'], 'port': value['port'], 'mode': value['mode'],
-                    'tasks': list()}
+                    'user': value['user'], 'password': value['password'], 'tasks': list()}
 
-            for task in data['tasks']:
+            for task, state in play_data['tasks'].items():
+                print(task, state)
                 if task:
                     _tmp['tasks'].append({'name': task, 'status': 'waiting', 'uuid': str(uuid.uuid4())})
 
@@ -158,7 +154,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Configure':
                     self.commit_config(target=target, task=task)
                 elif task['name'] == 'Copy':
-                    self.copy(target=target)
+                    self.copy(target=target, task=task)
 
     def zeroize(self, target=None, task=None):
 
@@ -169,31 +165,32 @@ class PyEzDriver(Base):
         try:
 
             try:
-                dev = Device(host=target['address'], mode=target['mode'], port=target['port'])
+                dev = Device(host=target['address'], mode=target['mode'], port=target['port'], user=target['user'],
+                             password=target['password'])
                 dev.open()
                 resp = dev.zeroize()
 
             except (RuntimeError, OSError) as err:
                 print(err)
 
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'zeroize initialized'}
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Zeroize initialized'}
             self.emit_message(message=message)
 
             while True:
 
-                #data = tn.read_until("\r\n".encode('utf-8'))
+                # data = tn.read_until("\r\n".encode('utf-8'))
                 data = dev._tty._tn.read_until(b"\r\n")
                 print(str(data, 'utf-8'))
-                #print(data.decode('utf-8').strip())
 
                 if data.decode('utf-8').strip() in c.TERM_STRINGS:
-                    print("Device <{0}> is rebooted. Waiting for daemons to come up.".format(target['name']))
+                    print("Device <{0}> is rebooted. Waiting for daemons to come up...".format(target['name']))
                     message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
                     self.emit_message(message=message)
                     dev.close(skip_logout=True)
                     break
 
-                message = {'action': 'update_session_output', 'uuid': task['uuid'], 'status': 'zeroizing...'}
+                message = {'action': 'update_session_output', 'uuid': task['uuid'],
+                           'msg': str(data, 'utf-8')}
                 self.emit_message(message=message)
                 time.sleep(0.2)
 
@@ -223,7 +220,9 @@ class PyEzDriver(Base):
 
             dev = Device(host=target['address'], user=self.user, passwd=self.pw, mode=target['mode'],
                          port=target['port'], console_has_banner=True)
-
+            message = {'action': 'update_task_status', 'uuid': task['uuid'],
+                       'status': 'Waiting for daemons to come up...'}
+            self.emit_message(message=message)
             result = dev.probe(timeout=60)
 
             if result:

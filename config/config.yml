@@ -7,7 +7,7 @@ ws_client_port: 8670
 git_protocol: http
 git_host: 127.0.0.1
 git_http_port: 9999
-git_ssh_port: 3022
+git_ssh_port: 2222
 git_login_url: /oauth/token
 git_repo_url: cso_ops/usecases
 git_user: root
@@ -17,7 +17,7 @@ usecases_dir: usecases
 
 IS_SSL: False
 DEMONIZE: False
-UI_ADDRESS: 0.0.0.0
+UI_ADDRESS: 127.0.0.1
 UI_PORT: 8670
 
 JSNS_URL: https://forums.juniper.net/t5/Security/bg-p/networkingnow

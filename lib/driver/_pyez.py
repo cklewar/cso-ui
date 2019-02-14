@@ -307,7 +307,6 @@ class PyEzDriver(Base):
             print(str(data, 'utf-8'))
 
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
-                print("Device <{0}> is rebooted. Waiting for daemons to come up...".format(target['name']))
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
                 self.emit_message(message=message)
                 break
@@ -334,11 +333,12 @@ class PyEzDriver(Base):
         with open('{0}/{1}'.format(self._use_case_path, target['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
+            print("Device <{0}> is rebooted. Waiting for daemons to be ready...".format(target['name']))
             message = {'action': 'update_task_status', 'uuid': task['uuid'],
                        'status': 'Waiting for daemons to be ready...'}
             self.emit_message(message=message)
             # adding some timeout for telnet session to close properly. Need a better approach here!
-            time.sleep(90)
+            time.sleep(120)
             message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
             self.emit_message(message=message)
             self._dev.open()

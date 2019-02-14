@@ -166,7 +166,8 @@ class PyEzDriver(Base):
             for task in target['tasks']:
 
                 if task['name'] == 'Render':
-                    self.render(target=target, task=task)
+                    resp = self.render(target=target, task=task)
+                    self.push(target=target, task=task, data=resp)
                 elif task['name'] == 'Pull':
                     self.pull(target=target, task=task)
                 elif task['name'] == 'Zerorize':
@@ -176,7 +177,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Copy':
                     self.copy(target=target, task=task)
 
-            #self.end()
+            # self.end()
 
     def render(self, target=None, task=None):
         print('Render device <{0}> configuration and push to git'.format(target['name']))
@@ -199,6 +200,57 @@ class PyEzDriver(Base):
             data = yaml.safe_load(fd)
             config = template.render(data)
 
+        return config
+
+    def push(self, target=None, task=None, data=None):
+        print('Push device <{0}> configuration to git'.format(target['name']))
+        status = self.authenticate()
+
+        if status:
+
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Push config'}
+            self.emit_message(message=message)
+
+            try:
+
+                project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
+                self.emit_message(message=message)
+
+            except (GitlabConnectionError, GitlabError) as gle:
+                return False, 'Failed to get project with error: <0>'.format(gle.message)
+
+            _status, _data = self.pull(target=target, task=task)
+            file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'],
+                                             target['name'])
+            file_body = {
+                "branch": c.CONFIG['git_branch'],
+                "content": _data,
+                "commit_message": "Device config {0}".format(target['name'])
+            }
+
+            if _status:
+                print('Updating file <{0}>'.format(target['name']))
+                try:
+
+                    _data = project.files.update(file_path=file_path, new_data=file_body)
+                    return True, _data
+
+                except (GitlabConnectionError, GitlabError) as gle:
+                    return False, 'Failed to update device template with error: <0>'.format(gle.message)
+
+            else:
+                print('Creating new file <{0}>'.format(target['name']))
+                try:
+
+                    _data = project.files.create(file_body)
+                    return True, _data
+
+                except (GitlabConnectionError, GitlabError) as gle:
+                    return False, 'Failed to create device template with error: <0>'.format(gle.message)
+
+    def update(self, target=None, task=None, data=None):
+        print('Update device <{0}> configuration in git'.format(target['name']))
         status = self.authenticate()
 
         if status:
@@ -213,8 +265,8 @@ class PyEzDriver(Base):
 
                 file_body = {
                     "file_path": file_path,
-                    "branch": "master",
-                    "content": config,
+                    "branch": c.CONFIG['git_branch'],
+                    "content": data,
                     "commit_message": "Device config {0}".format(target['name'])
                 }
 
@@ -225,31 +277,29 @@ class PyEzDriver(Base):
                 return False, 'Failed to get project with error: <0>'.format(gle.message)
 
             try:
-                f = project.files.create(file_body)
-                return status, f
+                _response = project.files.update(file_body)
+                return True, _response
 
             except GitlabCreateError as gce:
-                return False, 'Failed to add device config with error: <{0}>'.format(gce)
+                return False, 'Failed to update template data with error: <{0}>'.format(gce)
 
     def pull(self, target=None, task=None):
-        print('Pull file <{0}> from git for use case <{1}>'.format(task['file'], self._use_case_name))
+        print('Pull file <{0}> from git for use case <{1}>'.format(target['name'], self._use_case_name))
 
         try:
             project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-            path = '{0}'.format(task['file'])
+            _path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+
+            try:
+                f = project.files.get(file_path=_path, ref='master')
+                return True, f.decode()
+            except GitlabError as ge:
+                return False, 'Failed to get file with error: <{0}>'.format(ge)
 
         except (GitlabConnectionError, GitlabError) as gle:
             return False, 'Failed to get project with error: <0>'.format(gle.message)
 
-        try:
-            f = project.files.get(file_path=path, ref='master')
-        except GitlabError as ge:
-            return False, 'Failed to get file with error: <{0}>'.format(ge)
-
-        return True, f.decode()
-
     def zeroize(self, target=None, task=None):
-
         print('Zerorize device <{0}>'.format(target['name']))
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Zeroize initializing'}
         self.emit_message(message=message)
@@ -274,8 +324,7 @@ class PyEzDriver(Base):
             time.sleep(0.2)
 
     def commit_config(self, target=None, task=None):
-
-        print('Pushing configuration to device <{0}>'.format(target['name']))
+        print('Commit configuration on device <{0}>'.format(target['name']))
 
         try:
 
@@ -324,7 +373,6 @@ class PyEzDriver(Base):
         tn.write('cat > {0} << EOF'.format(task['dst']).encode('ascii') + b"\n\r")
 
         with open(_file, 'r') as fd:
-
             for line in fd:
                 tn.write(line.encode("ascii"))
                 time.sleep(1)

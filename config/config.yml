@@ -13,6 +13,7 @@ git_repo_url: cso_ops/usecases
 git_device_conf_dir: config
 git_user: root
 git_password: password
+git_branch: master
 tmp_dir: /tmp/cso-ui/data
 usecases_dir: usecases
 

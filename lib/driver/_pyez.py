@@ -102,7 +102,13 @@ class PyEzDriver(Base):
                                password=target['password'])
             message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
             self.emit_message(message=message)
+            #resp = self._dev.probe(30)
+            #print(resp)
+
+            #if resp:
             self._dev.open()
+            message = {'action': 'update_session_output', 'msg': '\nConnected to target: {0}'.format(target['name'])}
+            self.emit_message(message=message)
 
         except (RuntimeError, OSError) as err:
             print(err)
@@ -332,7 +338,6 @@ class PyEzDriver(Base):
         print('Commit configuration on device <{0}>'.format(target['name']))
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
         self.emit_message(message=message)
-        self.connect(target=target)
 
         try:
 
@@ -352,34 +357,34 @@ class PyEzDriver(Base):
             message = {'action': 'update_task_status', 'uuid': task['uuid'],
                        'status': 'Waiting for daemons to be ready...'}
             self.emit_message(message=message)
-            # adding some timeout for telnet session to close properly. Need a better approach here!
-            time.sleep(90)
 
-            if self._dev.probe(60):
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
-                self.emit_message(message=message)
-                cu = Config(self._dev)
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Lock config'}
-                self.emit_message(message=message)
-                cu.lock()
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Load config'}
-                self.emit_message(message=message)
-                cu.load(config, merge=task['merge'], overwrite=task['overwrite'], update=task['update'])
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Commit config'}
-                self.emit_message(message=message)
-                cu.commit(confirm=task['confirm'])
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Unlock config'}
-                self.emit_message(message=message)
-                cu.unlock()
-                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
-                self.emit_message(message=message)
+            # adding some timeout for telnet session to close properly. Need a better approach here!
+            time.sleep(120)
+            self.connect(target=target)
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
+            self.emit_message(message=message)
+            cu = Config(self._dev)
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Lock config'}
+            self.emit_message(message=message)
+            cu.lock()
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Load config'}
+            self.emit_message(message=message)
+            cu.load(config, merge=task['merge'], override=task['override'], update=task['update'])
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Commit config'}
+            self.emit_message(message=message)
+            cu.commit(confirm=task['confirm'])
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Unlock config'}
+            self.emit_message(message=message)
+            cu.unlock()
+            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
+            self.emit_message(message=message)
 
     def copy(self, target=None, task=None):
-        print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))
-        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Copy file {0}'.format(task['src'])}
+        print('Copy file <{0}> to <{1}>'.format(target['copy_src'], task['dst']))
+        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Copy file {0}'.format(target['src'])}
         self.emit_message(message=message)
-        _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], task['src'])
-        self._dev._tty._tn.write('cat > {0} << EOF'.format(task['dst']).encode('ascii') + b"\n\r")
+        _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], target['copy_src'])
+        self._dev._tty._tn.write('cat > {0} << EOF'.format(target['copy_dst']).encode('ascii') + b"\n\r")
 
         with open(_file, 'r') as fd:
             for line in fd:

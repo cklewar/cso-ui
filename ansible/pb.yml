@@ -9,6 +9,8 @@ targets:
     password: juniper123
     template: vsrx01.j2
     template_data: vsrx01.yml
+    copy_src: phcd-ca.crt
+    copy_dst: /tmp/phcd-ca.crt
 
 tasks:
   Render:
@@ -23,5 +25,3 @@ tasks:
     confirm: False
   Copy:
     enabled: True
-    src: phcd-ca.crt
-    dst: /tmp/phcd-ca.crt

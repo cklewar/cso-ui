@@ -338,10 +338,9 @@ class PyEzDriver(Base):
                        'status': 'Waiting for daemons to be ready...'}
             self.emit_message(message=message)
             # adding some timeout for telnet session to close properly. Need a better approach here!
-            time.sleep(120)
+            time.sleep(90)
             message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
             self.emit_message(message=message)
-            self._dev.open()
             cu = Config(self._dev)
             message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Lock config'}
             self.emit_message(message=message)
@@ -363,7 +362,6 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Copy file {0}'.format(task['src'])}
         self.emit_message(message=message)
         _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], task['src'])
-        #tn = telnetlib.Telnet(host=target['address'], port=target['port'])
         self._dev._tty._tn.write('cat > {0} << EOF'.format(task['dst']).encode('ascii') + b"\n\r")
 
         with open(_file, 'r') as fd:

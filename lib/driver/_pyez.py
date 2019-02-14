@@ -95,6 +95,22 @@ class PyEzDriver(Base):
             print(response.status_code, response.headers, response)
             return False, "GIT AUTH FAILED"
 
+    def connect(self, target=None):
+        try:
+            self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
+                               user=target['user'],
+                               password=target['password'])
+            message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
+            self.emit_message(message=message)
+            self._dev.open()
+
+        except (RuntimeError, OSError) as err:
+            print(err)
+            return False
+
+    def disconnect(self):
+        self._dev.close(skip_logout=True)
+
     def fetch(self):
         URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
                                                  c.CONFIG['git_repo_url'])
@@ -145,19 +161,8 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         for target in self._data:
-            '''
-            try:
-                self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
-                                   user=target['user'],
-                                   password=target['password'])
-                message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
-                self.emit_message(message=message)
-                self._dev.open()
 
-            except (RuntimeError, OSError) as err:
-                print(err)
-                return False
-            '''
+            self.connect(target=target)
 
             for task in target['tasks']:
 
@@ -172,8 +177,6 @@ class PyEzDriver(Base):
                     self.commit_config(target=target, task=task)
                 elif task['name'] == 'Copy':
                     self.copy(target=target, task=task)
-
-            #self.end()
 
     def render(self, target=None, task=None):
         print('Render device <{0}> configuration and push to git'.format(target['name']))
@@ -317,6 +320,7 @@ class PyEzDriver(Base):
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
                 self.emit_message(message=message)
+                self.disconnect()
                 break
 
             message = {'action': 'update_session_output', 'uuid': task['uuid'],
@@ -326,6 +330,9 @@ class PyEzDriver(Base):
 
     def commit_config(self, target=None, task=None):
         print('Commit configuration on device <{0}>'.format(target['name']))
+        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
+        self.emit_message(message=message)
+        self.connect(target=target)
 
         try:
 
@@ -357,10 +364,10 @@ class PyEzDriver(Base):
                 cu.lock()
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Load config'}
                 self.emit_message(message=message)
-                cu.load(config, merge=True)
+                cu.load(config, merge=task['merge'], overwrite=task['overwrite'], update=task['update'])
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Commit config'}
                 self.emit_message(message=message)
-                cu.commit()
+                cu.commit(confirm=task['confirm'])
                 message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Unlock config'}
                 self.emit_message(message=message)
                 cu.unlock()
@@ -385,9 +392,7 @@ class PyEzDriver(Base):
         self._dev._tty._tn.write('clear'.encode("ascii") + b"\n\r")
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
-
-    def end(self):
-        self._dev.close(skip_logout=True)
+        self.disconnect()
 
     def get_status_update(self):
         pass

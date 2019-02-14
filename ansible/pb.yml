@@ -14,13 +14,14 @@ tasks:
   Render:
     enabled: True
   Zerorize:
-    enabled: False
+    enabled: True
   Configure:
-    enabled: False
-    merge: True
-    replace: False
-    confirmed: False
+    enabled: True
+    merge: False
+    override: False
+    update: True
+    confirm: False
   Copy:
     enabled: True
     src: phcd-ca.crt
-    dst: /var/phone-home/phcd-ca.crt
+    dst: /tmp/phcd-ca.crt

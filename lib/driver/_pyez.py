@@ -196,7 +196,7 @@ class PyEzDriver(Base):
 
         return config
 
-    def push(self, target=None, task=None, data=None):
+    def push(self, target=None, task=None):
         print('Push device <{0}> configuration to git'.format(target['name']))
         status = self.authenticate()
 
@@ -217,14 +217,16 @@ class PyEzDriver(Base):
             _status, _data = self.pull(target=target, task=task)
             file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'],
                                              target['name'])
-            file_body = {
-                "branch": c.CONFIG['git_branch'],
-                "content": _data,
-                "commit_message": "Device config {0}".format(target['name'])
-            }
 
             if _status:
                 print('Updating file <{0}>'.format(target['name']))
+
+                file_body = {
+                    "branch": c.CONFIG['git_branch'],
+                    "content": str(_data),
+                    "commit_message": "Device config {0}".format(target['name'])
+                }
+
                 try:
 
                     _data = project.files.update(file_path=file_path, new_data=file_body)
@@ -235,6 +237,14 @@ class PyEzDriver(Base):
 
             else:
                 print('Creating new file <{0}>'.format(target['name']))
+
+                file_body = {
+                    "file_path": file_path,
+                    "branch": c.CONFIG['git_branch'],
+                    "content": _data.encode('utf-8'),
+                    "commit_message": "Device config {0}".format(target['name'])
+                }
+
                 try:
 
                     _data = project.files.create(file_body)
@@ -258,9 +268,8 @@ class PyEzDriver(Base):
                 file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
                 file_body = {
-                    "file_path": file_path,
                     "branch": c.CONFIG['git_branch'],
-                    "content": data,
+                    "content": data.decode('utf-8'),
                     "commit_message": "Device config {0}".format(target['name'])
                 }
 
@@ -339,23 +348,25 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
             # adding some timeout for telnet session to close properly. Need a better approach here!
             time.sleep(90)
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
-            self.emit_message(message=message)
-            cu = Config(self._dev)
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Lock config'}
-            self.emit_message(message=message)
-            cu.lock()
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Load config'}
-            self.emit_message(message=message)
-            cu.load(config, merge=True)
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Commit config'}
-            self.emit_message(message=message)
-            cu.commit()
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Unlock config'}
-            self.emit_message(message=message)
-            cu.unlock()
-            message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
-            self.emit_message(message=message)
+
+            if self._dev.probe(60):
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Connecting...'}
+                self.emit_message(message=message)
+                cu = Config(self._dev)
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Lock config'}
+                self.emit_message(message=message)
+                cu.lock()
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Load config'}
+                self.emit_message(message=message)
+                cu.load(config, merge=True)
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Commit config'}
+                self.emit_message(message=message)
+                cu.commit()
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Unlock config'}
+                self.emit_message(message=message)
+                cu.unlock()
+                message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
+                self.emit_message(message=message)
 
     def copy(self, target=None, task=None):
         print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))
@@ -373,7 +384,6 @@ class PyEzDriver(Base):
                 time.sleep(1)
 
         self._dev._tty._tn.write('clear'.encode("ascii") + b"\n\r")
-        #self._dev._tty._tn.close()
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
 

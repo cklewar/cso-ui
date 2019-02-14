@@ -20,9 +20,6 @@ tasks:
     merge: True
     replace: False
     confirmed: False
-  Pull:
-    enabled: False
-    file: phcd-ca.crt
   Copy:
     enabled: True
     src: phcd-ca.crt

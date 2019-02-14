@@ -30,7 +30,6 @@ import socket
 import yaml
 import uuid
 import shutil
-import telnetlib
 
 from git import Repo
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
@@ -146,7 +145,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         for target in self._data:
-
+            '''
             try:
                 self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
                                    user=target['user'],
@@ -158,12 +157,13 @@ class PyEzDriver(Base):
             except (RuntimeError, OSError) as err:
                 print(err)
                 return False
+            '''
 
             for task in target['tasks']:
 
                 if task['name'] == 'Render':
-                    resp = self.render(target=target, task=task)
-                    self.push(target=target, task=task)
+                    _status, _data = self.render(target=target, task=task)
+                    self.push(target=target, task=task, data=_data)
                 elif task['name'] == 'Pull':
                     self.pull(target=target, task=task)
                 elif task['name'] == 'Zerorize':
@@ -173,7 +173,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Copy':
                     self.copy(target=target, task=task)
 
-            self.end()
+            #self.end()
 
     def render(self, target=None, task=None):
         print('Render device <{0}> configuration and push to git'.format(target['name']))
@@ -194,9 +194,9 @@ class PyEzDriver(Base):
             data = yaml.safe_load(fd)
             config = template.render(data)
 
-        return config
+        return True, config
 
-    def push(self, target=None, task=None):
+    def push(self, target=None, task=None, data=None):
         print('Push device <{0}> configuration to git'.format(target['name']))
         status = self.authenticate()
 
@@ -215,15 +215,14 @@ class PyEzDriver(Base):
                 return False, 'Failed to get project with error: <0>'.format(gle.message)
 
             _status, _data = self.pull(target=target, task=task)
-            file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'],
-                                             target['name'])
+            file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
             if _status:
                 print('Updating file <{0}>'.format(target['name']))
 
                 file_body = {
                     "branch": c.CONFIG['git_branch'],
-                    "content": str(_data),
+                    "content": data,
                     "commit_message": "Device config {0}".format(target['name'])
                 }
 

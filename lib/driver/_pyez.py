@@ -163,7 +163,7 @@ class PyEzDriver(Base):
 
                 if task['name'] == 'Render':
                     resp = self.render(target=target, task=task)
-                    self.push(target=target, task=task, data=resp)
+                    self.push(target=target, task=task)
                 elif task['name'] == 'Pull':
                     self.pull(target=target, task=task)
                 elif task['name'] == 'Zerorize':

@@ -217,17 +217,20 @@ $( document ).ready(function() {
     });
 
     $('.btnDeployUseCase').on('click', function (event) {
+        console.log('deploy use case');
         var data = {};
         data.use_case_name = ($(this).data('usecase'));
         deploy(data);
     });
 
-    $('#modalDeployStatus').on('shown.bs.modal', function (e) {
-        t_deploy_status.clear();
-        t_deploy_status.columns.adjust();
-        $("#session_output").val('');
-        $('#session_output').trigger("change");
+    $('#modalDeployStatus').on('show.bs.modal', function (e) {
+        t_deploy_status.clear().draw();
+        //$("#session_output").val('');
+        //$('#session_output').trigger("change");
+    });
 
+    $('#modalDeployStatus').on('shown.bs.modal', function (e) {
+        t_deploy_status.columns.adjust();
     });
 
     $(function () {

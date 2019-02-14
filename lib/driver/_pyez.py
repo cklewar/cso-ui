@@ -30,6 +30,7 @@ import socket
 import yaml
 import uuid
 import shutil
+import telnetlib
 
 from git import Repo
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
@@ -55,7 +56,7 @@ class PyEzDriver(Base):
         self.user = None
         self.pw = None
         self._data = None
-        self._path = None
+        self._use_case_path = None
         self._dev = None
 
     def authenticate(self):
@@ -100,6 +101,7 @@ class PyEzDriver(Base):
                                                  c.CONFIG['git_repo_url'])
         print('Fetch use case data from repo <{0}>'.format(URL))
         PATH = '{0}'.format(c.CONFIG['tmp_dir'])
+        print(PATH)
 
         if os.path.exists(PATH):
             shutil.rmtree(PATH)
@@ -125,23 +127,21 @@ class PyEzDriver(Base):
         except socket.error as se:
             print(se.filename, se.strerror, se.args, se.errno)
 
-        self._path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
-        play = '{0}/{1}'.format(self._path, self._use_case_data['playbook'])
+        self._use_case_path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
+        play = '{0}/{1}'.format(self._use_case_path, self._use_case_data['playbook'])
 
         with open(play, 'r') as fd:
             play_data = yaml.safe_load(fd)
 
         for target, value in play_data['targets'].items():
 
-            _tmp = {'name': target, 'address': value['address'], 'port': value['port'], 'mode': value['mode'],
-                    'user': value['user'], 'password': value['password'], 'template': value['template'],
-                    'template_data': value['template_data'], 'tasks': list()}
+            _tmp = {'name': target, **value, 'tasks': list()}
 
             for task, attr in play_data['tasks'].items():
                 print(task, attr)
 
                 if attr['enabled']:
-                    _tmp['tasks'].append({'name': task, 'status': 'waiting', 'uuid': str(uuid.uuid4())})
+                    _tmp['tasks'].append({'name': task, 'status': 'waiting', 'uuid': str(uuid.uuid4()), **attr})
 
             self._data.append(_tmp)
 
@@ -149,7 +149,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         for target in self._data:
-
+            '''
             try:
                 self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
                                    user=target['user'],
@@ -160,6 +160,8 @@ class PyEzDriver(Base):
 
             except (RuntimeError, OSError) as err:
                 print(err)
+                return False
+            '''
 
             for task in target['tasks']:
 
@@ -174,7 +176,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Copy':
                     self.copy(target=target, task=task)
 
-            self.end()
+            #self.end()
 
     def render(self, target=None, task=None):
         print('Render device <{0}> configuration and push to git'.format(target['name']))
@@ -182,17 +184,18 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         try:
-
+            print(self._use_case_path)
+            print(target['template'])
             env = Environment(autoescape=False,
-                              loader=FileSystemLoader(self._path), trim_blocks=True, lstrip_blocks=True)
+                              loader=FileSystemLoader(self._use_case_path), trim_blocks=True, lstrip_blocks=True)
 
             template = env.get_template(target['template'])
 
         except (TemplateNotFound, IOError) as err:
-            print('Error({0}): {1} --> {2})'.format(err.errno, err.strerror, err.filename))
+            print(err)
             return False, err
 
-        with open('{0}/{1}'.format(self._path, target['template_data'])) as fd:
+        with open('{0}/{1}'.format(self._use_case_path, target['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
 
@@ -277,15 +280,15 @@ class PyEzDriver(Base):
         try:
 
             env = Environment(autoescape=False,
-                              loader=FileSystemLoader(self._path), trim_blocks=True, lstrip_blocks=True)
+                              loader=FileSystemLoader(self._use_case_path), trim_blocks=True, lstrip_blocks=True)
 
             template = env.get_template(target['template'])
 
         except (TemplateNotFound, IOError) as err:
-            print('Error({0}): {1} --> {2})'.format(err.errno, err.strerror, err.filename))
+            print(err)
             return False, err
 
-        with open('{0}/{1}'.format(self._path, target['template_data'])) as fd:
+        with open('{0}/{1}'.format(self._use_case_path, target['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
             message = {'action': 'update_task_status', 'uuid': task['uuid'],
@@ -313,18 +316,21 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
     def copy(self, target=None, task=None):
-        print('Copy file to device <{0}>'.format(target['name']))
-        message = {'action': 'update_task_status', 'uuid': task['uuid'],
-                   'status': 'Copy file...'}
+        print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))
+        message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Copy file {0}'.format(task['src'])}
         self.emit_message(message=message)
+        _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], task['src'])
+        tn = telnetlib.Telnet(host=target['address'], port=target['port'])
+        tn.write('cat > {0} << EOF'.format(task['dst']).encode('ascii') + b"\n\r")
 
-        self._dev._tty._tn.write(b'cat > test_cert.crt << EOF')
-        self._dev._tty._tn.write(b'a')
-        self._dev._tty._tn.write(b'b')
-        self._dev._tty._tn.write(b'c')
-        self._dev._tty._tn.write(b'd')
-        self._dev._tty._tn.write(b'EOF')
-        print(self._dev._tty._tn.read_all().decode('ascii'))
+        with open(_file, 'r') as fd:
+
+            for line in fd:
+                tn.write(line.encode("ascii"))
+                time.sleep(1)
+
+        tn.write('clear'.encode("ascii") + b"\n\r")
+        tn.close()
         message = {'action': 'update_task_status', 'uuid': task['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
 

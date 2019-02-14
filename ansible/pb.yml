@@ -26,4 +26,4 @@ tasks:
   Copy:
     enabled: True
     src: phcd-ca.crt
-    dst: /tmp/phcd-ca.crt
+    dst: /var/phone-home/phcd-ca.crt

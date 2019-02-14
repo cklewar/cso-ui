@@ -95,24 +95,39 @@ class PyEzDriver(Base):
             print(response.status_code, response.headers, response)
             return False, "GIT AUTH FAILED"
 
-    def connect(self, target=None):
-        try:
-            self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
-                               user=target['user'],
-                               password=target['password'])
-            message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
-            self.emit_message(message=message)
-            #resp = self._dev.probe(30)
-            #print(resp)
+    def connect(self, target=None, after_zeroize=False):
 
-            #if resp:
-            self._dev.open()
-            message = {'action': 'update_session_output', 'msg': '\nConnected to target: {0}'.format(target['name'])}
-            self.emit_message(message=message)
+        if after_zeroize:
 
-        except (RuntimeError, OSError) as err:
-            print(err)
-            return False
+            try:
+                self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'])
+                message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
+                self.emit_message(message=message)
+                self._dev.open()
+                message = {'action': 'update_session_output',
+                           'msg': '\nConnected to target: {0}'.format(target['name'])}
+                self.emit_message(message=message)
+
+            except (RuntimeError, OSError) as err:
+                print(err)
+                return False
+
+        else:
+
+            try:
+                self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
+                                   user=target['user'],
+                                   password=target['password'])
+                message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}'.format(target['name'])}
+                self.emit_message(message=message)
+                self._dev.open()
+                message = {'action': 'update_session_output',
+                           'msg': '\nConnected to target: {0}'.format(target['name'])}
+                self.emit_message(message=message)
+
+            except (RuntimeError, OSError) as err:
+                print(err)
+                return False
 
     def disconnect(self):
         self._dev.close(skip_logout=True)

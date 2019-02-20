@@ -23,31 +23,39 @@ import abc
 import json
 import lib.constants as c
 
+from lib.wsclient import WSClient
+
 
 class Base(object):
 
-    def __init__(self, ws_client=None):
+    def __init__(self):
+        self.load_settings()
         self.status = None
-        self.ws_client = ws_client
         self.tmp_dir = c.CONFIG['tmp_dir']
         self._use_case_name = None
         self._use_case_data = None
         self.usecases_dir = c.CONFIG['usecases_dir']
+        __cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
+                                                 c.CONFIG['ws_client_port'])
+        __url = '{0}?clientname=server'.format(__cso_ws_url)
+        print(__url)
+        self.ws_client = WSClient(name='server', url=__url)
+        self.__data = None
 
     @abc.abstractmethod
     def authenticate(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def fetch(self):
+    def clone(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_target_tasks(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
     def run(self, use_case=None):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_status_update(self):
         raise NotImplementedError()
 
     @abc.abstractmethod

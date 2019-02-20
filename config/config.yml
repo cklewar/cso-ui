@@ -16,6 +16,7 @@ git_password: password
 git_branch: master
 tmp_dir: /tmp/cso-ui/data
 usecases_dir: usecases
+logfile: pyez.log
 
 IS_SSL: False
 DEMONIZE: False

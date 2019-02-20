@@ -33,7 +33,7 @@ $( document ).ready(function() {
     ws.onmessage = function(ev){
 
         var json = JSON.parse(ev.data);
-        console.log(json);
+        //console.log(json);
 
         if (json.action === 'v2_playbook_on_play_start'){
 
@@ -117,8 +117,15 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
-            $("#session_output").append(json.msg);
-            $('#session_output').trigger("change");
+            var s = json.msg.replace(/\</g, '#').replace(/\>/g, '#');
+            $("#session_output_" + json.task + '_' + json.uuid).append(s);
+            $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
+
+
+        } else if (json.action === 'update_task_output'){
+            var output = '<pre class="scrolly-2">' + json.msg + '</pre>'
+            $("#task_detail_info_" + json.task + '_' + json.uuid).append(output);
+
 
         } else if (json.action === 'add_tasks'){
             t_deploy_status.clear().draw();
@@ -136,10 +143,12 @@ $( document ).ready(function() {
 
             });
         } else if (json.action === 'update_task_status') {
-
-            var temp = t_deploy_status.row('#' + json.uuid).data();
+            var temp = t_deploy_status.row('#' + json.task + '_' + json.uuid).data();
             temp.status = json.status;
-            t_deploy_status.row('#' + json.uuid).data(temp).invalidate();
+            t_deploy_status.row('#' + json.task + '_' + json.uuid).data(temp).invalidate();
+        } else {
+            console.log(json);
+
         }
     };
 
@@ -154,29 +163,6 @@ $( document ).ready(function() {
       $message.attr("class", 'label label-warning');
       $message.text('error occurred');
     };
-
-    t_deploy_status = $('#t_deploy_status').DataTable({
-        "columns": [
-            {
-                "data": "target",
-                "defaultContent": ""
-            },
-            {
-                "data": "task",
-                "defaultContent": ""
-            },
-            {
-                "data": "status",
-                "defaultContent": ""
-            },
-        ],
-        "info": false,
-        "ordering": false,
-        "paging": false,
-        "scrollY": "350px",
-        "scrollCollapse": true
-    });
-
 
     $('#btnCardAdd').on('click', function (event) {
         var cardData = $("#formAddCard").serializeArray();
@@ -207,7 +193,6 @@ $( document ).ready(function() {
             dataType: 'json',
             contentType: 'application/json',
             success: function (response) {
-                console.log(response);
                 $('#cardSettingsModal_' + cardId).modal('hide');
             },
             error : function (data, errorText) {
@@ -224,7 +209,7 @@ $( document ).ready(function() {
     });
 
     $('#modalDeployStatus').on('show.bs.modal', function (e) {
-        t_deploy_status.clear().draw();
+        //t_deploy_status.clear().draw();
         //$("#session_output").val('');
         //$('#session_output').trigger("change");
     });
@@ -251,16 +236,11 @@ $( document ).ready(function() {
             }
         });
     });
-
-    $("#session_output").on('change', function(){
-        scrollToBottom();
-    });
 });
 
-function scrollToBottom() {
-  $('#session_output').scrollTop($('#session_output')[0].scrollHeight);
+function scrollToBottom(elem) {
+  $(elem).scrollTop($(elem)[0].scrollHeight);
 }
-
 
 function initGrid() {
   grid = new Muuri('.grid', {
@@ -354,7 +334,119 @@ function deleteCard(cardData){
 
 function deploy(data){
 
-    data.action = 'fetch';
+    if ($.fn.DataTable.isDataTable("#t_deploy_status")) {
+        $('#t_deploy_status').DataTable().clear().destroy();
+    }
+
+    data.action = 'target_tasks';
+    t_deploy_status = $('#t_deploy_status').DataTable({
+        'ajax'       : {
+            "type"   : "POST",
+            "url"    : "/api/deploy",
+            "data": function ( d ) {
+                return JSON.stringify( data );
+            },
+            "contentType": "application/json",
+            "processData": true,
+            "dataType": "json",
+            "destroy": true,
+            "dataSrc": function (response) {
+                var return_data = new Array();
+                var modal_task_details;
+                $.each(response[1], function( index, target ) {
+                  $.each(target.tasks, function( index, task ) {
+                      return_data.push({
+                        'target': target.name,
+                        'task':  task.name,
+                        'status': task.status,
+                        'uuid': target.uuid
+                      })
+
+                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect'){
+                        modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
+                        '<div class="modal-dialog modal-lg" role="document">' +
+                            '<div class="modal-content">' +
+                                '<div class="modal-header">' +
+                                    '<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
+                                    '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                    '</button>' +
+                                '</div>' +
+                                '<div class="modal-body h-50">' +
+                                    '<div>' +
+                                        '<textarea readonly spellcheck="false" class="session_output" id="session_output_' + task.name + '_' + target.uuid + '" rows="100" cols="1"></textarea>' +
+                                    '<div>' +
+                                '</div>' +
+                                '<div class="modal-footer">' +
+                                    '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '</div>';
+                      $("body").append(modal_task_details);
+
+                      } else {
+                        modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
+                        '<div class="modal-dialog modal-lg" role="document">' +
+                            '<div class="modal-content">' +
+                                '<div class="modal-header">' +
+                                    '<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
+                                    '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                                        '<span aria-hidden="true">&times;</span>' +
+                                    '</button>' +
+                                '</div>' +
+                                '<div class="modal-body h-50">' +
+                                    '<div id="task_detail_info_' + task.name + '_' + target.uuid +'">' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="modal-footer">' +
+                                    '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '</div>';
+                      $("body").append(modal_task_details);
+                      }
+
+                      $('#session_output_' + task.name + '_' + target.uuid).on('change', function(){
+                        scrollToBottom('#session_output_' + task.name + '_' + target.uuid);
+                      });
+                  });
+                });
+
+                return return_data;
+            }
+        },
+        "createdRow": function( row, data, dataIndex ) {
+            $(row).attr('id', data.task + '_' + data.uuid);
+        },
+        "columns": [
+            {
+                "data": "target",
+                "defaultContent": ""
+            },
+            {
+                "data": "task",
+                "defaultContent": ""
+            },
+            {
+                "data": "status",
+                "defaultContent": ""
+            },
+        ],
+        "info": false,
+        "ordering": false,
+        "paging": false,
+        "scrollY": "350px",
+        "scrollCollapse": true
+    });
+
+    $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
+        var data = t_deploy_status.row( this ).data();
+        $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
+    });
+
+    data.action = 'clone';
 
     $.ajax({
         url: '/api/deploy',
@@ -366,7 +458,6 @@ function deploy(data){
         contentType: 'application/json',
         success: function (response) {
             //$("#loader").hide();
-            console.log(response);
             //var tmp = t_deploy_status.row('#' response.uuid).data();
             //tmp.status = response.result;
             //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
@@ -384,7 +475,6 @@ function deploy(data){
                     contentType: 'application/json',
                     success: function (response) {
                         //$("#loader").hide();
-                        console.log(response);
                         //var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
                         //tmp.status = response.result;
                         //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();

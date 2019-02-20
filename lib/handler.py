@@ -1,7 +1,7 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
 #
-# Copyright (c) 2018 Juniper Networks, Inc.
+# Copyright (c) 2019 Juniper Networks, Inc.
 # All rights reserved.
 #
 # Use is subject to license terms.
@@ -19,10 +19,20 @@
 # Author: cklewar
 #
 
-DRIVER_SALTSTACK = 'saltstack'
-DRIVER_ANSIBLE = 'ansible'
-DRIVER_PYEZ = 'pyez'
-ADMIN_USERS = ('admin', 'root')
-ADMIN_USER_PW = 'juniper123'
-CONFIG = None
-TERM_STRINGS = ["Amnesiac (ttyu0)", "Ubuntu 14.04.1 LTS jdm tty1"]
+import json
+from logging import StreamHandler
+
+
+class WSHandler(StreamHandler):
+
+    def __init__(self, ws_client=None):
+        StreamHandler.__init__(self)
+        self.ws_client = ws_client
+        self.target = None
+        self.task = None
+
+    def emit(self, message):
+
+        msg = {'action': 'update_session_output', 'task': self.task, 'uuid': self.target['uuid'],
+               'msg': self.format(message) + '\n'}
+        self.ws_client.send(json.dumps(msg))

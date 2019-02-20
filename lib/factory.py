@@ -1,7 +1,7 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
 #
-# Copyright (c) 2018 Juniper Networks, Inc.
+# Copyright (c) 2019 Juniper Networks, Inc.
 # All rights reserved.
 #
 # Use is subject to license terms.
@@ -19,10 +19,27 @@
 # Author: cklewar
 #
 
-DRIVER_SALTSTACK = 'saltstack'
-DRIVER_ANSIBLE = 'ansible'
-DRIVER_PYEZ = 'pyez'
-ADMIN_USERS = ('admin', 'root')
-ADMIN_USER_PW = 'juniper123'
-CONFIG = None
-TERM_STRINGS = ["Amnesiac (ttyu0)", "Ubuntu 14.04.1 LTS jdm tty1"]
+import lib.constants as c
+
+from lib.driver._pyez import PyEzDriver
+from lib.driver._ansible import AnsibleDriver
+from lib.driver._saltstack import SaltDriver
+
+
+class DriverFactory(object):
+
+    def __init__(self, name=None):
+
+        self.name = name
+        self._driver = None
+
+    def get_driver(self):
+
+        if self.name == c.DRIVER_SALTSTACK:
+            self._driver = SaltDriver()
+        elif self.name == c.DRIVER_ANSIBLE:
+            self._driver = AnsibleDriver()
+        elif self.name == c.DRIVER_PYEZ:
+            self._driver = PyEzDriver()
+
+        return self._driver

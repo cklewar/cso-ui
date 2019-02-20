@@ -28,6 +28,7 @@ import pprint
 import json
 import threading
 import random
+import logging
 
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
@@ -35,9 +36,7 @@ from ruamel.yaml import YAML
 from lib.auth import AuthController, require, member_of, name_is
 from ws4py.client.threadedclient import WebSocketClient
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-from lib.driver._ansible import AnsibleDriver
-from lib.driver._saltstack import SaltDriver
-from lib.driver._pyez import PyEzDriver
+from lib.factory import DriverFactory
 
 
 def cors_tool():
@@ -105,8 +104,8 @@ class RestrictedArea(object):
 
 class Root(object):
 
-    def __init__(self, driver=None):
-        self.driver = driver
+    #def __init__(self, driver=None):
+    #    self.driver = driver
 
     _cp_config = {
         'tools.sessions.on': True,
@@ -247,8 +246,8 @@ class Upload(object):
 @require()
 class Deploy(object):
 
-    def __init__(self, driver=None):
-        self.driver = driver
+    def __init__(self, _driver=None):
+        self.driver = _driver
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -257,12 +256,10 @@ class Deploy(object):
         action = cherrypy.request.json['action']
         use_case_name = cherrypy.request.json['use_case_name']
 
-        if action == 'fetch':
-            ret = self.driver.fetch()
-            return ret
-            #return {'result': 'OK'}
+        if action == 'clone':
+            return self.driver.clone()
 
-        if action == 'run':
+        elif action == 'run':
 
             yaml = YAML(typ='rt')
 
@@ -274,14 +271,25 @@ class Deploy(object):
 
             return True
 
+        elif action == 'target_tasks':
+
+            yaml = YAML(typ='rt')
+
+            with open('config/items.yml', 'r') as ifp:
+                use_cases = yaml.load(ifp)
+                use_case_data = use_cases[use_case_name]
+
+            ret = self.driver.get_target_tasks(use_case_name=use_case_name, use_case_data=use_case_data)
+
+            return True, ret
+
 
 class Api(object):
 
-    def __init__(self, driver=None):
+    def __init__(self, _driver=None):
         cherrypy.tools.cors_tool = cherrypy.Tool('before_request_body', cors_tool, name='cors_tool', priority=50)
-        self.driver = driver
-        self.driver.load_settings()
         self.url_map = {'cards': Cards, 'upload': Upload, 'deploy': Deploy}
+        self.driver = _driver
         self._setattr_url_map()
 
     def _setattr_url_map(self):
@@ -291,7 +299,7 @@ class Api(object):
 
         for url, cls in six.iteritems(self.url_map):
             if url == 'deploy':
-                setattr(self, url, cls(driver=self.driver))
+                setattr(self, url, cls(_driver=self.driver))
             else:
                 setattr(self, url, cls())
 
@@ -436,6 +444,12 @@ if __name__ == '__main__':
         yaml = YAML(typ='safe')
         c.CONFIG = yaml.load(_config)
 
+    # initialize logging
+    logging.basicConfig(filename=c.CONFIG['logfile'], level=logging.INFO, format='%(asctime)s:%(name)s: %(message)s')
+    logging.getLogger().name = '7'
+    logging.getLogger().addHandler(logging.StreamHandler())
+    logging.info('Information logged in {0}'.format(c.CONFIG['logfile']))
+
     print('Starting UI at http(s)://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
     cherrypy.config.update({'log.screen': True,
                             'log.access_file': '',
@@ -486,25 +500,12 @@ if __name__ == '__main__':
     if c.CONFIG['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
 
-    _driver = None
-
-    cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
-                                           c.CONFIG['ws_client_port'])
-    url = '{0}?clientname=server'.format(cso_ws_url)
-    print(url)
-    ws_client = WSClient(name='server', url=url)
-
-    if c.CONFIG['driver'] == c.DRIVER_SALTSTACK:
-        _driver = SaltDriver(ws_client=ws_client)
-    elif c.CONFIG['driver'] == c.DRIVER_ANSIBLE:
-        _driver = AnsibleDriver(ws_client=ws_client)
-    elif c.CONFIG['driver'] == c.DRIVER_PYEZ:
-        _driver = PyEzDriver(ws_client=ws_client)
-
-    if _driver:
-        WSPlugin(cherrypy.engine).subscribe()
-        cherrypy.tools.websocket = WebSocketTool()
-        cherrypy.tree.mount(Root(driver=_driver), '/', config=ui_conf)
-        cherrypy.tree.mount(Api(driver=_driver), '/api', config=api_conf)
-        cherrypy.engine.start()
-        cherrypy.engine.block()
+    WSPlugin(cherrypy.engine).subscribe()
+    cherrypy.tools.websocket = WebSocketTool()
+    df = DriverFactory(name=c.CONFIG['driver'])
+    driver = df.get_driver()
+    cherrypy.tree.mount(Root(), '/', config=ui_conf)
+    cherrypy.tree.mount(Api(_driver=driver), '/api', config=api_conf)
+    cherrypy.engine.start()
+    driver.ws_client.connect()
+    cherrypy.engine.block()

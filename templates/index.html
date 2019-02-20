@@ -13,6 +13,7 @@
     <link href="/static/css/font-awesome.all.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.2.7/css/select.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
     <!-- UI CSS -->
     <link href="/static/css/ui.css" rel="stylesheet">
 </head>
@@ -273,6 +274,7 @@
                 <table id="t_deploy_status" class="display" style="width:100%">
                     <thead>
                     <tr>
+                        <!--<th></th>-->
                         <th>Target</th>
                         <th>Task</th>
                         <th>Status</th>
@@ -281,9 +283,6 @@
                     <tbody>
                     </tbody>
                 </table>
-            </div>
-            <div>
-                <textarea spellcheck="false" id="session_output" rows="10" cols="1" style="overflow:hidden;width:100%;resize: none;"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

@@ -174,7 +174,6 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
     def disconnect(self, target=None):
-        print(target)
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
@@ -194,6 +193,7 @@ class PyEzDriver(Base):
 
         resp = Repo.clone_from(URL, PATH)
         print(resp)
+        time.sleep(3)
         ret_code = 0
 
         if ret_code == 0:
@@ -222,7 +222,6 @@ class PyEzDriver(Base):
             _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
             self.__data.append(_tmp)
 
-        print(self.__data)
         return self.__data
 
     def run(self, use_case_name=None, use_case_data=None):

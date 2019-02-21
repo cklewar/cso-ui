@@ -28,10 +28,9 @@ import requests
 import json
 import time
 import yaml
-import uuid
-import shutil
+import six
 
-from git import Repo
+from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
@@ -44,28 +43,27 @@ from lib.handler import WSHandler
 
 
 class PyEzDriver(Base):
+    NEW_LINE = six.b('\n')
+    EMPTY_STR = six.b('')
+    NETCONF_EOM = six.b(']]>]]>')
+    STARTS_WITH = six.b("<!--")
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, _data=None, use_case_name=None, use_case_data=None):
+        super().__init__(_data=_data, use_case_name=use_case_name, use_case_data=use_case_data)
         print('Loading PyEZ driver')
         self.session = None
         self.gl = None
-        self.mode = None
-        self.address = None
-        self.port = None
-        self.user = None
-        self.pw = None
-        self._data = None
-        self._use_case_path = None
-        self._dev = None
+        self.rebooted = False
         self.jnpr_junos_tty = logging.getLogger('jnpr.junos.tty')
         self.jnpr_junos_tty_netconf = logging.getLogger('jnpr.junos.tty_netconf')
+        self.jnpr_junos_tty_telnet = logging.getLogger('jnpr.junos.tty_telnet')
         formatter = logging.Formatter("%(message)s")
-        self.ws = WSHandler(ws_client=self.ws_client)
+        self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
         self.ws.setFormatter(formatter)
         self.ws.setLevel(logging.INFO)
         self.jnpr_junos_tty.addHandler(self.ws)
         self.jnpr_junos_tty_netconf.addHandler(self.ws)
+        self.jnpr_junos_tty_telnet.addHandler(self.ws)
 
     def authenticate(self):
 
@@ -104,158 +102,106 @@ class PyEzDriver(Base):
             print(response.status_code, response.headers, response)
             return False, "GIT AUTH FAILED"
 
-    def connect(self, target=None, after_zeroize=False):
-        self.ws.target = target
+    def connect(self):
         self.ws.task = 'Connect'
+        message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                   'msg': 'Connecting to target: {0}\n'.format(self.target_data['name'])}
+        self.emit_message(message=message)
+        time.sleep(2)
+        '''
+        try:
+            self._dev = Device(host=self.target_data['address'], mode=self.target_data['mode'],
+                               port=self.target_data['port'],
+                               user=self.target_data['user'],
+                               password=self.target_data['password'], gather_facts=False)
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'msg': 'Connecting to target: {0}\n'.format(self.target_data['name'])}
+            self.emit_message(message=message)
+            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'status': 'Connecting...'}
+            self.emit_message(message=message)
+            self._dev.open()
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'msg': 'Connected to target: {0}\n'.format(self.target_data['name'])}
+            self.emit_message(message=message)
+            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'status': 'Get target model...'}
+            self.emit_message(message=message)
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'msg': 'Get target model...\n'}
+            self.emit_message(message=message)
+            model = self._dev.rpc.get_software_information({'format': 'json'})
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'msg': 'Target RE Model: '}
+            self.emit_message(message=message)
+            self.target_data['model'] = model['software-information'][0]['product-model'][0]['data']
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'msg': self.target_data['model'] + '\n'}
+            self.emit_message(message=message)
 
-        if after_zeroize:
+        except (RuntimeError, OSError) as err:
+            print(err)
+            return False
+        '''
 
-            try:
-                self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
-                                   user=target['user'], gather_facts=False)
-                message = {'action': 'update_session_output', 'msg': 'Connecting to target: {0}\n'.format(target['name'])}
-                self.emit_message(message=message)
-                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': target['uuid'],
-                           'status': 'Connecting...'}
-                self.emit_message(message=message)
-                self._dev.open()
-                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': target['uuid'],
-                           'status': 'Connected'}
-                self.emit_message(message=message)
-
-                message = {'action': 'update_session_output',
-                           'msg': '\nConnected to target: {0}\n'.format(target['name'])}
-                self.emit_message(message=message)
-
-            except (RuntimeError, OSError) as err:
-                print(err)
-                return False
-
-        else:
-
-            try:
-                self._dev = Device(host=target['address'], mode=target['mode'], port=target['port'],
-                                   user=target['user'],
-                                   password=target['password'], gather_facts=False)
-                message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': target['uuid'],
-                           'msg': 'Connecting to target: {0}\n'.format(target['name'])}
-                self.emit_message(message=message)
-                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': target['uuid'],
-                           'status': 'Connecting...'}
-                self.emit_message(message=message)
-                self._dev.open()
-                message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': target['uuid'],
-                           'msg': 'Connected to target: {0}\n'.format(target['name'])}
-                self.emit_message(message=message)
-                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': target['uuid'],
-                           'status': 'Get target model...'}
-                self.emit_message(message=message)
-                message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': target['uuid'],
-                           'msg': 'Get target model...\n'}
-                self.emit_message(message=message)
-                re = self._dev.rpc.get_route_engine_information({'format': 'json'})
-                message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': target['uuid'],
-                           'msg': 'Target RE Model: '}
-                self.emit_message(message=message)
-
-                for t in self.__data:
-                    if t['name'] == target['name']:
-                        print(t)
-                        t['model'] = re['route-engine-information'][0]['route-engine'][0]['model'][0]['data']
-                        message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': target['uuid'],
-                                   'msg': t['model']+'\n'}
-                        self.emit_message(message=message)
-
-            except (RuntimeError, OSError) as err:
-                print(err)
-                return False
-
-        message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': target['uuid'], 'status': 'Done'}
+        message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                   'status': 'Done'}
         self.emit_message(message=message)
 
-    def disconnect(self, target=None):
-        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+    def disconnect(self):
+        """
+        Disconnect complete telnet session
+        :return:
+        """
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
-        self._dev.close(skip_logout=True)
-        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'], 'status': 'Done'}
+        #self._dev.close(skip_logout=True)
+        time.sleep(2)
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
+                   'status': 'Done'}
         self.emit_message(message=message)
 
-    def clone(self):
+    def connect_netconf(self):
+        self._dev._tty.login()
 
-        URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
-                                                 c.CONFIG['git_repo_url'])
-        print('Fetch use case data from repo <{0}>'.format(URL))
-        PATH = '{0}'.format(c.CONFIG['tmp_dir'])
+    def disconnect_netconf(self):
+        self._dev._tty.nc.close()
 
-        if os.path.exists(PATH):
-            shutil.rmtree(PATH)
+    def run(self):
+        print('Deploy use case <{0}>'.format(self.use_case_name))
 
-        resp = Repo.clone_from(URL, PATH)
-        print(resp)
-        time.sleep(3)
-        ret_code = 0
+        for task in self.target_data['tasks']:
+            if task['name'] == 'Connect':
+                self.connect()
+            elif task['name'] == 'Render':
+                #_status, _data = self.render(target=self.target_data, task=task)
+                self.render(target=self.target_data, task=task)
 
-        if ret_code == 0:
-            return {'result': 'OK'}
-        if ret_code > 0:
-            return {'result': 'FAILED'}
-
-    def get_target_tasks(self, use_case_name=None, use_case_data=None):
-        print('Get target task list')
-
-        self._use_case_name = use_case_name
-        self._use_case_data = use_case_data
-        self._use_case_path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
-        play = '{0}/{1}'.format(self._use_case_path, self._use_case_data['playbook'])
-        self.__data = list()
-
-        with open(play, 'r') as fd:
-            play_data = yaml.safe_load(fd)
-
-        for target, value in play_data['targets'].items():
-            _tmp = {'name': target, **value, 'uuid': str(uuid.uuid4()), 'tasks': list()}
-            _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting'})
-            for task, attr in value['tasks'].items():
-                if attr['enabled']:
-                    _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
-            _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
-            self.__data.append(_tmp)
-
-        return self.__data
-
-    def run(self, use_case_name=None, use_case_data=None):
-        print('Deploy use case <{0}>'.format(use_case_name))
-        self._use_case_name = use_case_name
-        self._use_case_data = use_case_data
-
-        for target in self.__data:
-            for task in target['tasks']:
-
-                if task['name'] == 'Connect':
-                    self.connect(target=target)
-                elif task['name'] == 'Render':
-                    _status, _data = self.render(target=target, task=task)
-                    self.push(target=target, task=task, data=_data)
-                elif task['name'] == 'Zerorize':
-                    self.zeroize(target=target, task=task)
-                elif task['name'] == 'Configure':
-                    self.commit_config(target=target, task=task)
-                elif task['name'] == 'Copy':
-                    self.copy(target=target, task=task)
-                elif task['name'] == 'Disconnect':
-                    self.disconnect(target=target)
+                #if _status:
+                #    self.push(target=self.target_data, task=task, data=_data)
+                #else:
+                #    print(_status, _data)
+            elif task['name'] == 'Zerorize':
+                self.zeroize(target=self.target_data, task=task)
+            elif task['name'] == 'Configure':
+                self.commit_config(target=self.target_data, task=task)
+            elif task['name'] == 'Copy':
+                self.copy(target=self.target_data, task=task)
+            elif task['name'] == 'Disconnect':
+                self.disconnect()
 
     def render(self, target=None, task=None):
-
         print('Render device <{0}> configuration and push to git'.format(target['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Render template'}
         self.emit_message(message=message)
+        time.sleep(2)
 
+        '''
         try:
             env = Environment(autoescape=False,
-                              loader=FileSystemLoader(self._use_case_path), trim_blocks=True, lstrip_blocks=True)
+                              loader=FileSystemLoader(self.use_case_path), trim_blocks=True, lstrip_blocks=True)
 
             template = env.get_template(task['template'])
 
@@ -263,7 +209,7 @@ class PyEzDriver(Base):
             print(err)
             return False, err
 
-        with open('{0}/{1}'.format(self._use_case_path, task['template_data'])) as fd:
+        with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
 
@@ -274,6 +220,9 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         return True, config
+        '''
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+        self.emit_message(message=message)
 
     def push(self, target=None, task=None, data=None):
         print('Push device <{0}> configuration to git'.format(target['name']))
@@ -296,7 +245,7 @@ class PyEzDriver(Base):
                 return False, 'Failed to get project with error: <0>'.format(gle.message)
 
             _status, _data = self.pull(target=target, task=task)
-            file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+            file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
             if _status:
                 print('Updating file <{0}>'.format(target['name']))
@@ -321,7 +270,7 @@ class PyEzDriver(Base):
                 file_body = {
                     "file_path": file_path,
                     "branch": c.CONFIG['git_branch'],
-                    "content": _data.encode('utf-8'),
+                    "content": data,
                     "commit_message": "Device config {0}".format(target['name'])
                 }
 
@@ -346,7 +295,7 @@ class PyEzDriver(Base):
             try:
 
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-                file_path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+                file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
                 file_body = {
                     "branch": c.CONFIG['git_branch'],
@@ -368,11 +317,11 @@ class PyEzDriver(Base):
                 return False, 'Failed to update template data with error: <{0}>'.format(gce)
 
     def pull(self, target=None, task=None):
-        print('Pull file <{0}> from git for use case <{1}>'.format(target['name'], self._use_case_name))
+        print('Pull file <{0}> from git for use case <{1}>'.format(target['name'], self.use_case_name))
 
         try:
             project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-            _path = '{0}/{1}/{2}'.format(self._use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+            _path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
             try:
                 f = project.files.get(file_path=_path, ref='master')
@@ -385,9 +334,12 @@ class PyEzDriver(Base):
 
     def zeroize(self, target=None, task=None):
         print('Zerorize device <{0}>'.format(target['name']))
+        self.ws.task = task['name']
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
+        time.sleep(2)
+        '''
         resp = self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize initialized'}
@@ -404,7 +356,8 @@ class PyEzDriver(Base):
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Disconnecting...'}
                 self.emit_message(message=message)
-                self.disconnect(target=target)
+                self.disconnect_netconf()
+                self.rebooted = True
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
@@ -414,17 +367,23 @@ class PyEzDriver(Base):
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
             time.sleep(0.2)
+        '''
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Done'}
+        self.emit_message(message=message)
 
     def commit_config(self, target=None, task=None):
         print('Commit configuration on device <{0}>'.format(target['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Connecting...'}
         self.emit_message(message=message)
+        time.sleep(5)
 
+        '''
         try:
 
             env = Environment(autoescape=False,
-                              loader=FileSystemLoader(self._use_case_path), trim_blocks=True, lstrip_blocks=True)
+                              loader=FileSystemLoader(self.use_case_path), trim_blocks=True, lstrip_blocks=True)
 
             template = env.get_template(task['template'])
 
@@ -432,7 +391,7 @@ class PyEzDriver(Base):
             print(err)
             return False, err
 
-        with open('{0}/{1}'.format(self._use_case_path, task['template_data'])) as fd:
+        with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
             message = {'action': 'update_task_output', 'task': task['name'], 'uuid': target['uuid'], 'msg': config}
@@ -442,9 +401,21 @@ class PyEzDriver(Base):
                        'status': 'Waiting for daemons to be ready...'}
             self.emit_message(message=message)
 
-            # adding some timeout for telnet session to close properly. Need a better approach here!
-            time.sleep(120)
-            self.connect(target=target, after_zeroize=True)
+            if self.rebooted:
+                # adding some timeout for telnet session to close properly. Need a better approach here!
+                mark_start = datetime.now()
+                SECONDS = 120
+                mark_end = mark_start + timedelta(seconds=SECONDS)
+
+                while datetime.now() < mark_end:
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                               'status': 'Waiting for daemons to be ready... {0}'.format(SECONDS - 1)}
+                    SECONDS -= 1
+                    self.emit_message(message=message)
+                    time.sleep(1)
+
+                self.connect_netconf()
+
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Connecting...'}
             self.emit_message(message=message)
@@ -465,11 +436,17 @@ class PyEzDriver(Base):
                        'status': 'Unlock config'}
             self.emit_message(message=message)
             cu.unlock()
+        
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
             self.emit_message(message=message)
+            '''
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+        self.emit_message(message=message)
 
     def copy(self, target=None, task=None):
         print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))
+        time.sleep(2)
+        '''
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Copy file {0}'.format(task['src'])}
         self.emit_message(message=message)
@@ -485,6 +462,7 @@ class PyEzDriver(Base):
                 time.sleep(1)
 
         self._dev._tty._tn.write('clear'.encode("ascii") + b"\n\r")
+        '''
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
 

@@ -25,14 +25,13 @@ from logging import StreamHandler
 
 class WSHandler(StreamHandler):
 
-    def __init__(self, ws_client=None):
+    def __init__(self, ws_client=None, target_data=None):
         StreamHandler.__init__(self)
         self.ws_client = ws_client
-        self.target = None
+        self.target_data = target_data
         self.task = None
 
     def emit(self, message):
-
-        msg = {'action': 'update_session_output', 'task': self.task, 'uuid': self.target['uuid'],
+        msg = {'action': 'update_session_output', 'task': self.task, 'uuid': self.target_data['uuid'],
                'msg': self.format(message) + '\n'}
         self.ws_client.send(json.dumps(msg))

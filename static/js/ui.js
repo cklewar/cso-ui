@@ -146,6 +146,12 @@ $( document ).ready(function() {
             var temp = t_deploy_status.row('#' + json.task + '_' + json.uuid).data();
             temp.status = json.status;
             t_deploy_status.row('#' + json.task + '_' + json.uuid).data(temp).invalidate();
+            if (json.status === 'Done') {
+                var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
+                $('td', row).eq(2).css('color', 'green');
+                //$( row ).css( "background-color", "Green" );
+                //console.log($(t_deploy_status.row('#' + json.task + '_' + json.uuid)));
+            }
         } else {
             console.log(json);
 
@@ -362,7 +368,7 @@ function deploy(data){
                         'uuid': target.uuid
                       })
 
-                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect'){
+                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure'){
                         modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
                         '<div class="modal-dialog modal-lg" role="document">' +
                             '<div class="modal-content">' +

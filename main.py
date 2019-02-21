@@ -21,15 +21,18 @@
 
 import lib.constants as c
 import os
-import socket
 import cherrypy
 import six
-import pprint
 import json
 import threading
 import random
 import logging
+import yaml
+import uuid
+import shutil
+import time
 
+from git import Repo
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ruamel.yaml import YAML
@@ -246,8 +249,9 @@ class Upload(object):
 @require()
 class Deploy(object):
 
-    def __init__(self, _driver=None):
-        self.driver = _driver
+    def __init__(self):
+        self.__data = list()
+        self.tmp_dir = c.CONFIG['tmp_dir']
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -257,39 +261,68 @@ class Deploy(object):
         use_case_name = cherrypy.request.json['use_case_name']
 
         if action == 'clone':
-            return self.driver.clone()
+
+            URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
+                                                     c.CONFIG['git_repo_url'])
+            print('Fetch use case data from repo <{0}>'.format(URL))
+            PATH = '{0}'.format(c.CONFIG['tmp_dir'])
+
+            if os.path.exists(PATH):
+                shutil.rmtree(PATH)
+
+            resp = Repo.clone_from(URL, PATH)
+            print(resp)
+            ret_code = 0
+
+            if ret_code == 0:
+                return {'result': 'OK'}
+            if ret_code > 0:
+                return {'result': 'FAILED'}
 
         elif action == 'run':
+            print('Deploy use case <{0}>'.format(use_case_name))
 
-            yaml = YAML(typ='rt')
-
-            with open('config/items.yml', 'r') as ifp:
-                use_cases = yaml.load(ifp)
-                use_case_data = use_cases[use_case_name]
-
-            ret = self.driver.run(use_case_name=use_case_name, use_case_data=use_case_data)
+            for target in self.__data:
+                df = DriverFactory(name=c.CONFIG['driver'])
+                driver = df.init_driver(target_data=target, use_case_name=self._use_case_name, use_case_data=self._use_case_data)
+                driver.start()
 
             return True
 
         elif action == 'target_tasks':
-
-            yaml = YAML(typ='rt')
+            print('Get target task list')
+            _yaml = YAML(typ='rt')
 
             with open('config/items.yml', 'r') as ifp:
-                use_cases = yaml.load(ifp)
+                use_cases = _yaml.load(ifp)
                 use_case_data = use_cases[use_case_name]
 
-            ret = self.driver.get_target_tasks(use_case_name=use_case_name, use_case_data=use_case_data)
+            self._use_case_name = use_case_name
+            self._use_case_data = use_case_data
+            self._use_case_path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
+            play = '{0}/{1}'.format(self._use_case_path, self._use_case_data['playbook'])
+            self.__data = list()
 
-            return True, ret
+            with open(play, 'r') as fd:
+                play_data = _yaml.load(fd)
+
+            for target, value in play_data['targets'].items():
+                _tmp = {'name': target, **value, 'uuid': str(uuid.uuid4()), 'tasks': list()}
+                _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting'})
+                for task, attr in value['tasks'].items():
+                    if attr['enabled']:
+                        _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
+                _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
+                self.__data.append(_tmp)
+            print(self.__data)
+            return True, self.__data
 
 
 class Api(object):
 
-    def __init__(self, _driver=None):
+    def __init__(self):
         cherrypy.tools.cors_tool = cherrypy.Tool('before_request_body', cors_tool, name='cors_tool', priority=50)
         self.url_map = {'cards': Cards, 'upload': Upload, 'deploy': Deploy}
-        self.driver = _driver
         self._setattr_url_map()
 
     def _setattr_url_map(self):
@@ -298,10 +331,10 @@ class Api(object):
         """
 
         for url, cls in six.iteritems(self.url_map):
-            if url == 'deploy':
-                setattr(self, url, cls(_driver=self.driver))
-            else:
-                setattr(self, url, cls())
+            #if url == 'deploy':
+            #    setattr(self, url, cls(_driver=self.driver))
+            #else:
+            setattr(self, url, cls())
 
 
 class WSPlugin(WebSocketPlugin):
@@ -445,7 +478,7 @@ if __name__ == '__main__':
         c.CONFIG = yaml.load(_config)
 
     # initialize logging
-    logging.basicConfig(filename=c.CONFIG['logfile'], level=logging.INFO, format='%(asctime)s:%(name)s: %(message)s')
+    logging.basicConfig(filename=c.CONFIG['logfile'], level=logging.DEBUG, format='%(asctime)s:%(name)s: %(message)s')
     logging.getLogger().name = '7'
     logging.getLogger().addHandler(logging.StreamHandler())
     logging.info('Information logged in {0}'.format(c.CONFIG['logfile']))
@@ -502,10 +535,7 @@ if __name__ == '__main__':
 
     WSPlugin(cherrypy.engine).subscribe()
     cherrypy.tools.websocket = WebSocketTool()
-    df = DriverFactory(name=c.CONFIG['driver'])
-    driver = df.get_driver()
     cherrypy.tree.mount(Root(), '/', config=ui_conf)
-    cherrypy.tree.mount(Api(_driver=driver), '/api', config=api_conf)
+    cherrypy.tree.mount(Api(), '/api', config=api_conf)
     cherrypy.engine.start()
-    driver.ws_client.connect()
     cherrypy.engine.block()

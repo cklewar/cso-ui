@@ -100,10 +100,6 @@ class PyEzDriver(Base):
 
     def connect(self):
         self.ws.task = 'Connect'
-        message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                   'msg': 'Connecting to target: {0}\n'.format(self.target_data['name'])}
-        self.emit_message(message=message)
-
 
         try:
             self._dev = Device(host=self.target_data['address'], mode=self.target_data['mode'],
@@ -327,8 +323,7 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
-        time.sleep(2)
-        '''
+
         resp = self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize initialized'}
@@ -345,7 +340,7 @@ class PyEzDriver(Base):
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Disconnecting...'}
                 self.emit_message(message=message)
-                self.disconnect_netconf()
+                self.disconnect()
                 self.rebooted = True
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
@@ -356,10 +351,6 @@ class PyEzDriver(Base):
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
             time.sleep(0.2)
-        '''
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                   'status': 'Done'}
-        self.emit_message(message=message)
 
     def commit_config(self, target=None, task=None):
         print('Commit configuration on device <{0}>'.format(target['name']))
@@ -399,7 +390,7 @@ class PyEzDriver(Base):
                     self.emit_message(message=message)
                     time.sleep(1)
 
-                self.connect_netconf()
+                self.connect()
 
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Connecting...'}

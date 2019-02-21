@@ -342,6 +342,50 @@ function deploy(data){
         $('#t_deploy_status').DataTable().clear().destroy();
     }
 
+    data.action = 'clone';
+
+    $.ajax({
+        url: '/api/deploy',
+        type: 'POST',
+        data: JSON.stringify(data),
+        cache: false,
+        processData: true,
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function (response) {
+            //$("#loader").hide();
+            //var tmp = t_deploy_status.row('#' response.uuid).data();
+            //tmp.status = response.result;
+            //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
+
+            if (response.result === 'OK') {
+                data.action = 'run';
+
+                $.ajax({
+                    url: '/api/deploy',
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    cache: false,
+                    processData: true,
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    success: function (response) {
+                        //$("#loader").hide();
+                        //var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
+                        //tmp.status = response.result;
+                        //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
+                    },
+                    error : function (data, errorText) {
+                        $("#errormsg").html(errorText).show();
+                    }
+                });
+            }
+        },
+        error : function (data, errorText) {
+            $("#errormsg").html(errorText).show();
+        }
+    });
+
     data.action = 'target_tasks';
     t_deploy_status = $('#t_deploy_status').DataTable({
         'ajax'       : {
@@ -448,50 +492,6 @@ function deploy(data){
     $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
-    });
-
-    data.action = 'clone';
-
-    $.ajax({
-        url: '/api/deploy',
-        type: 'POST',
-        data: JSON.stringify(data),
-        cache: false,
-        processData: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        success: function (response) {
-            //$("#loader").hide();
-            //var tmp = t_deploy_status.row('#' response.uuid).data();
-            //tmp.status = response.result;
-            //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
-
-            if (response.result === 'OK') {
-                data.action = 'run';
-
-                $.ajax({
-                    url: '/api/deploy',
-                    type: 'POST',
-                    data: JSON.stringify(data),
-                    cache: false,
-                    processData: true,
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    success: function (response) {
-                        //$("#loader").hide();
-                        //var tmp = t_deploy_status.row('#' + response.target + '_' + response.uuid).data();
-                        //tmp.status = response.result;
-                        //t_deploy_status.row('#' + response.target + '_' + response.uuid).data(tmp).invalidate();
-                    },
-                    error : function (data, errorText) {
-                        $("#errormsg").html(errorText).show();
-                    }
-                });
-            }
-        },
-        error : function (data, errorText) {
-            $("#errormsg").html(errorText).show();
-        }
     });
 }
 

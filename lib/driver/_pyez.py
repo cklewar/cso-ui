@@ -30,6 +30,8 @@ import time
 import yaml
 import six
 
+
+from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
@@ -342,6 +344,9 @@ class PyEzDriver(Base):
                 self.emit_message(message=message)
                 self.disconnect()
                 self.rebooted = True
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                           'status': 'waiting'}
+                self.emit_message(message=message)
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
@@ -354,7 +359,7 @@ class PyEzDriver(Base):
 
     def commit_config(self, target=None, task=None):
         print('Commit configuration on device <{0}>'.format(target['name']))
-
+        self.disconnect()
         try:
 
             env = Environment(autoescape=False,
@@ -396,10 +401,10 @@ class PyEzDriver(Base):
                        'status': 'Connecting...'}
             self.emit_message(message=message)
             cu = Config(self._dev)
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Lock config'}
-            self.emit_message(message=message)
-            cu.lock()
+            #message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            #           'status': 'Lock config'}
+            #self.emit_message(message=message)
+            #cu.lock()
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Load config'}
             self.emit_message(message=message)
@@ -407,11 +412,20 @@ class PyEzDriver(Base):
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Commit config'}
             self.emit_message(message=message)
-            cu.commit(confirm=task['confirm'], sync=task['sync'])
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Unlock config'}
-            self.emit_message(message=message)
-            cu.unlock()
+            try:
+                cu.commit(confirm=task['confirm'], sync=task['sync'])
+            # Netconf Session gets dropped when override config with netconf server enabled. So we need to catch up here
+            # and reconnect.
+            except XMLSyntaxError as xse:
+                print(xse)
+                self.disconnect()
+                time.sleep(2)
+                self.connect()
+
+            #message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            #           'status': 'Unlock config'}
+            #self.emit_message(message=message)
+            #cu.unlock()
         
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
             self.emit_message(message=message)
@@ -437,6 +451,38 @@ class PyEzDriver(Base):
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
+
+    def reboot(self, target=None, task=None):
+        print('Rebooting device {0}'.format(target['name']))
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Rebooting...'}
+        self.emit_message(message=message)
+        resp = self._dev.rpc.request_reboot()
+        print(resp)
+
+        while True:
+
+            data = self._dev._tty._tn.read_until(b"\r\n")
+            print(str(data, 'utf-8'))
+
+            if data.decode('utf-8').strip() in c.TERM_STRINGS:
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Disconnecting...'}
+                self.emit_message(message=message)
+                self.disconnect()
+                self.rebooted = True
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                           'status': 'waiting'}
+                self.emit_message(message=message)
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Done'}
+                self.emit_message(message=message)
+                break
+
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                       'msg': str(data, 'utf-8')}
+            self.emit_message(message=message)
+            time.sleep(0.2)
 
     def load_settings(self):
         with open('config/driver/pyez.yml', 'r') as fp:

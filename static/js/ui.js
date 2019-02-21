@@ -410,7 +410,7 @@ function deploy(data){
                         'uuid': target.uuid
                       })
 
-                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure'){
+                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure' || task.name === 'Reboot'){
                         modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
                         '<div class="modal-dialog modal-lg" role="document">' +
                             '<div class="modal-content">' +

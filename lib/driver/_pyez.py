@@ -127,17 +127,17 @@ class PyEzDriver(Base):
             message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'status': 'Get target model...'}
             self.emit_message(message=message)
-            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                       'msg': 'Get target model...\n'}
-            self.emit_message(message=message)
-            model = self._dev.rpc.get_software_information({'format': 'json'})
-            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                       'msg': 'Target RE Model: '}
-            self.emit_message(message=message)
-            self.target_data['model'] = model['software-information'][0]['product-model'][0]['data']
-            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                       'msg': self.target_data['model'] + '\n'}
-            self.emit_message(message=message)
+            #message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+            #           'msg': 'Get target model...\n'}
+            #self.emit_message(message=message)
+            #model = self._dev.rpc.get_software_information({'format': 'json'})
+            #message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+            #           'msg': 'Target RE Model: '}
+            #self.emit_message(message=message)
+            #self.target_data['model'] = model['software-information'][0]['product-model'][0]['data']
+            #message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+            #           'msg': self.target_data['model'] + '\n'}
+            #self.emit_message(message=message)
 
         except (RuntimeError, OSError) as err:
             print(err)

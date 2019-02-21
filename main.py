@@ -272,6 +272,7 @@ class Deploy(object):
 
             resp = Repo.clone_from(URL, PATH)
             print(resp)
+            time.sleep(5)
             ret_code = 0
 
             if ret_code == 0:

@@ -43,10 +43,6 @@ from lib.handler import WSHandler
 
 
 class PyEzDriver(Base):
-    NEW_LINE = six.b('\n')
-    EMPTY_STR = six.b('')
-    NETCONF_EOM = six.b(']]>]]>')
-    STARTS_WITH = six.b("<!--")
 
     def __init__(self, _data=None, use_case_name=None, use_case_data=None):
         super().__init__(_data=_data, use_case_name=use_case_name, use_case_data=use_case_data)
@@ -367,12 +363,7 @@ class PyEzDriver(Base):
 
     def commit_config(self, target=None, task=None):
         print('Commit configuration on device <{0}>'.format(target['name']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                   'status': 'Connecting...'}
-        self.emit_message(message=message)
-        time.sleep(5)
 
-        '''
         try:
 
             env = Environment(autoescape=False,
@@ -387,14 +378,15 @@ class PyEzDriver(Base):
         with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
-            message = {'action': 'update_task_output', 'task': task['name'], 'uuid': target['uuid'], 'msg': config}
-            self.emit_message(message=message)
-            print("Device <{0}> is rebooted. Waiting for daemons to be ready...".format(target['name']))
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Waiting for daemons to be ready...'}
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                       'msg': config}
             self.emit_message(message=message)
 
             if self.rebooted:
+                print("Device <{0}> is rebooted. Waiting for daemons to be ready...".format(target['name']))
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Waiting for daemons to be ready...'}
+                self.emit_message(message=message)
                 # adding some timeout for telnet session to close properly. Need a better approach here!
                 mark_start = datetime.now()
                 SECONDS = 120
@@ -424,7 +416,7 @@ class PyEzDriver(Base):
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Commit config'}
             self.emit_message(message=message)
-            cu.commit(confirm=task['confirm'])
+            cu.commit(confirm=task['confirm'], sync=task['sync'])
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Unlock config'}
             self.emit_message(message=message)
@@ -432,9 +424,6 @@ class PyEzDriver(Base):
         
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
             self.emit_message(message=message)
-            '''
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
-        self.emit_message(message=message)
 
     def copy(self, target=None, task=None):
         print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))

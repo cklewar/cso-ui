@@ -20,6 +20,7 @@ targets:
         override: False
         update: True
         confirm: False
+        sync: False
         template: vsrx01.j2
         template_data: vsrx01.yml
       Copy:
@@ -43,6 +44,7 @@ targets:
         override: False
         update: True
         confirm: False
+        sync: False
         template: vsrx01.j2
         template_data: vsrx01.yml
       Copy:

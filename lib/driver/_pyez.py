@@ -107,8 +107,8 @@ class PyEzDriver(Base):
         message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                    'msg': 'Connecting to target: {0}\n'.format(self.target_data['name'])}
         self.emit_message(message=message)
-        time.sleep(2)
-        '''
+
+
         try:
             self._dev = Device(host=self.target_data['address'], mode=self.target_data['mode'],
                                port=self.target_data['port'],
@@ -142,7 +142,6 @@ class PyEzDriver(Base):
         except (RuntimeError, OSError) as err:
             print(err)
             return False
-        '''
 
         message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                    'status': 'Done'}
@@ -156,8 +155,7 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
-        #self._dev.close(skip_logout=True)
-        time.sleep(2)
+        self._dev.close(skip_logout=True)
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Done'}
         self.emit_message(message=message)
@@ -175,13 +173,13 @@ class PyEzDriver(Base):
             if task['name'] == 'Connect':
                 self.connect()
             elif task['name'] == 'Render':
-                #_status, _data = self.render(target=self.target_data, task=task)
-                self.render(target=self.target_data, task=task)
+                _status, _data = self.render(target=self.target_data, task=task)
 
-                #if _status:
-                #    self.push(target=self.target_data, task=task, data=_data)
-                #else:
-                #    print(_status, _data)
+                if _status:
+                    self.push(target=self.target_data, task=task, data=_data)
+                else:
+                    print(_status, _data)
+
             elif task['name'] == 'Zerorize':
                 self.zeroize(target=self.target_data, task=task)
             elif task['name'] == 'Configure':
@@ -196,9 +194,7 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Render template'}
         self.emit_message(message=message)
-        time.sleep(2)
 
-        '''
         try:
             env = Environment(autoescape=False,
                               loader=FileSystemLoader(self.use_case_path), trim_blocks=True, lstrip_blocks=True)
@@ -220,9 +216,6 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         return True, config
-        '''
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
-        self.emit_message(message=message)
 
     def push(self, target=None, task=None, data=None):
         print('Push device <{0}> configuration to git'.format(target['name']))
@@ -445,8 +438,7 @@ class PyEzDriver(Base):
 
     def copy(self, target=None, task=None):
         print('Copy file <{0}> to <{1}>'.format(task['src'], task['dst']))
-        time.sleep(2)
-        '''
+
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Copy file {0}'.format(task['src'])}
         self.emit_message(message=message)
@@ -462,7 +454,7 @@ class PyEzDriver(Base):
                 time.sleep(1)
 
         self._dev._tty._tn.write('clear'.encode("ascii") + b"\n\r")
-        '''
+
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
 

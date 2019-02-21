@@ -1,0 +1,4 @@
+Host 192.168.10.5
+   StrictHostKeyChecking no
+   UserKnownHostsFile=/dev/null
+   IdentityFile ./cso-ui

@@ -3,8 +3,8 @@ jinja2
 six
 requests
 ruamel.yaml
-salt
-ansible
+#salt
+#ansible
 ws4py
 junos-eznc
 jxmlease

@@ -149,8 +149,6 @@ $( document ).ready(function() {
             if (json.status === 'Done') {
                 var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
                 $('td', row).eq(2).css('color', 'green');
-                //$( row ).css( "background-color", "Green" );
-                //console.log($(t_deploy_status.row('#' + json.task + '_' + json.uuid)));
             }
         } else {
             console.log(json);

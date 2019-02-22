@@ -1,3 +1,5 @@
+import lib.constants as c
+
 from ws4py.client.threadedclient import WebSocketClient
 
 
@@ -8,7 +10,7 @@ class WSClient(WebSocketClient):
         self._clientName = name
 
     def opened(self):
-        print('opened connection')
+        c.cso_logger.info('WSClient opened connection')
 
     def closed(self, code, reason=None):
         if code != 1000:

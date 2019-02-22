@@ -117,8 +117,11 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
-            var s = json.msg.replace(/\</g, '#').replace(/\>/g, '#');
-            $("#session_output_" + json.task + '_' + json.uuid).append(s);
+            //console.log("#session_output_" + json.task + '_' + json.uuid);
+            //var s = json.msg.replace(/\</g, '#').replace(/\>/g, '#');
+            //console.log(json.msg);
+            //console.log(json.msg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+            $("#session_output_" + json.task + '_' + json.uuid).append(json.msg);
             $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
 
 
@@ -150,9 +153,12 @@ $( document ).ready(function() {
                 var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
                 $('td', row).eq(2).css('color', 'green');
             }
+        } else if (json.action === 'update_card_deploy_status'){
+            console.log(json);
+            $('#' + json.usecase + ' > div > div').css('border-color', 'green');
+            $('#useCase2 > div > div > img').attr("src", "/static/images/dummy_deployed.png");
         } else {
             console.log(json);
-
         }
     };
 
@@ -208,7 +214,7 @@ $( document ).ready(function() {
     $('.btnDeployUseCase').on('click', function (event) {
         console.log('deploy use case');
         var data = {};
-        data.use_case_name = ($(this).data('usecase'));
+        data.use_case_name = $(this).data('usecase');
         deploy(data);
     });
 
@@ -410,7 +416,7 @@ function deploy(data){
                         'uuid': target.uuid
                       })
 
-                      if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure' || task.name === 'Reboot'){
+                      //if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure' || task.name === 'Reboot'){
                         modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
                         '<div class="modal-dialog modal-lg" role="document">' +
                             '<div class="modal-content">' +
@@ -433,7 +439,8 @@ function deploy(data){
                         '</div>';
                       $("body").append(modal_task_details);
 
-                      } else {
+                      //} else {
+                      /*
                         modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
                         '<div class="modal-dialog modal-lg" role="document">' +
                             '<div class="modal-content">' +
@@ -455,6 +462,7 @@ function deploy(data){
                         '</div>';
                       $("body").append(modal_task_details);
                       }
+                      */
 
                       $('#session_output_' + task.name + '_' + target.uuid).on('change', function(){
                         scrollToBottom('#session_output_' + task.name + '_' + target.uuid);
@@ -491,6 +499,7 @@ function deploy(data){
 
     $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
+        scrollToBottom('#session_output_' + data.task + '_' + data.uuid);
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
     });
 }

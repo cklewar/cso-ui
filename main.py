@@ -26,11 +26,9 @@ import six
 import json
 import threading
 import random
-import logging
-import yaml
+import logging.config
 import uuid
 import shutil
-import time
 
 from git import Repo
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
@@ -40,6 +38,12 @@ from lib.auth import AuthController, require, member_of, name_is
 from ws4py.client.threadedclient import WebSocketClient
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from lib.factory import DriverFactory
+
+c.logger = logging.getLogger()
+c.cso_logger = logging.getLogger('cso_ui')
+c.jnpr_junos_tty = logging.getLogger('jnpr.junos.tty')
+c.jnpr_junos_tty_netconf = logging.getLogger('jnpr.junos.tty_netconf')
+c.jnpr_junos_tty_telnet = logging.getLogger('jnpr.junos.tty_telnet')
 
 
 def cors_tool():
@@ -106,8 +110,7 @@ class RestrictedArea(object):
 
 
 class Root(object):
-
-    #def __init__(self, driver=None):
+    # def __init__(self, driver=None):
     #    self.driver = driver
 
     _cp_config = {
@@ -126,8 +129,6 @@ class Root(object):
             tmpl = env.get_template('index.html', 'r')
             data = dict()
             data['cards'] = dict()
-            # data['cards'] = self.driver.load_use_cases()[1]
-
             data['protocol'] = c.CONFIG["ws_client_protocol"]
             data['ip'] = c.CONFIG["ws_client_ip"]
             data['port'] = c.CONFIG["ws_client_port"]
@@ -145,13 +146,13 @@ class Root(object):
         except (TemplateNotFound, IOError) as ioe:
 
             error = '{0}'.format(ioe.filename if ioe.filename else ioe)
-            print(error)
+            c.cso_logger.info(error)
             return error
 
     @cherrypy.expose
     def ws(self, clientname):
         cherrypy.request.ws_handler.clientname = clientname
-        cherrypy.log("Handler created: %s" % repr(cherrypy.request.ws_handler))
+        cherrypy.log("[WebSocket]: Handler created: %s" % repr(cherrypy.request.ws_handler))
 
 
 @cherrypy.expose
@@ -261,17 +262,16 @@ class Deploy(object):
         use_case_name = cherrypy.request.json['use_case_name']
 
         if action == 'clone':
-
             URL = '{0}://git@{1}:{2}/{3}.git'.format('ssh', c.CONFIG['git_host'], c.CONFIG['git_ssh_port'],
                                                      c.CONFIG['git_repo_url'])
-            print('Fetch use case data from repo <{0}>'.format(URL))
+            c.cso_logger.info('[Clone]: Clone Use case <{0}> data from repo <{1}>'.format(use_case_name, URL))
             PATH = '{0}'.format(c.CONFIG['tmp_dir'])
 
             if os.path.exists(PATH):
                 shutil.rmtree(PATH)
 
             resp = Repo.clone_from(URL, PATH)
-            print(resp)
+            c.cso_logger.info('[Clone]: {0} --> DONE'.format(resp))
             ret_code = 0
 
             if ret_code == 0:
@@ -280,17 +280,18 @@ class Deploy(object):
                 return {'result': 'FAILED'}
 
         elif action == 'run':
-            print('Deploy use case <{0}>'.format(use_case_name))
 
             for target in self.__data:
+                c.cso_logger.info('[{0}][Run]: Start deploy usecase <{1}>'.format(target['name'], use_case_name))
                 df = DriverFactory(name=c.CONFIG['driver'])
-                driver = df.init_driver(target_data=target, use_case_name=self._use_case_name, use_case_data=self._use_case_data)
+                driver = df.init_driver(target_data=target, use_case_name=self._use_case_name,
+                                        use_case_data=self._use_case_data)
                 driver.start()
 
             return True
 
         elif action == 'target_tasks':
-            print('Get target task list')
+            c.cso_logger.info('[Target_Tasks]: Compute target attached tasks')
             _yaml = YAML(typ='rt')
 
             with open('config/items.yml', 'r') as ifp:
@@ -314,7 +315,8 @@ class Deploy(object):
                         _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
                 _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
                 self.__data.append(_tmp)
-            print(self.__data)
+
+            c.cso_logger.info('[Target_Tasks]: Compute target attached tasks --> DONE')
             return True, self.__data
 
 
@@ -331,9 +333,9 @@ class Api(object):
         """
 
         for url, cls in six.iteritems(self.url_map):
-            #if url == 'deploy':
+            # if url == 'deploy':
             #    setattr(self, url, cls(_driver=self.driver))
-            #else:
+            # else:
             setattr(self, url, cls())
 
 
@@ -477,16 +479,9 @@ if __name__ == '__main__':
         yaml = YAML(typ='safe')
         c.CONFIG = yaml.load(_config)
 
-    # initialize logging
-    logging.basicConfig(filename=c.CONFIG['logfile'], level=logging.DEBUG, format='%(asctime)s:%(name)s: %(message)s')
-    logging.getLogger().name = '7'
-    logging.getLogger().addHandler(logging.StreamHandler())
-    logging.info('Information logged in {0}'.format(c.CONFIG['logfile']))
-
-    print('Starting UI at http(s)://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
     cherrypy.config.update({'log.screen': True,
-                            'log.access_file': '',
-                            'log.error_file': '',
+                            #'log.access_file': '',
+                            #'log.error_file': '',
                             'engine.autoreload_on': False,
                             'server.socket_host': c.CONFIG['UI_ADDRESS'],
                             'server.socket_port': c.CONFIG['UI_PORT'],
@@ -494,6 +489,10 @@ if __name__ == '__main__':
                             }, )
 
     if c.CONFIG['IS_SSL']:
+        print(50 * '#')
+        print('Starting UI at https://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
+        c.cso_logger.info('Starting UI at https://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
+        print(50 * '#')
         ssl_config = {
             'server.ssl_module': 'builtin',
             'server.ssl_certificate': 'config/ssl/cert.pem',
@@ -501,6 +500,11 @@ if __name__ == '__main__':
             # 'server.ssl_certificate_chain': 'bundle.crt'
         }
         cherrypy.config.update(ssl_config)
+    else:
+        print(50 * '#')
+        print('Starting UI at http://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
+        print(50 * '#')
+        c.cso_logger.info('Starting UI at http://{0}:{1}'.format(c.CONFIG['UI_ADDRESS'], c.CONFIG['UI_PORT']))
 
     ui_conf = {
         '/': {
@@ -532,7 +536,9 @@ if __name__ == '__main__':
 
     if c.CONFIG['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
-
+    cherrypy.engine.unsubscribe('graceful', cherrypy.log.reopen_files)
+    logging.config.dictConfig(c.LOG_CONF)
+    c.logger.info('Base information logged into {0}'.format(c.CONFIG['baselog']))
     WSPlugin(cherrypy.engine).subscribe()
     cherrypy.tools.websocket = WebSocketTool()
     cherrypy.tree.mount(Root(), '/', config=ui_conf)

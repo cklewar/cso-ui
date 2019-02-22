@@ -79,6 +79,7 @@ body {
 #modalDeployStatus .modal-content
 {
   min-height:500px;
+  min-width:600px;
 }
 
 #statusMessages {

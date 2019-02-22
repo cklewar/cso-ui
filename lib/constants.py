@@ -26,3 +26,103 @@ ADMIN_USERS = ('admin', 'root')
 ADMIN_USER_PW = 'juniper123'
 CONFIG = None
 TERM_STRINGS = ["Amnesiac (ttyu0)", "Ubuntu 14.04.1 LTS jdm tty1"]
+logger = None
+cso_logger = None
+jnpr_junos_tty = None
+jnpr_junos_tty_netconf = None
+jnpr_junos_tty_telnet = None
+
+LOG_CONF = {
+    'version': 1,
+
+    'formatters': {
+        'void': {
+            'format': ''
+        },
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': {
+        'default': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout'
+        },
+        'cherrypy_console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'void',
+            'stream': 'ext://sys.stdout'
+        },
+        'cherrypy_access': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'void',
+            'filename': 'log/access.log',
+            'maxBytes': 10485760,
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+        'cherrypy_error': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'void',
+            'filename': 'log/errors.log',
+            'maxBytes': 10485760,
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+        'cso_ui': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'standard',
+            'filename': 'log/cso-ui.log',
+            'maxBytes': 10485760,
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default'],
+            'level': 'INFO'
+        },
+        'cso_ui': {
+            'handlers': ['cso_ui'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'jnpr.junos.tty': {
+            'handlers': ['cso_ui'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'jnpr.junos.tty_netconf': {
+            'handlers': ['cso_ui'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'jnpr.junos.tty_telnet': {
+            'handlers': ['cso_ui'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'jnpr.junos.console': {
+            'handlers': ['cso_ui'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'cherrypy.access': {
+            'handlers': ['cherrypy_access'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'cherrypy.error': {
+            'handlers': ['cherrypy_console', 'cherrypy_error'],
+            'level': 'INFO',
+            'propagate': False
+        },
+    }
+}

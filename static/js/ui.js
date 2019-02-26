@@ -254,7 +254,7 @@ $( document ).ready(function() {
             }
         });
     });
-    $('#img_poc_ref').zoom({magnify: 2});
+    $('#img_poc_ref').zoom({magnify: 1});
 });
 
 function scrollToBottom(elem) {

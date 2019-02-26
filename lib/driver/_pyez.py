@@ -556,21 +556,14 @@ class PyEzDriver(Base):
         while True:
 
             data = self._dev._tty._tn.read_until(b"\r\n")
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8')))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
+            _data = data.decode('utf-8').strip()
+            re_pattern = re.compile(target['name'] + ' ' + r'\(tty.*\)')
+            term_str = re_pattern.match(_data)
 
-            string = data.decode('utf-8').strip()
-            #print(repr(string))
-            re_str1 = r'\(tty.*\)'
-            #print(target['name'] + ' ' + re_str1)
-            re_pattern = re.compile(target['name'] + ' ' + re_str1)
-            #print(re_pattern)
-            match = re_pattern.match(string)
-            print(match)
-
-            if match:
+            if term_str:
 
                 self.isRebooted = True
-
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': self.gen_task_done_message(target=target, task=task)}
                 self.emit_message(message=message)

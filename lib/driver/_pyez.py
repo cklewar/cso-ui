@@ -157,8 +157,8 @@ class PyEzDriver(Base):
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
 
-        # self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
         self._dev.close(skip_logout=True)
+        # self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
 
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}

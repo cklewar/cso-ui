@@ -142,3 +142,10 @@ td.details-control {
 tr.shown td.details-control {
     background: url('/static/images/details_close.png') no-repeat center center;
 }
+
+.zoom {
+    display: flex;
+    position: relative;
+}
+
+.zoom img::selection { background-color: transparent; }

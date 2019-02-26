@@ -155,9 +155,9 @@ $( document ).ready(function() {
                 $('td', row).eq(2).css('color', 'green');
             }
         } else if (json.action === 'update_card_deploy_status'){
-            console.log(json);
             $('#' + json.usecase + ' > div > div').css('border-color', 'green');
             $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/dummy_deployed.png");
+            isDeploying = false;
         } else {
             console.log(json);
         }
@@ -216,10 +216,14 @@ $( document ).ready(function() {
         console.log('deploy use case');
         var data = {};
         data.use_case_name = $(this).data('usecase');
-        if (isDeploying) {
 
+        if (isDeploying) {
+           // only show modal not starting new deployment
+        } else {
+            isDeploying = true;
+            deploy(data);
         }
-        deploy(data);
+
     });
 
     $('#modalDeployStatus').on('show.bs.modal', function (e) {

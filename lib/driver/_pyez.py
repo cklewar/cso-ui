@@ -155,12 +155,10 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
-        #self.disconnect_netconf(target=target)
 
-        if target['model'] in c.MODEL_NORMAL:
-            self._dev.close()
-        else:
-            self._dev.close(skip_logout=True)
+        self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+        self._dev.close(skip_logout=True)
+
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}
         self.emit_message(message=message)
@@ -201,7 +199,8 @@ class PyEzDriver(Base):
                     break
 
             elif task['name'] == 'Zerorize':
-                self.zeroize(target=self.target_data, task=task)
+                time.sleep(2)
+                #self.zeroize(target=self.target_data, task=task)
             elif task['name'] == 'Configure':
                 self.configure(target=self.target_data, task=task)
             elif task['name'] == 'Copy':

@@ -20,6 +20,7 @@
 #
 
 import logging
+import re
 import pprint
 import gitlab
 import lib.constants as c
@@ -49,6 +50,7 @@ class PyEzDriver(Base):
         self.session = None
         self.gl = None
         self.isRebooted = False
+        self.isNetConf = False
         self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
@@ -110,28 +112,13 @@ class PyEzDriver(Base):
                        'status': 'Connecting...'}
             self.emit_message(message=message)
             self._dev.open()
+            self.isNetConf = True
             message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'msg': 'Connected to target: {0}\n'.format(self.target_data['name'])}
             self.emit_message(message=message)
             message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'msg': self.gen_task_done_message(target=target, task={'name': 'Connect'})}
             self.emit_message(message=message)
-
-            # message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-            #           'status': 'Get target model...'}
-            # self.emit_message(message=message)
-
-            # message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-            #           'msg': 'Get target model...\n'}
-            # self.emit_message(message=message)
-            # model = self._dev.rpc.get_software_information({'format': 'json'})
-            # message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-            #           'msg': 'Target RE Model: '}
-            # self.emit_message(message=message)
-            # self.target_data['model'] = model['software-information'][0]['product-model'][0]['data']
-            # message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-            #           'msg': self.target_data['model'] + '\n'}
-            # self.emit_message(message=message)
 
         except (RuntimeError, OSError) as err:
             c.cso_logger.info(err)
@@ -151,6 +138,7 @@ class PyEzDriver(Base):
 
         if self.isRebooted:
             self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
+            self.isRebooted = False
 
         c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(target['name'], 'Disconnect'))
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
@@ -159,7 +147,7 @@ class PyEzDriver(Base):
 
         self._dev.close(skip_logout=True)
         # self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
-
+        self.isNetConf = False
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}
         self.emit_message(message=message)
@@ -172,12 +160,14 @@ class PyEzDriver(Base):
     def connect_netconf(self):
         self.ws.task = 'Connect'
         self._dev._tty.login()
+        self.isNetConf = True
 
     def disconnect_netconf(self, target=None):
         self.ws.task = 'Disconnect'
         c.cso_logger.info(
             '[{0}][{1}]: Disconnect netconf session'.format('Disconnect', target['name']))
         self._dev._tty.nc.close()
+        self.isNetConf = False
         c.cso_logger.info(
             '[{0}][{1}]: Disconnect netconf session --> DONE'.format('Disconnect', target['name']))
 
@@ -228,7 +218,12 @@ class PyEzDriver(Base):
                     self.reboot(target=self.target_data, task=task)
                 elif task['name'] == 'Disconnect':
                     self.disconnect(target=self.target_data)
+
+                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target_data['uuid'],
+                           'msg': self.gen_task_done_message(target=self.target_data, task=task)}
+                self.emit_message(message=message)
             else:
+                c.cso_logger.info('[{0}][{1}]: Error in last task.'.format(self.target_data['name'], task['name']))
                 break
 
         message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
@@ -400,6 +395,9 @@ class PyEzDriver(Base):
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
 
+        if not self.isNetConf:
+            self.connect_netconf()
+
         resp = self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize running'}
@@ -444,6 +442,11 @@ class PyEzDriver(Base):
 
         if self.isRebooted:
             self.wait_for_daeomons(target=target, task=task)
+            self.isRebooted = False
+            self.connect(target=target)
+
+        if not self.isNetConf:
+            self.connect_netconf()
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Connecting...'}
@@ -507,6 +510,7 @@ class PyEzDriver(Base):
 
         if self.isRebooted:
             self.wait_for_daeomons(target=target, task={'name': task['name']})
+            self.isRebooted = False
 
         c.cso_logger.info(
             '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(target['name'], task['name'], task['src'], task['dst']))
@@ -542,20 +546,35 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Rebooting...'}
         self.emit_message(message=message)
+
+        if not self.isNetConf:
+            self.connect_netconf()
+
         resp = self._dev.rpc.request_reboot()
         c.cso_logger.info('{0}: {1}'.format(task['name'], resp))
 
         while True:
 
             data = self._dev._tty._tn.read_until(b"\r\n")
-            c.cso_logger.info('{0}: {1} --> {2}'.format(task['name'], target['name'], str(data, 'utf-8')))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8')))
 
-            if data.decode('utf-8').strip() in c.TERM_STRINGS:
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                           'status': 'Disconnecting...'}
-                self.emit_message(message=message)
-                self.disconnect()
+            string = data.decode('utf-8').strip()
+            #print(repr(string))
+            re_str1 = r'\(tty.*\)'
+            #print(target['name'] + ' ' + re_str1)
+            re_pattern = re.compile(target['name'] + ' ' + re_str1)
+            #print(re_pattern)
+            match = re_pattern.match(string)
+            print(match)
+
+            if match:
+
                 self.isRebooted = True
+
+                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                           'msg': self.gen_task_done_message(target=target, task=task)}
+                self.emit_message(message=message)
+                c.cso_logger.info('[{0}][{1}]: Reboot --> DONE'.format(target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
@@ -596,8 +615,6 @@ class PyEzDriver(Base):
                                                                                                 task['name'],
                                                                                                 timeout - 1))
             time.sleep(1)
-        self.isRebooted = False
-        self.connect(target=target)
 
     def gen_task_done_message(self, target=None, task=None):
         header = '{0} TASK {1} DONE {2}'.format(15 * '#', task['name'], 15 * '#')

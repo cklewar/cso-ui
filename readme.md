@@ -67,6 +67,17 @@ git_port: 9080
 git_repo_url: cso_ops/usecases
 ```
 
+Create required directories:
+
+- /tmp/cso-ui/log
+- /tmp/cso-ui/data
+
+```bash
+mkdir -p /tmp/cso-ui/log
+mkdir -p /tmp/cso-ui/data
+
+```
+
 Run following commands on docker box:
 ```bash
 docker build -t cso-ui .

@@ -155,8 +155,12 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
+        #self.disconnect_netconf(target=target)
 
-        self._dev.close(skip_logout=True)
+        if target['model'] in c.MODEL_NORMAL:
+            self._dev.close()
+        else:
+            self._dev.close(skip_logout=True)
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}
         self.emit_message(message=message)
@@ -527,7 +531,7 @@ class PyEzDriver(Base):
         while True:
 
             data = self._dev._tty._tn.read_until(b"\r\n")
-            c.cso_c.cso_logger.info('{0}: {1} --> {2}'.format(task['name'], target['name'], str(data, 'utf-8')))
+            c.cso_logger.info('{0}: {1} --> {2}'.format(task['name'], target['name'], str(data, 'utf-8')))
 
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],

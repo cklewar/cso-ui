@@ -1,6 +1,7 @@
 var grid;
 var imageFileName;
 var t_deploy_status;
+var isDeploying = false;
 
 $( document ).ready(function() {
     console.log( "ready function in ui.js" );
@@ -156,7 +157,7 @@ $( document ).ready(function() {
         } else if (json.action === 'update_card_deploy_status'){
             console.log(json);
             $('#' + json.usecase + ' > div > div').css('border-color', 'green');
-            $('#useCase2 > div > div > img').attr("src", "/static/images/dummy_deployed.png");
+            $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/dummy_deployed.png");
         } else {
             console.log(json);
         }
@@ -215,6 +216,9 @@ $( document ).ready(function() {
         console.log('deploy use case');
         var data = {};
         data.use_case_name = $(this).data('usecase');
+        if (isDeploying) {
+
+        }
         deploy(data);
     });
 
@@ -416,7 +420,6 @@ function deploy(data){
                         'uuid': target.uuid
                       })
 
-                      //if (task.name === 'Zerorize' || task.name === 'Copy' || task.name === 'Connect' || task.name === 'Disconnect' || task.name === 'Configure' || task.name === 'Reboot'){
                         modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
                         '<div class="modal-dialog modal-lg" role="document">' +
                             '<div class="modal-content">' +
@@ -438,32 +441,6 @@ function deploy(data){
                         '</div>' +
                         '</div>';
                       $("body").append(modal_task_details);
-
-                      //} else {
-                      /*
-                        modal_task_details = '<div class="modal" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
-                        '<div class="modal-dialog modal-lg" role="document">' +
-                            '<div class="modal-content">' +
-                                '<div class="modal-header">' +
-                                    '<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
-                                    '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
-                                        '<span aria-hidden="true">&times;</span>' +
-                                    '</button>' +
-                                '</div>' +
-                                '<div class="modal-body h-50">' +
-                                    '<div id="task_detail_info_' + task.name + '_' + target.uuid +'">' +
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="modal-footer">' +
-                                    '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        '</div>';
-                      $("body").append(modal_task_details);
-                      }
-                      */
-
                       $('#session_output_' + task.name + '_' + target.uuid).on('change', function(){
                         scrollToBottom('#session_output_' + task.name + '_' + target.uuid);
                       });

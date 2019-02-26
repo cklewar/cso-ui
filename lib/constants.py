@@ -26,6 +26,7 @@ ADMIN_USERS = ('admin', 'root')
 ADMIN_USER_PW = 'juniper123'
 CONFIG = None
 TERM_STRINGS = ["Amnesiac (ttyu0)", "Ubuntu 14.04.1 LTS jdm tty1"]
+MODEL_NORMAL = ['qfx', 'srx', 'ex', 'mx']
 logger = None
 cso_logger = None
 jnpr_junos_tty = None

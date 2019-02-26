@@ -6,9 +6,6 @@ RUN python3 -m pip install --no-cache-dir -r /cso-ui/requirements.txt
 COPY ./config/ssh/config /root/.ssh/config
 COPY ./config/ssh/cso-ui /root/.ssh/cso-ui
 RUN chmod 400 /root/.ssh/cso-ui
-#RUN mkdir -p /root/.ansible/plugins/callback
-#COPY ./lib/ansible.cfg /root/.ansible
-#COPY ./lib/driver/callback/cso.py /root/.ansible/plugins/callback/cso.py
-#RUN ansible-galaxy install Juniper.junos
+RUN mkdir /tmp/cso-ui/log
 WORKDIR /cso-ui
 CMD [ "python3", "./main.py" ]

@@ -73,7 +73,7 @@ LOG_CONF = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'void',
-            'filename': 'log/access.log',
+            'filename': '/tmp/cso-ui/log/cso-ui.log',
             'maxBytes': 10485760,
             'backupCount': 20,
             'encoding': 'utf8'
@@ -82,7 +82,7 @@ LOG_CONF = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'void',
-            'filename': 'log/errors.log',
+            'filename': '/tmp/cso-ui/log/cso-ui.log',
             'maxBytes': 10485760,
             'backupCount': 20,
             'encoding': 'utf8'
@@ -91,7 +91,7 @@ LOG_CONF = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'standard',
-            'filename': 'log/cso-ui.log',
+            'filename': '/tmp/cso-ui/log/cso-ui.log',
             'maxBytes': 10485760,
             'backupCount': 20,
             'encoding': 'utf8'

@@ -19,7 +19,6 @@
 # Author: cklewar
 #
 
-import os
 import logging
 import pprint
 import gitlab
@@ -28,8 +27,6 @@ import requests
 import json
 import time
 import yaml
-import six
-import html
 
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
@@ -55,7 +52,7 @@ class PyEzDriver(Base):
         self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
-        self.status = False
+        self.status = True
         c.jnpr_junos_tty.addHandler(self.ws)
         c.jnpr_junos_tty_netconf.addHandler(self.ws)
         c.jnpr_junos_tty_telnet.addHandler(self.ws)
@@ -187,29 +184,52 @@ class PyEzDriver(Base):
     def run(self):
 
         for task in self.target_data['tasks']:
-            if task['name'] == 'Connect':
-                self.connect(target=self.target_data)
-            elif task['name'] == 'Render':
-                _status, _data = self.render(target=self.target_data, task=task)
+            if self.status:
+                if task['name'] == 'Connect':
+                    self.connect(target=self.target_data)
 
-                if _status:
-                    self.push(target=self.target_data, task=task, data=_data)
-                else:
-                    c.cso_logger.info(
-                        '[{0}][{1}]: Pushing data failed <{2}>'.format(self.target_data['name'], task['name'], _data))
-                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target_data['uuid'],
-                               'status': _data}
-                    self.emit_message(message=message)
-                    break
+                elif task['name'] == 'Render':
+                    _status, _data = self.render(target=self.target_data, task=task)
 
-            elif task['name'] == 'Zerorize':
-                self.zeroize(target=self.target_data, task=task)
-            elif task['name'] == 'Configure':
-                self.configure(target=self.target_data, task=task)
-            elif task['name'] == 'Copy':
-                self.copy(target=self.target_data, task=task)
-            elif task['name'] == 'Disconnect':
-                self.disconnect(target=self.target_data)
+                    if _status:
+                        self.push(target=self.target_data, task=task, data=_data)
+                    else:
+                        c.cso_logger.info(
+                            '[{0}][{1}]: Pushing data failed <{2}>'.format(self.target_data['name'], task['name'],
+                                                                           _data))
+                        message = {'action': 'update_task_status', 'task': task['name'],
+                                   'uuid': self.target_data['uuid'],
+                                   'status': _data}
+                        self.emit_message(message=message)
+                        break
+
+                elif task['name'] == 'Zerorize':
+                    self.zeroize(target=self.target_data, task=task)
+
+                elif task['name'] == 'Configure':
+                    _status, _data = self.pull(target=self.target_data, task=task)
+
+                    if _status:
+                        self.status = self.configure(target=self.target_data, task=task, data=_data.decode('utf-8'))
+                    else:
+                        c.cso_logger.info(
+                            '[{0}][{1}]: Pulling configuration failed <{2}>'.format(self.target_data['name'],
+                                                                                    task['name'],
+                                                                                    _data))
+                        message = {'action': 'update_task_status', 'task': task['name'],
+                                   'uuid': self.target_data['uuid'],
+                                   'status': _data.decode("utf-8")}
+                        self.emit_message(message=message)
+                        break
+
+                elif task['name'] == 'Copy':
+                    self.copy(target=self.target_data, task=task)
+                elif task['name'] == 'Reboot':
+                    self.reboot(target=self.target_data, task=task)
+                elif task['name'] == 'Disconnect':
+                    self.disconnect(target=self.target_data)
+            else:
+                break
 
         message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
         self.emit_message(message=message)
@@ -415,72 +435,72 @@ class PyEzDriver(Base):
 
             time.sleep(0.2)
 
-    def configure(self, target=None, task=None):
+    def configure(self, target=None, task=None, data=None):
         self.ws.task = task['name']
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(target['name'], task['name']))
+        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                   'msg': data}
+        self.emit_message(message=message)
 
-        try:
+        if self.isRebooted:
+            self.wait_for_daeomons(target=target, task=task)
 
-            env = Environment(autoescape=False,
-                              loader=FileSystemLoader(self.use_case_path), trim_blocks=True, lstrip_blocks=True)
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Connecting...'}
+        self.emit_message(message=message)
+        cu = Config(self._dev)
 
-            template = env.get_template(task['template'])
-
-        except (TemplateNotFound, IOError) as err:
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], err))
-            return False, err
-
-        with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
-            data = yaml.safe_load(fd)
-            config = template.render(data)
-            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
-                       'msg': config}
-            self.emit_message(message=message)
-
-            if self.isRebooted:
-                self.wait_for_daeomons(target=target, task=task)
-
+        if target['model'] == 'qfx':
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Connecting...'}
+                       'status': 'We got device with auto-image-upgrade running. Stopping that...'}
             self.emit_message(message=message)
-            cu = Config(self._dev)
-
-            if target['model'] == 'qfx':
-                c.cso_logger.info(
-                    '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping that...'.format(target['name'],
-                                                                                                         task['name']))
+            c.cso_logger.info(
+                '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping that...'.format(target['name'],
+                                                                                                     task['name']))
+            try:
 
                 cu.load(c.cfg_aiu, format="text", merge=True)
                 cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
-                    '[{0}][{1}]: We got device with autod running. Stopping autod --> DONE'.format(target['name'],
-                                                                                                   task['name']))
+                    '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping auto-image-upgrade --> DONE'.format(
+                        target['name'],
+                        task['name']))
 
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Load config'}
-            self.emit_message(message=message)
-            cu.load(config, merge=task['merge'], override=task['override'], update=task['update'])
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Commit config'}
-            self.emit_message(message=message)
+            except (ConfigLoadError, CommitError) as err:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Error loading / commit configuration: {0}'.format(
+                        target['name'],
+                        task['name'], err))
+                return False
 
-            try:
-                cu.commit(confirm=task['confirm'], sync=task['sync'])
-            # Netconf Session gets dropped when override config with netconf server enabled. So we need to catch up here
-            # and reconnect.
-            except XMLSyntaxError as xse:
-                c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], xse))
-                self.disconnect(target=target)
-                time.sleep(2)
-                self.connect(target=target)
-            self.disconnect_netconf(target=target)
-            c.cso_logger.info(
-                '[{0}][{1}]: Commit configuration on device --> DONE'.format(target['name'], task['name']))
-            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
-                       'msg': self.gen_task_done_message(target=target, task=task)}
-            self.emit_message(message=message)
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
-            self.emit_message(message=message)
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Load config'}
+        self.emit_message(message=message)
+        cu.load(data, merge=task['merge'], override=task['override'], update=task['update'])
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Commit config'}
+        self.emit_message(message=message)
+
+        try:
+            cu.commit(confirm=task['confirm'], sync=task['sync'])
+        # NetConf session gets dropped when override config with NetConf service enabled. So we need to catch up here
+        # and reconnect.
+        except XMLSyntaxError as xse:
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], xse))
+            self.disconnect(target=target)
+            time.sleep(2)
+            self.connect(target=target)
+            return False
+
+        self.disconnect_netconf(target=target)
+        c.cso_logger.info(
+            '[{0}][{1}]: Commit configuration on device --> DONE'.format(target['name'], task['name']))
+        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                   'msg': self.gen_task_done_message(target=target, task=task)}
+        self.emit_message(message=message)
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+        self.emit_message(message=message)
+        return True
 
     def copy(self, target=None, task=None):
         self.ws.task = task['name']
@@ -517,6 +537,7 @@ class PyEzDriver(Base):
 
     def reboot(self, target=None, task=None):
         self.ws.task = task['name']
+
         c.cso_logger.info('{0}: Rebooting device {1}'.format(task['name'], target['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Rebooting...'}

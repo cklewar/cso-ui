@@ -15,9 +15,10 @@ git_user: root
 git_password: password
 git_branch: master
 tmp_dir: /tmp/cso-ui/data
+log_dir: /tmp/cso-ui/log
 usecases_dir: usecases
-baselog: log/cso-ui.log
-tasklog: log/cso-ui-task.log
+baselog: cso-ui.log
+
 
 IS_SSL: False
 DEMONIZE: False

@@ -48,7 +48,7 @@ class Base(Thread):
         __cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
                                                  c.CONFIG['ws_client_port'])
         __url = '{0}?clientname=server'.format(__cso_ws_url)
-        print(__url)
+        c.cso_logger.info('WS Client connect to URL: {0}'.format(__url))
         self.ws_client = WSClient(name='server', url=__url)
         self.ws_client.connect()
 

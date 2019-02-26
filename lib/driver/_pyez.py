@@ -51,7 +51,7 @@ class PyEzDriver(Base):
         c.cso_logger.info('Loading PyEZ driver')
         self.session = None
         self.gl = None
-        self.rebooted = False
+        self.isRebooted = False
         self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
@@ -151,12 +151,16 @@ class PyEzDriver(Base):
         """
 
         self.ws.task = 'Disconnect'
+
+        if self.isRebooted:
+            self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
+
         c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(target['name'], 'Disconnect'))
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
 
-        self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+        # self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
         self._dev.close(skip_logout=True)
 
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
@@ -199,8 +203,7 @@ class PyEzDriver(Base):
                     break
 
             elif task['name'] == 'Zerorize':
-                time.sleep(2)
-                #self.zeroize(target=self.target_data, task=task)
+                self.zeroize(target=self.target_data, task=task)
             elif task['name'] == 'Configure':
                 self.configure(target=self.target_data, task=task)
             elif task['name'] == 'Copy':
@@ -397,7 +400,7 @@ class PyEzDriver(Base):
                            'status': 'Disconnecting...'}
                 self.emit_message(message=message)
                 self.disconnect(target=target)
-                self.rebooted = True
+                self.isRebooted = True
                 message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
@@ -434,35 +437,25 @@ class PyEzDriver(Base):
                        'msg': config}
             self.emit_message(message=message)
 
-            if self.rebooted:
-                c.cso_logger.info(
-                    "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready...".format(target['name'],
-                                                                                                task['name']))
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                           'status': 'Waiting for daemons to be ready...'}
-                self.emit_message(message=message)
-                # adding some timeout for telnet session to close properly. Need a better approach here!
-                mark_start = datetime.now()
-                SECONDS = 120
-                mark_end = mark_start + timedelta(seconds=SECONDS)
-
-                while datetime.now() < mark_end:
-                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                               'status': 'Waiting for daemons to be ready... {0}'.format(SECONDS - 1)}
-                    SECONDS -= 1
-                    self.emit_message(message=message)
-                    c.cso_logger.info(
-                        "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready <{2}>".format(target['name'],
-                                                                                                       task['name'],
-                                                                                                       SECONDS - 1))
-                    time.sleep(1)
-
-                self.connect(target=target)
+            if self.isRebooted:
+                self.wait_for_daeomons(target=target, task=task)
 
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Connecting...'}
             self.emit_message(message=message)
             cu = Config(self._dev)
+
+            if target['model'] == 'qfx':
+                c.cso_logger.info(
+                    '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping that...'.format(target['name'],
+                                                                                                         task['name']))
+
+                cu.load(c.cfg_aiu, format="text", merge=True)
+                cu.commit(confirm=task['confirm'], sync=task['sync'])
+                c.cso_logger.info(
+                    '[{0}][{1}]: We got device with autod running. Stopping autod --> DONE'.format(target['name'],
+                                                                                                   task['name']))
+
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Load config'}
             self.emit_message(message=message)
@@ -491,6 +484,10 @@ class PyEzDriver(Base):
 
     def copy(self, target=None, task=None):
         self.ws.task = task['name']
+
+        if self.isRebooted:
+            self.wait_for_daeomons(target=target, task={'name': task['name']})
+
         c.cso_logger.info(
             '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(target['name'], task['name'], task['src'], task['dst']))
 
@@ -537,7 +534,7 @@ class PyEzDriver(Base):
                            'status': 'Disconnecting...'}
                 self.emit_message(message=message)
                 self.disconnect()
-                self.rebooted = True
+                self.isRebooted = True
                 message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
@@ -550,6 +547,36 @@ class PyEzDriver(Base):
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
             time.sleep(0.2)
+
+    def wait_for_daeomons(self, target=None, task=None):
+        c.cso_logger.info(
+            "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready...".format(target['name'],
+                                                                                         task['name']))
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Waiting for daemons to be ready...'}
+        self.emit_message(message=message)
+        # adding some timeout for telnet session to close properly. Need a better approach here!
+        mark_start = datetime.now()
+
+        if target['model'] == 'qfx' or target['model'] == 'nfx':
+            timeout = 30
+        else:
+            timeout = 120
+
+        mark_end = mark_start + timedelta(seconds=timeout)
+
+        while datetime.now() < mark_end:
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                       'status': 'Waiting for daemons to be ready... {0}'.format(timeout - 1)}
+            timeout -= 1
+            self.emit_message(message=message)
+            c.cso_logger.info(
+                "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready <{2}>".format(target['name'],
+                                                                                                task['name'],
+                                                                                                timeout - 1))
+            time.sleep(1)
+        self.isRebooted = False
+        self.connect(target=target)
 
     def gen_task_done_message(self, target=None, task=None):
         header = '{0} TASK {1} DONE {2}'.format(15 * '#', task['name'], 15 * '#')

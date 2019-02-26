@@ -33,6 +33,18 @@ jnpr_junos_tty = None
 jnpr_junos_tty_netconf = None
 jnpr_junos_tty_telnet = None
 
+
+cfg_aiu = """
+chassis {
+    delete: auto-image-upgrade;
+}
+system {
+    root-authentication {
+        encrypted-password "$6$nCsDlN7N$qTG9G3zHHBcF8wwIkuH3VAwbwU4oV4kdhwv7CSyenNDA/qReSfZ2kuUPGcQWmnON4mfKAwjC323c8hkKr3iWh1"; ## SECRET-DATA
+    }
+}
+"""
+
 LOG_CONF = {
     'version': 1,
 

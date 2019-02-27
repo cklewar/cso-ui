@@ -454,11 +454,11 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'Disconnecting...'}
                 self.emit_message(message=message)
-                self.disconnect(target=target)
                 self.isRebooted = True
+                self.disconnect(target=target)
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)

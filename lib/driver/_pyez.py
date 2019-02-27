@@ -228,9 +228,6 @@ class PyEzDriver(Base):
 
                 elif task['name'] == 'Zerorize':
                     self.status = self.zeroize(target=self.target_data, task=task)
-                    #self.isRebooted = False
-                    #self.disconnect(target=self.target_data)
-                    #self.status = True
 
                 elif task['name'] == 'Configure':
                     _status, _data = self.pull(target=self.target_data, task=task)
@@ -532,7 +529,6 @@ class PyEzDriver(Base):
             self.disconnect(target=target)
             time.sleep(2)
             self.connect(target=target)
-            return False
 
         c.cso_logger.info(
             '[{0}][{1}]: Commit configuration on device --> DONE'.format(target['name'], task['name']))

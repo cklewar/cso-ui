@@ -163,7 +163,10 @@ class PyEzDriver(Base):
             self._dev.close(skip_logout=True)
 
         else:
-            if self.isNetConf:
+            if target['model'] == 'nfx':
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev.close(skip_logout=True)
+            elif self.isNetConf:
                 self.disconnect_netconf(target=target)
                 self.isNetConf = False
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")

@@ -466,8 +466,8 @@ class PyEzDriver(Base):
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': self.gen_task_done_message(target=target, task=task)}
                 self.emit_message(message=message)
-                message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
-                           'msg': 'waiting...'}
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                           'status': 'waiting...'}
                 self.emit_message(message=message)
 
                 return True

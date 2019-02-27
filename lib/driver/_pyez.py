@@ -34,9 +34,9 @@ from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
-from jnpr.junos.exception import ConfigLoadError, CommitError, ConnectClosedError
+from jnpr.junos.exception import ConfigLoadError, CommitError, ConnectClosedError, ConnectAuthError
 from jnpr.junos.exception import RpcError
-from gitlab.exceptions import GitlabError, GitlabDeleteError, GitlabConnectionError, GitlabCreateError
+from gitlab.exceptions import GitlabError, GitlabDeleteError, GitlabConnectionError, GitlabCreateError, GitlabHttpError
 from ruamel.yaml import YAML
 from lib.driver.driver import Base
 from lib.handler import WSHandler
@@ -111,7 +111,17 @@ class PyEzDriver(Base):
             message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'status': 'Connecting...'}
             self.emit_message(message=message)
-            self._dev.open()
+
+            try:
+                self._dev.open()
+
+            except ConnectAuthError as err:
+                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                           'status':  str(err)}
+                self.emit_message(message=message)
+                c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
+                return False
+
             self.isNetConf = True
             message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'msg': 'Connected to target: {0}\n'.format(self.target_data['name'])}
@@ -191,12 +201,10 @@ class PyEzDriver(Base):
 
     def disconnect_netconf(self, target=None):
         self.ws.task = 'Disconnect'
-        c.cso_logger.info(
-            '[{0}][{1}]: Disconnect netconf session'.format('Disconnect', target['name']))
+        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session'.format(target['name'], 'Disconnect'))
         self._dev._tty.nc.close()
         self.isNetConf = False
-        c.cso_logger.info(
-            '[{0}][{1}]: Disconnect netconf session --> DONE'.format('Disconnect', target['name']))
+        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session --> DONE'.format(target['name'], 'Disconnect'))
 
     def run(self):
 
@@ -222,7 +230,7 @@ class PyEzDriver(Base):
                         break
 
                 elif task['name'] == 'Zerorize':
-                    self.zeroize(target=self.target_data, task=task)
+                    self.status = self.zeroize(target=self.target_data, task=task)
 
                 elif task['name'] == 'Configure':
                     _status, _data = self.pull(target=self.target_data, task=task)
@@ -241,7 +249,7 @@ class PyEzDriver(Base):
                         break
 
                 elif task['name'] == 'Copy':
-                    self.copy(target=self.target_data, task=task)
+                    self.status = self.copy(target=self.target_data, task=task)
                 elif task['name'] == 'Reboot':
                     self.reboot(target=self.target_data, task=task)
                 elif task['name'] == 'Disconnect':
@@ -273,7 +281,7 @@ class PyEzDriver(Base):
             template = env.get_template(task['template'])
 
         except (TemplateNotFound, IOError) as err:
-            c.cso_logger.info('[{0}]: {1}'.format(task['name'], err))
+            c.cso_logger.info('[{0}][{1}]: Render configuration failed: {2}'.format(target['name'], task['name'], err))
             return False, err
 
         with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
@@ -336,8 +344,8 @@ class PyEzDriver(Base):
                     c.cso_logger.info('[{0}][{1}]: Updating file <{0}> --> DONE'.format(target['name'], task['name']))
                     return True, _data
 
-                except (GitlabConnectionError, GitlabError) as gle:
-                    return False, 'Failed to update device template with error: <0>'.format(gle.message)
+                except (GitlabConnectionError, GitlabError, GitlabHttpError) as gle:
+                    return False, 'Failed to update device template with error: <0>'.format(str(gle))
 
             else:
                 c.cso_logger.info('[{0}][{1}]: Creating new file <{0}>'.format(target['name'], task['name']))
@@ -357,7 +365,7 @@ class PyEzDriver(Base):
                     return True, _data
 
                 except (GitlabConnectionError, GitlabError) as gle:
-                    return False, 'Failed to create device template with error: <0>'.format(gle.message)
+                    return False, 'Failed to create device template with error: <0>'.format(str(gle))
 
     def update(self, target=None, task=None, data=None):
         c.cso_logger.info('[{0}][{1}]: Update device <{0}> configuration in git'.format(target['name'], task['name']))
@@ -411,7 +419,9 @@ class PyEzDriver(Base):
                                                                                               self.use_case_name))
                 return True, f.decode()
             except GitlabError as ge:
-                return False, 'Failed to get file with error: <{0}>'.format(ge)
+                c.cso_logger.info(
+                    '[{0}][{1}]: Pull file from git failed: {2}'.format(target['name'], task['name'], ge))
+                return False, 'Pull file from git failed with error: <{0}>'.format(ge)
 
         except (GitlabConnectionError, GitlabError) as gle:
             return False, 'Failed to get project with error: <0>'.format(gle.message)
@@ -441,7 +451,7 @@ class PyEzDriver(Base):
                 c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
                 return False
 
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8')))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
@@ -452,9 +462,6 @@ class PyEzDriver(Base):
                 self.emit_message(message=message)
                 self.disconnect(target=target)
                 self.isRebooted = True
-                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
-                           'status': 'waiting'}
-                self.emit_message(message=message)
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
@@ -462,7 +469,7 @@ class PyEzDriver(Base):
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': self.gen_task_done_message(target=target, task=task)}
                 self.emit_message(message=message)
-                break
+                return True
 
             time.sleep(0.2)
 
@@ -488,17 +495,16 @@ class PyEzDriver(Base):
 
         if target['model'] == 'qfx':
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'We got device with auto-image-upgrade running. Stopping that...'}
+                       'status': 'Device with auto-image-upgrade. Stopping that...'}
             self.emit_message(message=message)
             c.cso_logger.info(
-                '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping that...'.format(target['name'],
-                                                                                                     task['name']))
+                '[{0}][{1}]: Device with auto-image-upgrade. Stopping that...'.format(target['name'], task['name']))
             try:
 
                 cu.load(c.cfg_aiu, format="text", merge=True)
                 cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
-                    '[{0}][{1}]: We got device with auto-image-upgrade running. Stopping auto-image-upgrade --> DONE'.format(
+                    '[{0}][{1}]: Device with auto-image-upgrade. Stopping auto-image-upgrade --> DONE'.format(
                         target['name'],
                         task['name']))
 
@@ -528,7 +534,6 @@ class PyEzDriver(Base):
             self.connect(target=target)
             return False
 
-        self.disconnect_netconf(target=target)
         c.cso_logger.info(
             '[{0}][{1}]: Commit configuration on device --> DONE'.format(target['name'], task['name']))
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
@@ -571,6 +576,7 @@ class PyEzDriver(Base):
                                                                    task['dst']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
+        return True
 
     def reboot(self, target=None, task=None):
         self.ws.task = task['name']
@@ -588,7 +594,12 @@ class PyEzDriver(Base):
 
         while True:
 
-            data = self._dev._tty._tn.read_until(b"\r\n")
+            try:
+                data = self._dev._tty._tn.read_until(b"\r\n")
+            except EOFError as err:
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                return False
+
             c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
             _data = data.decode('utf-8').strip()
             re_pattern = re.compile(target['name'] + ' ' + r'\(tty.*\)')
@@ -606,8 +617,7 @@ class PyEzDriver(Base):
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
-                self.disconnect(target=target)
-                break
+                return True
 
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                        'msg': str(data, 'utf-8')}
@@ -632,14 +642,15 @@ class PyEzDriver(Base):
         mark_end = mark_start + timedelta(seconds=timeout)
 
         while datetime.now() < mark_end:
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': 'Waiting for daemons to be ready... {0}'.format(timeout - 1)}
             timeout -= 1
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                       'status': 'Waiting for daemons to be ready... {0}'.format(timeout)}
+
             self.emit_message(message=message)
             c.cso_logger.info(
                 "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready <{2}>".format(target['name'],
                                                                                                 task['name'],
-                                                                                                timeout - 1))
+                                                                                                timeout))
             time.sleep(1)
 
     def gen_task_done_message(self, target=None, task=None):

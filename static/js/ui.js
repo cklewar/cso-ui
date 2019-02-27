@@ -227,6 +227,8 @@ $( document ).ready(function() {
     });
 
     $('#modalDeployStatus').on('show.bs.modal', function (e) {
+        title = e.relatedTarget.dataset.usecase + ': Deployment status'
+        $("#modalDeployStatusTitle").text(title.charAt(0).toUpperCase() + title.slice(1));
         //t_deploy_status.clear().draw();
         //$("#session_output").val('');
         //$('#session_output').trigger("change");

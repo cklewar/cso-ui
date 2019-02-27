@@ -131,6 +131,7 @@ class PyEzDriver(Base):
             message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'msg': self.gen_task_done_message(target=target, task={'name': 'Connect'})}
             self.emit_message(message=message)
+            c.cso_logger.info('[{0}][{1}]: Connecting to device --> DONE'.format(target['name'], 'Connect'))
 
         except (RuntimeError, OSError) as err:
             c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
@@ -158,21 +159,39 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if self.isRebooted:
+            c.cso_logger.info('[{0}][{1}]: Disconnect from device after reboot'.format(target['name'], 'Disconnect'))
             self.isRebooted = False
             self.isConnected = False
             self._dev.close(skip_logout=True)
+            c.cso_logger.info('[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(target['name'], 'Disconnect'))
 
         else:
             if target['model'] == 'nfx':
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from NFX shell...'.format(target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
                 self._dev.close(skip_logout=True)
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from NFX shell --> DONE'.format(target['name'], 'Disconnect'))
             elif self.isNetConf:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Terminate netconf session...'.format(target['name'], 'Disconnect'))
                 self.disconnect_netconf(target=target)
+                c.cso_logger.info(
+                    '[{0}][{1}]: Terminate netconf session --> DONE'.format(target['name'], 'Disconnect'))
                 self.isNetConf = False
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
             else:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                c.cso_logger.info(
+                    '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
 
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
@@ -209,6 +228,7 @@ class PyEzDriver(Base):
     def run(self):
 
         for task in self.target_data['tasks']:
+
             if self.status:
 
                 if task['name'] == 'Connect':
@@ -262,10 +282,17 @@ class PyEzDriver(Base):
                 c.cso_logger.info('[{0}][{1}]: Error in last task.'.format(self.target_data['name'], task['name']))
                 break
 
-        message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
-        self.emit_message(message=message)
-        c.cso_logger.info(
-            '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target_data['name'], self.use_case_name))
+        if self.status:
+            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
+            self.emit_message(message=message)
+            c.cso_logger.info(
+                '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target_data['name'], self.use_case_name))
+        else:
+            #message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
+            #self.emit_message(message=message)
+            c.cso_logger.info(
+                '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target_data['name'], self.use_case_name))
+
 
     def render(self, target=None, task=None):
         c.cso_logger.info(
@@ -544,6 +571,7 @@ class PyEzDriver(Base):
 
     def copy(self, target=None, task=None):
         self.ws.task = task['name']
+        self.disconnect_netconf(target=target)
 
         if self.isRebooted:
             self.wait_for_daeomons(target=target, task={'name': task['name']})

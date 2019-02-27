@@ -286,6 +286,7 @@ class Deploy(object):
                 df = DriverFactory(name=c.CONFIG['driver'])
                 driver = df.init_driver(target_data=target, use_case_name=self._use_case_name,
                                         use_case_data=self._use_case_data)
+
                 driver.start()
 
             return True

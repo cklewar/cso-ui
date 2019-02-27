@@ -34,7 +34,7 @@ from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
-from jnpr.junos.exception import ConfigLoadError, CommitError
+from jnpr.junos.exception import ConfigLoadError, CommitError, ConnectClosedError
 from jnpr.junos.exception import RpcError
 from gitlab.exceptions import GitlabError, GitlabDeleteError, GitlabConnectionError, GitlabCreateError
 from ruamel.yaml import YAML
@@ -121,12 +121,16 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
         except (RuntimeError, OSError) as err:
-            c.cso_logger.info(err)
+            c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
+            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                       'status': str(err)}
+            self.emit_message(message=message)
             return False
 
         message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                    'status': 'Done'}
         self.emit_message(message=message)
+        return True
 
     def disconnect(self, target=None):
         """
@@ -157,10 +161,20 @@ class PyEzDriver(Base):
                    'status': 'Done'}
         self.emit_message(message=message)
 
-    def connect_netconf(self):
+    def connect_netconf(self, target=None):
         self.ws.task = 'Connect'
-        self._dev._tty.login()
-        self.isNetConf = True
+
+        try:
+            c.cso_logger.info('[{0}][{1}]: Connect to netconf session'.format(target['name'], 'Connect'))
+            self._dev._tty.login()
+            self.isNetConf = True
+            c.cso_logger.info('[{0}][{1}]: Connect to netconf session --> DONE'.format(target['name'], 'Connect'))
+            return True
+
+        except (ConnectionResetError, RuntimeError) as err:
+            c.cso_logger.info(
+                '[{0}][{1}]: Connect netconf session failed: {2}'.format(target['name'], 'Disconnect', err))
+            return False
 
     def disconnect_netconf(self, target=None):
         self.ws.task = 'Disconnect'
@@ -175,8 +189,9 @@ class PyEzDriver(Base):
 
         for task in self.target_data['tasks']:
             if self.status:
+
                 if task['name'] == 'Connect':
-                    self.connect(target=self.target_data)
+                    self.status = self.connect(target=self.target_data)
 
                 elif task['name'] == 'Render':
                     _status, _data = self.render(target=self.target_data, task=task)
@@ -396,7 +411,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if not self.isNetConf:
-            self.connect_netconf()
+            self.connect_netconf(target=target)
 
         resp = self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
@@ -407,7 +422,12 @@ class PyEzDriver(Base):
 
         while True:
 
-            data = self._dev._tty._tn.read_until(b"\r\n")
+            try:
+                data = self._dev._tty._tn.read_until(b"\r\n")
+            except EOFError as err:
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                return False
+
             c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8')))
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                        'msg': str(data, 'utf-8')}
@@ -446,7 +466,7 @@ class PyEzDriver(Base):
             self.connect(target=target)
 
         if not self.isNetConf:
-            self.connect_netconf()
+            self.connect_netconf(target=target)
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Connecting...'}
@@ -469,7 +489,7 @@ class PyEzDriver(Base):
                         target['name'],
                         task['name']))
 
-            except (ConfigLoadError, CommitError) as err:
+            except (ConfigLoadError, CommitError, ConnectClosedError) as err:
                 c.cso_logger.info(
                     '[{0}][{1}]: Error loading / commit configuration: {0}'.format(
                         target['name'],
@@ -548,7 +568,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if not self.isNetConf:
-            self.connect_netconf()
+            self.connect_netconf(target=target)
 
         resp = self._dev.rpc.request_reboot()
         c.cso_logger.info('{0}: {1}'.format(task['name'], resp))
@@ -562,7 +582,6 @@ class PyEzDriver(Base):
             term_str = re_pattern.match(_data)
 
             if term_str:
-
                 self.isRebooted = True
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': self.gen_task_done_message(target=target, task=task)}
@@ -574,6 +593,7 @@ class PyEzDriver(Base):
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
+                self.disconnect(target=target)
                 break
 
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],

@@ -158,12 +158,9 @@ class PyEzDriver(Base):
         if self.isRebooted:
             self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
             self.isRebooted = False
+            #self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+            self._dev.close(skip_logout=True)
 
-            if target['model'] == 'nfx':
-                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
-                self._dev.close(skip_logout=True)
-            else:
-                self._dev.close()
         else:
             if self.isNetConf:
                 self.disconnect_netconf(target=target)

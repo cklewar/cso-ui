@@ -140,18 +140,31 @@ class PyEzDriver(Base):
 
         self.ws.task = 'Disconnect'
 
-        if self.isRebooted:
-            self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
-            self.isRebooted = False
-
         c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(target['name'], 'Disconnect'))
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
 
-        self._dev.close(skip_logout=True)
-        # self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
-        self.isNetConf = False
+        if self.isRebooted:
+            self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
+            self.isRebooted = False
+
+            if target['model'] == 'nfx':
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev.close(skip_logout=True)
+            else:
+                self._dev.close()
+        else:
+            if self.isNetConf:
+                self.disconnect_netconf(target=target)
+                self.isNetConf = False
+
+            if target['model'] == 'nfx':
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev.close(skip_logout=True)
+            else:
+                self._dev.close()
+
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}
         self.emit_message(message=message)

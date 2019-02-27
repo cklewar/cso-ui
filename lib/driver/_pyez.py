@@ -51,6 +51,7 @@ class PyEzDriver(Base):
         self.gl = None
         self.isRebooted = False
         self.isNetConf = False
+        self.isConnected = False
         self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
@@ -117,12 +118,13 @@ class PyEzDriver(Base):
 
             except ConnectAuthError as err:
                 message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                           'status':  str(err)}
+                           'status': str(err)}
                 self.emit_message(message=message)
                 c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
                 return False
 
             self.isNetConf = True
+            self.isConnected = True
             message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
                        'msg': 'Connected to target: {0}\n'.format(self.target_data['name'])}
             self.emit_message(message=message)
@@ -156,21 +158,19 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if self.isRebooted:
-            self.wait_for_daeomons(target=target, task={'name': 'Disconnect'})
             self.isRebooted = False
-            #self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+            self.isConnected = False
             self._dev.close(skip_logout=True)
 
         else:
             if self.isNetConf:
                 self.disconnect_netconf(target=target)
                 self.isNetConf = False
-
-            if target['model'] == 'nfx':
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
                 self._dev.close(skip_logout=True)
             else:
-                self._dev.close()
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev.close(skip_logout=True)
 
         message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'msg': self.gen_task_done_message(target=target, task={'name': 'Disconnect'})}
@@ -228,6 +228,9 @@ class PyEzDriver(Base):
 
                 elif task['name'] == 'Zerorize':
                     self.status = self.zeroize(target=self.target_data, task=task)
+                    #self.isRebooted = False
+                    #self.disconnect(target=self.target_data)
+                    #self.status = True
 
                 elif task['name'] == 'Configure':
                     _status, _data = self.pull(target=self.target_data, task=task)
@@ -248,7 +251,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Copy':
                     self.status = self.copy(target=self.target_data, task=task)
                 elif task['name'] == 'Reboot':
-                    self.reboot(target=self.target_data, task=task)
+                    self.status = self.reboot(target=self.target_data, task=task)
                 elif task['name'] == 'Disconnect':
                     self.disconnect(target=self.target_data)
 
@@ -454,9 +457,6 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
-                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
-                           'status': 'Disconnecting...'}
-                self.emit_message(message=message)
                 self.isRebooted = True
                 self.disconnect(target=target)
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
@@ -466,6 +466,10 @@ class PyEzDriver(Base):
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': self.gen_task_done_message(target=target, task=task)}
                 self.emit_message(message=message)
+                message = {'action': 'update_session_output', 'task': 'Disconnect', 'uuid': target['uuid'],
+                           'msg': 'waiting...'}
+                self.emit_message(message=message)
+
                 return True
 
             time.sleep(0.2)
@@ -477,9 +481,8 @@ class PyEzDriver(Base):
                    'msg': data}
         self.emit_message(message=message)
 
-        if self.isRebooted:
+        if not self.isConnected:
             self.wait_for_daeomons(target=target, task=task)
-            self.isRebooted = False
             self.connect(target=target)
 
         if not self.isNetConf:
@@ -507,7 +510,7 @@ class PyEzDriver(Base):
 
             except (ConfigLoadError, CommitError, ConnectClosedError) as err:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Error loading / commit configuration: {0}'.format(
+                    '[{0}][{1}]: Error loading / commit configuration: {2}'.format(
                         target['name'],
                         task['name'], err))
                 return False

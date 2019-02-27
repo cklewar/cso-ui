@@ -153,6 +153,9 @@ $( document ).ready(function() {
             if (json.status === 'Done') {
                 var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
                 $('td', row).eq(2).css('color', 'green');
+            } else {
+                var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
+                $('td', row).eq(2).css('color', 'black');
             }
         } else if (json.action === 'update_card_deploy_status'){
             $('#' + json.usecase + ' > div > div').css('border-color', 'green');

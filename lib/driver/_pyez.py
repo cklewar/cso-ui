@@ -514,28 +514,49 @@ class PyEzDriver(Base):
             c.cso_logger.info(
                 '[{0}][{1}]: Device with auto-image-upgrade. Stopping that...'.format(target['name'], task['name']))
             try:
-
+                c.cso_logger.info(
+                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration'.format(target['name'],
+                                                                                               task['name']))
                 cu.load(c.cfg_aiu, format="text", merge=True)
+                c.cso_logger.info(
+                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration --> DONE'.format(target['name'],
+                                                                                                        task['name']))
+
+            except (ConfigLoadError, ConnectClosedError) as err:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Error loading configuration: {2}'.format(target['name'], task['name'], err))
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Error loading configuration'}
+                self.emit_message(message=message)
+                return False
+
+            try:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration'.format(target['name'],
+                                                                                              task['name']))
                 cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
-                    '[{0}][{1}]: Device with auto-image-upgrade. Stopping auto-image-upgrade --> DONE'.format(
-                        target['name'],
-                        task['name']))
+                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration --> DONE'.format(target['name'],
+                                                                                                       task['name']))
 
-            except (ConfigLoadError, CommitError, ConnectClosedError) as err:
+            except CommitError as err:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Error loading / commit configuration: {2}'.format(
-                        target['name'],
-                        task['name'], err))
+                    '[{0}][{1}]: Error committing configuration: {2}'.format(target['name'], task['name'], err))
                 return False
+
+            c.cso_logger.info(
+                '[{0}][{1}]: Device with auto-image-upgrade. Stopping auto-image-upgrade --> DONE'.format(
+                    target['name'],
+                    task['name']))
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Load config'}
         self.emit_message(message=message)
 
         try:
-
-            cu.load(data, merge=task['merge'], override=task['override'], update=task['update'])
+            c.cso_logger.info('[{0}][{1}]: Device loading configuration'.format(target['name'], task['name']))
+            cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'])
+            c.cso_logger.info('[{0}][{1}]: Device loading configuration --> DONE'.format(target['name'], task['name']))
 
         except ConfigLoadError as err:
             c.cso_logger.info(
@@ -547,13 +568,14 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         try:
+            c.cso_logger.info('[{0}][{1}]: Device commit configuration'.format(target['name'], task['name']))
             cu.commit(confirm=task['confirm'], sync=task['sync'])
         # NetConf session gets dropped when override config with NetConf service enabled. So we need to catch up here
         # and reconnect.
         except XMLSyntaxError as xse:
             c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], xse))
             self.disconnect(target=target)
-            time.sleep(2)
+            time.sleep(3)
             self.connect(target=target)
 
         c.cso_logger.info(
@@ -590,7 +612,8 @@ class PyEzDriver(Base):
                 self._dev._tty._tn.write(line.encode("ascii"))
                 line_count += 1
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                           'status': 'Copy file {0} ({1}%)'.format(task['src'], int(100 * (line_count / float(total_lines))))}
+                           'status': 'Copy file {0} ({1}%)'.format(task['src'],
+                                                                   int(100 * (line_count / float(total_lines))))}
                 self.emit_message(message=message)
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': str(line.encode("ascii"), 'utf-8')}
@@ -628,10 +651,17 @@ class PyEzDriver(Base):
             resp = self._dev.rpc.request_reboot()
             c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], resp))
 
-        except (BrokenPipeError, RpcError) as err:
-            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(target['name'], task['name'], err))
+        except BrokenPipeError as bpErr:
+            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(target['name'], task['name'], bpErr))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                       'status': str(err)}
+                       'status': str(bpErr)}
+            self.emit_message(message=message)
+            return False
+
+        except RpcError as rpcErr:
+            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(target['name'], task['name'], rpcErr))
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                       'status': str(rpcErr.message)}
             self.emit_message(message=message)
 
         while True:

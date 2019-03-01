@@ -584,9 +584,14 @@ class PyEzDriver(Base):
         with open(_file, 'r') as fd:
             total_lines = sum(1 for _ in open(_file, 'rb'))
             c.cso_logger.info('Total lines: {0}'.format(total_lines))
+            line_count = 0
 
             for line in fd:
                 self._dev._tty._tn.write(line.encode("ascii"))
+                line_count += 1
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Copy file {0} ({1}%)'.format(task['src'], int(100 * (line_count / float(total_lines))))}
+                self.emit_message(message=message)
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                            'msg': str(line.encode("ascii"), 'utf-8')}
                 self.emit_message(message=message)

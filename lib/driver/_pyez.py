@@ -620,6 +620,10 @@ class PyEzDriver(Base):
         if not self.isNetConf:
             self.connect_netconf(target=target)
 
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                   'status': 'waiting'}
+        self.emit_message(message=message)
+
         try:
             resp = self._dev.rpc.request_reboot()
             c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], resp))

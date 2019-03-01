@@ -159,10 +159,10 @@ class PyEzDriver(Base):
             c.cso_logger.info('[{0}][{1}]: Disconnect from device after reboot'.format(target['name'], 'Disconnect'))
             self.isRebooted = False
             self.isConnected = False
-
-            if self.isConnected:
-                self._dev.close(skip_logout=True)
-            c.cso_logger.info('[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(target['name'], 'Disconnect'))
+            # Closing telnet connection
+            self._dev.close(skip_logout=True)
+            c.cso_logger.info(
+                '[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(target['name'], 'Disconnect'))
 
         else:
             if target['model'] == 'nfx':
@@ -284,11 +284,10 @@ class PyEzDriver(Base):
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target_data['name'], self.use_case_name))
         else:
-            #message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
-            #self.emit_message(message=message)
+            # message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
+            # self.emit_message(message=message)
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target_data['name'], self.use_case_name))
-
 
     def render(self, target=None, task=None):
         c.cso_logger.info(
@@ -604,7 +603,7 @@ class PyEzDriver(Base):
     def reboot(self, target=None, task=None):
         self.ws.task = task['name']
 
-        c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(target['name'], task['name'],))
+        c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(target['name'], task['name'], ))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Rebooting...'}
         self.emit_message(message=message)

@@ -9,6 +9,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase1:
     title: Use Case 1 - Local Break Out at Spoke
@@ -19,6 +20,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase2:
     title: Use Case 2 - MultiHoming
@@ -38,6 +40,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase4:
     title: Use Case 4 - Device RMA
@@ -47,6 +50,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase5:
     title: Use Case 5 - Realtime optimized
@@ -56,6 +60,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase6:
     title: Use Case 6 - Full Mesh
@@ -65,6 +70,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase7:
     title: Use Case 7 - VNF Integration
@@ -74,6 +80,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
+    deployed: false
 
   useCase8:
     title: Use Case 8 - Multicloud
@@ -83,4 +90,4 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
-
+    deployed: false

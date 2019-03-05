@@ -146,6 +146,7 @@ $( document ).ready(function() {
             var temp = t_deploy_status.row('#' + json.task + '_' + json.uuid).data();
             temp.status = json.status;
             t_deploy_status.row('#' + json.task + '_' + json.uuid).data(temp).invalidate();
+
             if (json.status === 'Done') {
                 var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
                 $('td', row).eq(2).css('color', 'green');
@@ -154,9 +155,21 @@ $( document ).ready(function() {
                 $('td', row).eq(2).css('color', 'black');
             }
         } else if (json.action === 'update_card_deploy_status'){
-            $('#' + json.usecase + ' > div > div').css('border-color', 'green');
-            $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/dummy_deployed.png");
-            isDeploying = false;
+            console.log(lastDeployedUseCase);
+            console.log(json.usecase);
+
+            if (lastDeployedUseCase !== json.usecase){
+                console.log('inside if deployed usecase');
+                $('#' + lastDeployedUseCase + ' > div > div').css('border-color', "");
+                $('#' + lastDeployedUseCase + ' > div > div > img').attr("src", "/static/images/dummy.png");
+                $('#' + json.usecase + ' > div > div').css('border-color', 'green');
+                $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/dummy_deployed.png");
+                isDeploying = false;
+                lastDeployedUseCase = json.usecase;
+
+            } else {
+                lastDeployedUseCase = json.usecase;
+            }
         } else {
             console.log(json);
         }

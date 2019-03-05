@@ -51,8 +51,16 @@
                     {% for item, value in data.cards.items() %}
                     <div class="item" id="{{ item }}" data-id="{{ item }}">
                         <div class="item-content">
+                            {% if item == data.deployed_usecase %}
+                            <div class="card card-border" style="border-color: green;">
+                            {% else %}
                             <div class="card card-border">
+                            {% endif %}
+                                {% if item == data.deployed_usecase %}
+                                <img class="card-img-top" src="static/images/{{ value.image_deployed }}" alt="{{ item }} login">
+                                {% else %}
                                 <img class="card-img-top" src="static/images/{{ value.image }}" alt="{{ item }} login">
+                                {% endif %}
                                 <div class="card-body">
                                     <h5 class="card-title">{{ value.title }}</h5>
                                     <p class="card-text">{{ value.description }}</p>

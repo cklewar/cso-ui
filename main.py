@@ -37,7 +37,7 @@ from ruamel.yaml import YAML
 from lib.auth import AuthController, require, member_of, name_is
 from ws4py.client.threadedclient import WebSocketClient
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-from lib.factory import DriverFactory
+from lib.tq import TargetQueue
 
 c.logger = logging.getLogger()
 c.cso_logger = logging.getLogger('cso_ui')
@@ -138,7 +138,9 @@ class Root(object):
 
             with open("config/items.yml", 'r') as fp:
                 yaml = YAML(typ='rt')
-                data['cards'] = yaml.load(fp)
+                _data = yaml.load(fp)
+                data['deployed_usecase'] = _data['deployed_usecase']
+                data['cards'] = _data['usecases']
 
             index = tmpl.render(data=data)
             return index
@@ -171,7 +173,7 @@ class Cards(object):
 
             with open('config/items.yml', 'r') as ifp:
 
-                cards = yaml.load(ifp)
+                cards = yaml.load(ifp)['usecases']
                 card_name = None
 
                 for item in data:
@@ -199,7 +201,7 @@ class Cards(object):
 
             with open('config/items.yml', 'r') as ifp:
                 yaml = YAML(typ='rt')
-                cards = yaml.load(ifp)
+                cards = yaml.load(ifp)['usecases']
                 del cards[data]
 
             with open('config/items.yml', 'w') as ofp:
@@ -213,7 +215,7 @@ class Cards(object):
 
             with open('config/items.yml', 'r') as ifp:
                 yaml = YAML(typ='rt')
-                cards = yaml.load(ifp)
+                cards = yaml.load(ifp)['usecases']
 
                 update_card = cards[data['cardId']]
                 update_card['title'] = data['title']
@@ -235,14 +237,14 @@ class Upload(object):
     @cherrypy.tools.json_out()
     def POST(self, **kwargs):
 
-        with open('static/images/{0}'.format(kwargs['imageFile'].filename), 'wb') as fp:
+        with open('static/images/{0}'.format(kwargs['imageFile'].filename), 'wb') as _fp:
             size = 0
             while True:
                 data = kwargs['imageFile'].file.read(8192)
                 if not data:
                     break
                 size += len(data)
-                fp.write(data)
+                _fp.write(data)
         return {"status": size}
 
 
@@ -281,13 +283,8 @@ class Deploy(object):
 
         elif action == 'run':
 
-            for target in self.__data:
-                c.cso_logger.info('[{0}][Run]: Start deploy usecase <{1}>'.format(target['name'], use_case_name))
-                df = DriverFactory(name=c.CONFIG['driver'])
-                driver = df.init_driver(target_data=target, use_case_name=self._use_case_name,
-                                        use_case_data=self._use_case_data)
-
-                driver.start()
+            tq = TargetQueue(_data=self.__data, use_case_name=self._use_case_name, use_case_data=self._use_case_data)
+            tq.run()
 
             return True
 
@@ -296,7 +293,7 @@ class Deploy(object):
             _yaml = YAML(typ='rt')
 
             with open('config/items.yml', 'r') as ifp:
-                use_cases = _yaml.load(ifp)
+                use_cases = _yaml.load(ifp)['usecases']
                 use_case_data = use_cases[use_case_name]
 
             self._use_case_name = use_case_name

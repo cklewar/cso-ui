@@ -118,10 +118,6 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
-            //console.log("#session_output_" + json.task + '_' + json.uuid);
-            //var s = json.msg.replace(/\</g, '#').replace(/\>/g, '#');
-            //console.log(json.msg);
-            //console.log(json.msg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
             $("#session_output_" + json.task + '_' + json.uuid).append(json.msg);
             $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
 

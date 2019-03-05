@@ -24,12 +24,11 @@ import json
 import lib.constants as c
 
 from threading import Thread
-from lib.wsclient import WSClient
 
 
 class Base(Thread):
 
-    def __init__(self, _data=None, use_case_name=None, use_case_data=None, group=None, target=None, name=None, args=(),
+    def __init__(self, _data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None, group=None, target=None, name=None, args=(),
                  kwargs=None, *, daemon=None):
         super(Base, self).__init__(group=group, target=target, name=name, daemon=daemon)
         self.load_settings()
@@ -45,12 +44,8 @@ class Base(Thread):
         self.pw = None
         self.usecases_dir = c.CONFIG['usecases_dir']
         self.use_case_path = '{0}/{1}'.format(self.tmp_dir, use_case_data['directory'])
-        __cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
-                                                 c.CONFIG['ws_client_port'])
-        __url = '{0}?clientname=server'.format(__cso_ws_url)
-        c.cso_logger.info('WS Client connect to URL: {0}'.format(__url))
-        self.ws_client = WSClient(name='server', url=__url)
-        self.ws_client.connect()
+        self.results = results
+        self.ws_client = ws_client
 
 
     @abc.abstractmethod

@@ -33,13 +33,14 @@ class DriverFactory(object):
         self.name = name
         self._driver = None
 
-    def init_driver(self, target_data=None, use_case_name=None, use_case_data=None):
+    def init_driver(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None):
 
         if self.name == c.DRIVER_SALTSTACK:
             self._driver = SaltDriver()
         elif self.name == c.DRIVER_ANSIBLE:
             self._driver = AnsibleDriver()
         elif self.name == c.DRIVER_PYEZ:
-            self._driver = PyEzDriver(_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data)
+            self._driver = PyEzDriver(_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
+                                      results=results, ws_client=ws_client)
 
         return self._driver

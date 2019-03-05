@@ -44,8 +44,9 @@ from lib.handler import WSHandler
 
 class PyEzDriver(Base):
 
-    def __init__(self, _data=None, use_case_name=None, use_case_data=None):
-        super().__init__(_data=_data, use_case_name=use_case_name, use_case_data=use_case_data)
+    def __init__(self, _data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None):
+        super().__init__(_data=_data, use_case_name=use_case_name, use_case_data=use_case_data, results=results,
+                         ws_client=ws_client)
         c.cso_logger.info('Loading PyEZ driver')
         self.session = None
         self.gl = None
@@ -281,13 +282,17 @@ class PyEzDriver(Base):
                 break
 
         if self.status:
-            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
-            self.emit_message(message=message)
+            # message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
+            # self.emit_message(message=message)
+            self.results[self.target_data['name']] = True
+            self.results['overall'] = True
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target_data['name'], self.use_case_name))
         else:
             # message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
             # self.emit_message(message=message)
+            self.results[self.target_data['name']] = False
+            self.results['overall'] = False
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target_data['name'], self.use_case_name))
 
@@ -399,7 +404,7 @@ class PyEzDriver(Base):
             try:
 
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-                file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+                # file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
 
                 file_body = {
                     "branch": c.CONFIG['git_branch'],

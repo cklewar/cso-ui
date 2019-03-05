@@ -1,4 +1,4 @@
-Host 192.168.10.5
+Host 10.10.11.223
    StrictHostKeyChecking no
    UserKnownHostsFile=/dev/null
    IdentityFile /root/.ssh/cso-ui

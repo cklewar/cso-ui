@@ -168,7 +168,7 @@ class PyEzDriver(Base):
             if target['model'] == 'nfx':
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from NFX shell...'.format(target['name'], 'Disconnect'))
-                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 self._dev.close(skip_logout=True)
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from NFX shell --> DONE'.format(target['name'], 'Disconnect'))
@@ -181,14 +181,14 @@ class PyEzDriver(Base):
                 self.isNetConf = False
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
-                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
             else:
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
-                self._dev._tty._tn.write('exit'.encode("ascii") + b"\n\r")
+                self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 c.cso_logger.info(
                     '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
@@ -266,6 +266,8 @@ class PyEzDriver(Base):
 
                 elif task['name'] == 'Copy':
                     self.status = self.copy(target=self.target_data, task=task)
+                elif task['name'] == 'License':
+                    self.status = self.license(target=self.target_data, task=task)
                 elif task['name'] == 'Reboot':
                     self.status = self.reboot(target=self.target_data, task=task)
                 elif task['name'] == 'Disconnect':
@@ -594,39 +596,96 @@ class PyEzDriver(Base):
         if self.isNetConf:
             self.disconnect_netconf(target=target)
 
-        c.cso_logger.info(
-            '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(target['name'], task['name'], task['src'], task['dst']))
+        for item in list(zip(task['src'], task['dst'])):
 
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                   'status': 'Copy file {0}'.format(task['src'])}
-        self.emit_message(message=message)
-        _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], task['src'])
-        self._dev._tty._tn.write('cat > {0} << EOF'.format(task['dst']).encode('ascii') + b"\n\r")
+            c.cso_logger.info(
+                '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(target['name'], task['name'], item[0], item[1]))
 
-        with open(_file, 'r') as fd:
-            total_lines = sum(1 for _ in open(_file, 'rb'))
-            c.cso_logger.info('Total lines: {0}'.format(total_lines))
-            line_count = 0
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                       'status': 'Copy file {0}'.format(item[0])}
+            self.emit_message(message=message)
+            _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], item[0])
+            self._dev._tty._tn.write('cat > {0} << EOF'.format(item[1]).encode('ascii') + b"\r\n")
+            self._dev._tty._tn.read_until(b"\r\r\n")
 
-            for line in fd:
-                self._dev._tty._tn.write(line.encode("ascii"))
-                line_count += 1
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
-                           'status': 'Copy file {0} ({1}%)'.format(task['src'],
-                                                                   int(100 * (line_count / float(total_lines))))}
-                self.emit_message(message=message)
-                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
-                           'msg': str(line.encode("ascii"), 'utf-8')}
-                self.emit_message(message=message)
-                time.sleep(1)
+            with open(_file, 'r') as fd:
+                total_lines = sum(1 for _ in open(_file, 'rb'))
+                c.cso_logger.info('Total lines: {0}'.format(total_lines))
+                line_count = 0
 
-        self._dev._tty._tn.write('clear'.encode("ascii") + b"\n\r")
-        c.cso_logger.info(
-            '[{0}][{1}]: Copy file <{2}> to <{3}> --> DONE'.format(target['name'], task['name'], task['src'],
-                                                                   task['dst']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
-        self.emit_message(message=message)
+                for line in fd:
+                    self._dev._tty._tn.write(line.encode("ascii"))
+                    self._dev._tty._tn.read_until(b"\r\r\n")
+
+                    line_count += 1
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                               'status': 'Copy file {0} ({1}%)'.format(item[0],
+                                                                       int(100 * (line_count / float(total_lines))))}
+                    self.emit_message(message=message)
+                    message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                               'msg': str(line.encode("ascii"), 'utf-8')}
+                    self.emit_message(message=message)
+                    time.sleep(1)
+
+            c.cso_logger.info(
+                '[{0}][{1}]: Copy file <{2}> to <{3}> --> DONE'.format(target['name'], task['name'], task['src'],
+                                                                       task['dst']))
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+            self.emit_message(message=message)
+
         return True
+
+    def license(self, target=None, task=None):
+        self.ws.task = task['name']
+
+        c.cso_logger.info(
+            '[{0}][{1}]: Install license <{2}>'.format(target['name'], task['name'], task['file']))
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                   'status': 'Adding license...'}
+        self.emit_message(message=message)
+
+        if not self.isConnected:
+            self.wait_for_daeomons(target=target, task=task)
+            self.connect(target=target)
+
+        if self.isNetConf:
+            self.disconnect_netconf(target=target)
+
+        command = 'cli -c "request system license add {0}"'.format(task['file'])
+        self._dev._tty._tn.write(command.encode("ascii") + b"\r\n")
+
+        while True:
+            try:
+                data = self._dev._tty._tn.read_until(b"\r\n")
+
+            except EOFError as err:
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                return False
+
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
+            _data = data.decode('utf-8').strip()
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                       'msg': str(data, 'utf-8')}
+            self.emit_message(message=message)
+
+            re_pattern = re.compile(r'add license failed \(.*? errors\)')
+            term_str = re_pattern.match(_data)
+
+            if term_str:
+                c.cso_logger.info('[{0}][{1}]: Adding license --> FAILED'.format(target['name'], task['name']))
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Failed'}
+                self.emit_message(message=message)
+                return False
+
+            elif _data == 'add license complete (no errors)':
+                c.cso_logger.info('[{0}][{1}]: Adding license --> DONE'.format(target['name'], task['name']))
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                           'status': 'Done'}
+                self.emit_message(message=message)
+                return True
+
+            time.sleep(0.2)
 
     def reboot(self, target=None, task=None):
         self.ws.task = task['name']

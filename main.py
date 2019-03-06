@@ -31,6 +31,7 @@ import uuid
 import shutil
 
 from git import Repo
+from git.exc import GitCommandError
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ruamel.yaml import YAML
@@ -271,14 +272,12 @@ class Deploy(object):
 
             if os.path.exists(PATH):
                 shutil.rmtree(PATH)
-
-            resp = Repo.clone_from(URL, PATH)
-            c.cso_logger.info('[Clone]: {0} --> DONE'.format(resp))
-            ret_code = 0
-
-            if ret_code == 0:
+            try:
+                resp = Repo.clone_from(URL, PATH)
+                c.cso_logger.info('[Clone]: {0} --> DONE'.format(resp))
                 return {'result': 'OK'}
-            if ret_code > 0:
+            except GitCommandError as err:
+                c.cso_logger.info('[Clone]: {0} --> Failed'.format(str(err)))
                 return {'result': 'FAILED'}
 
         elif action == 'run':

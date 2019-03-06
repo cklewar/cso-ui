@@ -483,7 +483,8 @@ function deploy(data){
             },
             {
                 "data": "status",
-                "defaultContent": ""
+                "defaultContent": "",
+                "width": "35%"
             },
         ],
         "info": false,

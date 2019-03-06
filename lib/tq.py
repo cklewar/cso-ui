@@ -84,7 +84,7 @@ class TargetQueue(Thread):
             self.emit_message(message=message)
             yaml = YAML(typ='rt')
 
-            with open('config/items.yml', 'w+') as fp:
+            with open('config/items.yml', 'r') as fp:
 
                 _data = yaml.load(fp)
                 _data['deployed_usecase'] = None
@@ -93,7 +93,8 @@ class TargetQueue(Thread):
                     if k == self.use_case_name:
                         v['deployed'] = False
 
-                yaml.dump(_data, fp)
+            with open('config/items.yml', 'w+') as ofp:
+                yaml.dump(_data, ofp)
 
     def emit_message(self, message=None):
 

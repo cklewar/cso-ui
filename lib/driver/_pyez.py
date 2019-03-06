@@ -611,16 +611,15 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
             _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], item[0])
             self._dev._tty._tn.write('cat > {0} << EOF'.format(item[1]).encode('ascii') + b"\r\n")
-            self._dev._tty._tn.read_until(b"\r\r\n")
+            self._dev._tty._tn.read_until(b"\r\n")
 
             with open(_file, 'r') as fd:
                 total_lines = sum(1 for _ in open(_file, 'rb'))
-                c.cso_logger.info('Total lines: {0}'.format(total_lines))
                 line_count = 0
 
                 for line in fd:
                     self._dev._tty._tn.write(line.encode("ascii"))
-                    self._dev._tty._tn.read_until(b"\r\r\n")
+                    self._dev._tty._tn.read_until(b"\r\n")
 
                     line_count += 1
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],

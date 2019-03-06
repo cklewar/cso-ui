@@ -256,6 +256,9 @@ class Deploy(object):
     def __init__(self):
         self.__data = list()
         self.tmp_dir = c.CONFIG['tmp_dir']
+        self._use_case_name = None
+        self._use_case_data = None
+        self._use_case_path = None
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -275,10 +278,10 @@ class Deploy(object):
             try:
                 resp = Repo.clone_from(URL, PATH)
                 c.cso_logger.info('[Clone]: {0} --> DONE'.format(resp))
-                return {'result': 'OK'}
+                return True, '[Clone]: {0} --> DONE'.format(resp)
             except GitCommandError as err:
                 c.cso_logger.info('[Clone]: {0} --> Failed'.format(str(err)))
-                return {'result': 'FAILED'}
+                return False, str(err.stderr)
 
         elif action == 'run':
 
@@ -301,20 +304,24 @@ class Deploy(object):
             play = '{0}/{1}'.format(self._use_case_path, self._use_case_data['playbook'])
             self.__data = list()
 
-            with open(play, 'r') as fd:
-                play_data = _yaml.load(fd)
+            try:
+                with open(play, 'r') as fd:
+                    play_data = _yaml.load(fd)
 
-            for target, value in play_data['targets'].items():
-                _tmp = {'name': target, **value, 'uuid': str(uuid.uuid4()), 'tasks': list()}
-                _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting'})
-                for task, attr in value['tasks'].items():
-                    if attr['enabled']:
-                        _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
-                _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
-                self.__data.append(_tmp)
+                for target, value in play_data['targets'].items():
+                    _tmp = {'name': target, **value, 'uuid': str(uuid.uuid4()), 'tasks': list()}
+                    _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting'})
+                    for task, attr in value['tasks'].items():
+                        if attr['enabled']:
+                            _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
+                    _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
+                    self.__data.append(_tmp)
 
-            c.cso_logger.info('[Target_Tasks]: Compute target attached tasks --> DONE')
-            return True, self.__data
+                c.cso_logger.info('[Target_Tasks]: Compute target attached tasks --> DONE')
+                return True, self.__data
+            except FileNotFoundError as err:
+                c.cso_logger.info('[Target_Tasks]: Usecase data no found')
+                return False, 'Usecase data no found'
 
 
 class Api(object):

@@ -27,6 +27,10 @@ body {
     object-fit: cover;
 }
 
+.deployed {
+    border-color: green;
+}
+
 .scrolly {
  height: 200px;
  overflow-y: scroll;
@@ -85,32 +89,58 @@ body {
     white-space: pre-wrap;
 }
 
-/* Center the loader */
-#loader {
+.spinner-background {
+    background: none repeat scroll 0 0 black;
+    position: fixed;
+    display: block;
+    opacity: 0.5;
+    z-index: 900;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.spinner.loading {
+  display: none;
+  padding: 50px;
+  text-align: center;
+}
+
+.loading-text {
+  width: 109px;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 1;
-  width: 150px;
-  height: 150px;
-  margin: -75px 0 0 -75px;
-  border: 16px solid #f3f3f3;
-  border-radius: 50%;
-  border-top: 16px solid #3498db;
-  width: 120px;
-  height: 120px;
-  -webkit-animation: spin 2s linear infinite;
-  animation: spin 2s linear infinite;
+  top: calc(50% - 15px);
+  left: calc(50% - 45px);
+  text-align: center;
+  z-index: 999;
+  color: white;
 }
 
-@-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
+.spinner.loading:before {
+  content: "";
+  height: 110px;
+  width: 110px;
+  position: absolute;
+  top: calc(50% - 45px);
+  left: calc(50% - 45px);
+  border-width: 8px;
+  border-style: solid;
+  border-color: #2180c0 #ccc #ccc;
+  border-radius: 100%;
+  animation: rotation .7s infinite linear;
+  z-index: 999;
+  margin: -15px auto -65px auto;
+  display: block (or flex);
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }
 
 .session_output {

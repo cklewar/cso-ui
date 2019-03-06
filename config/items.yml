@@ -9,7 +9,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
-    deployed: false
+    deployed: true
 
   useCase1:
     title: Use Case 1 - Local Break Out at Spoke

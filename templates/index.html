@@ -52,56 +52,57 @@
                     <div class="item" id="{{ item }}" data-id="{{ item }}">
                         <div class="item-content">
                             {% if item == data.deployed_usecase %}
-                            <div class="card card-border" style="border-color: green;">
-                            {% else %}
-                            <div class="card card-border">
-                            {% endif %}
-                                {% if item == data.deployed_usecase %}
-                                <img class="card-img-top" src="static/images/{{ value.image_deployed }}" alt="{{ item }} login">
+                            <div class="card card-border deployed">
                                 {% else %}
-                                <img class="card-img-top" src="static/images/{{ value.image }}" alt="{{ item }} login">
-                                {% endif %}
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ value.title }}</h5>
-                                    <p class="card-text">{{ value.description }}</p>
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn btn-primary btnDeployUseCase" role="button"
-                                            data-target="#modalDeployStatus"
-                                            data-toggle="modal" data-usecase="{{ item }}"
-                                            id="btnDeployUseCase_{{ item }}">Deploy
-                                    </button>
-                                    <div class="dropdown dropup float-right">
-                                        <button class="btn btn-secondary dropdown-toggle" type="button"
-                                                id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
-                                                aria-haspopup="true"
-                                                aria-expanded="false">
-                                            <i class="fas fa-cogs"></i>
+                                <div class="card card-border">
+                                    {% endif %}
+                                    {% if item == data.deployed_usecase %}
+                                    <img class="card-img-top" src="static/images/{{ value.image_deployed }}"
+                                         alt="{{ item }} login">
+                                    {% else %}
+                                    <img class="card-img-top" src="static/images/{{ value.image }}"
+                                         alt="{{ item }} login">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ value.title }}</h5>
+                                        <p class="card-text">{{ value.description }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button class="btn btn-primary btnDeployUseCase" role="button"
+                                                data-toggle="modal" data-usecase="{{ item }}"
+                                                id="btnDeployUseCase_{{ item }}">Deploy
                                         </button>
-                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ item }}">
-                                            <button class="dropdown-item" type="button" data-toggle="modal"
-                                                    data-target="#cardSettingsModal_{{ item }}">Settings
+                                        <div class="dropdown dropup float-right">
+                                            <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                    id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
+                                                    aria-haspopup="true"
+                                                    aria-expanded="false">
+                                                <i class="fas fa-cogs"></i>
                                             </button>
-                                            {% if value.delete %}
-                                            <button class="dropdown-item btnCardDelete" type="button"
-                                                    data-source="{{ item }}">Delete
-                                            </button>
-                                            {% else %}
-                                            <button class="dropdown-item btnCardDelete" type="button"
-                                                    data-source="{{ item }}" disabled>Delete
-                                            </button>
-                                            {% endif %}
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ item }}">
+                                                <button class="dropdown-item" type="button" data-toggle="modal"
+                                                        data-target="#cardSettingsModal_{{ item }}">Settings
+                                                </button>
+                                                {% if value.delete %}
+                                                <button class="dropdown-item btnCardDelete" type="button"
+                                                        data-source="{{ item }}">Delete
+                                                </button>
+                                                {% else %}
+                                                <button class="dropdown-item btnCardDelete" type="button"
+                                                        data-source="{{ item }}" disabled>Delete
+                                                </button>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
 </main>
 <!-- Modal edit card settings -->
 {% for item, value in data.cards.items() %}
@@ -301,6 +302,33 @@
         </div>
     </div>
 </div>
+<!-- Modal Deploy-->
+<div class="modal" id="modalMessage" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalMessageTitle" class="modal-title">Message</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body h-50">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS spinner loader -->
+<div id="divSpinner" class="spinner loading" style="display: none;">
+    <div class="spinner-background">
+        <span class="loading-text">Loading...</span>
+    </div>
+</div>
+
+<!--<div id='loader' style='display: none;'>Cloning</div>-->
 </body>
 <script src="/static/js/jquery-3.3.1.min.js"></script>
 <script src="/static/js/popper.min.js"></script>
@@ -323,5 +351,6 @@
     var ws_client_port = "{{ data.port }}";
     var clientname = "{{ data.clientname }}";
     var lastDeployedUseCase = "{{ data.deployed_usecase }}";
+
 </script>
 </html>

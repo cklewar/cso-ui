@@ -173,15 +173,11 @@ $( document ).ready(function() {
     };
 
     ws.onclose = function(ev){
-
-      $message.attr("class", 'label label-important');
-      $message.text('closed');
+      console.log('closed');
     };
 
     ws.onerror = function(ev){
-
-      $message.attr("class", 'label label-warning');
-      $message.text('error occurred');
+      alert("Websocket connection failed: " + evt.type);
     };
 
     $('#btnCardAdd').on('click', function (event) {

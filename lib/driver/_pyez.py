@@ -339,7 +339,7 @@ class PyEzDriver(Base):
 
         if status:
 
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': 'Push config'}
             self.emit_message(message=message)
 
@@ -348,7 +348,7 @@ class PyEzDriver(Base):
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
                 c.cso_logger.info(
                     '[{0}][{1}]: Push configuration to git --> DONE'.format(self.target['name'], task['name']))
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Done'}
 
                 self.emit_message(message=message)
@@ -461,7 +461,7 @@ class PyEzDriver(Base):
     def zeroize(self, target=None, task=None):
         c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(self.target['name'], task['name']))
         self.ws.task = task['name']
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
 
@@ -484,7 +484,7 @@ class PyEzDriver(Base):
                 return False
 
             c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
-            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
 
@@ -492,11 +492,11 @@ class PyEzDriver(Base):
                 self.isRebooted = True
                 self.isZeroized = True
                 self.disconnect()
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
                 c.cso_logger.info('[{0}][{1}]: Zerorize device --> DONE'.format(self.target['name'], task['name']))
-                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
 
@@ -507,7 +507,7 @@ class PyEzDriver(Base):
     def configure(self, target=None, task=None, data=None):
         self.ws.task = task['name']
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
-        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': data}
         self.emit_message(message=message)
 
@@ -518,13 +518,13 @@ class PyEzDriver(Base):
         if not self.isNetConf:
             self.connect_netconf()
 
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Connecting...'}
         self.emit_message(message=message)
         cu = Config(self._dev)
 
-        if target['model'] == 'qfx' and self.isZeroized:
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        if self.target['model'] == 'qfx' and self.isZeroized:
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': 'Device with auto-image-upgrade. Stopping that...'}
             self.emit_message(message=message)
             c.cso_logger.info(
@@ -543,7 +543,7 @@ class PyEzDriver(Base):
             except (ConfigLoadError, ConnectClosedError) as err:
                 c.cso_logger.info(
                     '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Error loading configuration'}
                 self.emit_message(message=message)
                 return False
@@ -568,7 +568,7 @@ class PyEzDriver(Base):
                     self.target['name'],
                     task['name']))
 
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Load config'}
         self.emit_message(message=message)
 
@@ -583,7 +583,7 @@ class PyEzDriver(Base):
                 '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
             return False
 
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Commit config'}
         self.emit_message(message=message)
 
@@ -600,7 +600,7 @@ class PyEzDriver(Base):
 
         c.cso_logger.info(
             '[{0}][{1}]: Commit configuration on device --> DONE'.format(self.target['name'], task['name']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
         return True
 
@@ -619,7 +619,7 @@ class PyEzDriver(Base):
             c.cso_logger.info(
                 '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(self.target['name'], task['name'], item[0], item[1]))
 
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': 'Copy file {0}'.format(item[0])}
             self.emit_message(message=message)
             _file = '{0}/{1}'.format(c.CONFIG['tmp_dir'], item[0])
@@ -635,11 +635,11 @@ class PyEzDriver(Base):
                     self._dev._tty._tn.read_until(b"\r\n")
 
                     line_count += 1
-                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                                'status': 'Copy file {0} ({1}%)'.format(item[0],
                                                                        int(100 * (line_count / float(total_lines))))}
                     self.emit_message(message=message)
-                    message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+                    message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                                'msg': str(line.encode("ascii"), 'utf-8')}
                     self.emit_message(message=message)
                     time.sleep(1)
@@ -647,7 +647,7 @@ class PyEzDriver(Base):
             c.cso_logger.info(
                 '[{0}][{1}]: Copy file <{2}> to <{3}> --> DONE'.format(self.target['name'], task['name'], task['src'],
                                                                        task['dst']))
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'], 'status': 'Done'}
             self.emit_message(message=message)
 
         return True
@@ -657,7 +657,7 @@ class PyEzDriver(Base):
 
         c.cso_logger.info(
             '[{0}][{1}]: Install license <{2}>'.format(self.target['name'], task['name'], task['file']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Adding license...'}
         self.emit_message(message=message)
 
@@ -681,7 +681,7 @@ class PyEzDriver(Base):
 
             c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
             _data = data.decode('utf-8').strip()
-            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
 
@@ -690,14 +690,14 @@ class PyEzDriver(Base):
 
             if term_str:
                 c.cso_logger.info('[{0}][{1}]: Adding license --> FAILED'.format(self.target['name'], task['name']))
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Failed'}
                 self.emit_message(message=message)
                 return False
 
             elif _data == 'add license complete (no errors)':
                 c.cso_logger.info('[{0}][{1}]: Adding license --> DONE'.format(self.target['name'], task['name']))
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
                 return True
@@ -708,7 +708,7 @@ class PyEzDriver(Base):
         self.ws.task = task['name']
 
         c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(self.target['name'], task['name'], ))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Rebooting...'}
         self.emit_message(message=message)
 
@@ -719,7 +719,7 @@ class PyEzDriver(Base):
         if not self.isNetConf:
             self.connect_netconf()
 
-        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'waiting'}
         self.emit_message(message=message)
 
@@ -729,14 +729,14 @@ class PyEzDriver(Base):
 
         except BrokenPipeError as bpErr:
             c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(self.target['name'], task['name'], bpErr))
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': str(bpErr)}
             self.emit_message(message=message)
             return False
 
         except RpcError as rpcErr:
             c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(self.target['name'], task['name'], rpcErr))
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': str(rpcErr.message)}
             self.emit_message(message=message)
 
@@ -756,15 +756,15 @@ class PyEzDriver(Base):
             if term_str:
                 self.isRebooted = True
                 c.cso_logger.info('[{0}][{1}]: Rebooting device --> DONE'.format(self.target['name'], task['name']))
-                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
-                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
                 return True
 
-            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
             time.sleep(0.2)

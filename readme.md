@@ -36,8 +36,6 @@ IS_SSL: False
 DEMONIZE: False
 UI_ADDRESS: 0.0.0.0
 UI_PORT: 8670
-
-
 ```
 
 Check UI bind IP:

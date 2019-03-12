@@ -40,7 +40,7 @@ class DriverFactory(object):
         elif self.name == c.DRIVER_ANSIBLE:
             self._driver = AnsibleDriver()
         elif self.name == c.DRIVER_PYEZ:
-            self._driver = PyEzDriver(_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
+            self._driver = PyEzDriver(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
                                       results=results, ws_client=ws_client)
 
         return self._driver

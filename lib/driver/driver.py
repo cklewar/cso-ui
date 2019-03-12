@@ -28,13 +28,14 @@ from threading import Thread
 
 class Base(Thread):
 
-    def __init__(self, _data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None, group=None, target=None, name=None, args=(),
+    def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
+                 group=None, target=None, name=None, args=(),
                  kwargs=None, *, daemon=None):
         super(Base, self).__init__(group=group, target=target, name=name, daemon=daemon)
         self.load_settings()
         self.use_case_name = use_case_name
         self.use_case_data = use_case_data
-        self.target_data = _data
+        self.target = target_data
         self.tmp_dir = c.CONFIG['tmp_dir']
         self._dev = None
         self.mode = None
@@ -46,7 +47,6 @@ class Base(Thread):
         self.use_case_path = '{0}/{1}'.format(self.tmp_dir, use_case_data['directory'])
         self.results = results
         self.ws_client = ws_client
-
 
     @abc.abstractmethod
     def authenticate(self):

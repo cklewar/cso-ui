@@ -44,8 +44,9 @@ from lib.handler import WSHandler
 
 class PyEzDriver(Base):
 
-    def __init__(self, _data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None):
-        super().__init__(_data=_data, use_case_name=use_case_name, use_case_data=use_case_data, results=results,
+    def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None):
+        super().__init__(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
+                         results=results,
                          ws_client=ws_client)
         c.cso_logger.info('Loading PyEZ driver')
         self.session = None
@@ -53,11 +54,11 @@ class PyEzDriver(Base):
         self.isRebooted = False
         self.isNetConf = False
         self.isConnected = False
-        self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target_data)
-        self.ws.setFormatter(logging.Formatter("%(message)s"))
-        self.ws.setLevel(logging.DEBUG)
         self.status = True
         self.isZeroized = False
+        self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target)
+        self.ws.setFormatter(logging.Formatter("%(message)s"))
+        self.ws.setLevel(logging.DEBUG)
         c.jnpr_junos_tty.addHandler(self.ws)
         c.jnpr_junos_tty_netconf.addHandler(self.ws)
         c.jnpr_junos_tty_telnet.addHandler(self.ws)
@@ -99,19 +100,19 @@ class PyEzDriver(Base):
             c.cso_logger.info('{0} {1} {2}'.format(response.status_code, response.headers, response))
             return False, "GIT AUTH FAILED"
 
-    def connect(self, target=None):
-        c.cso_logger.info('[{0}][{1}]: Connecting to device'.format(target['name'], 'Connect'))
+    def connect(self):
+        c.cso_logger.info('[{0}][{1}]: Connecting to device'.format(self.target['name'], 'Connect'))
         self.ws.task = 'Connect'
 
         try:
-            self._dev = Device(host=self.target_data['address'], mode=self.target_data['mode'],
-                               port=self.target_data['port'],
-                               user=self.target_data['user'],
-                               password=self.target_data['password'], gather_facts=False)
-            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                       'msg': 'Connecting to target: {0}\n'.format(self.target_data['name'])}
+            self._dev = Device(host=self.target['address'], mode=self.target['mode'],
+                               port=self.target['port'],
+                               user=self.target['user'],
+                               password=self.target['password'], gather_facts=False)
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target['uuid'],
+                       'msg': 'Connecting to target: {0}\n'.format(self.target['name'])}
             self.emit_message(message=message)
-            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target['uuid'],
                        'status': 'Connecting...'}
             self.emit_message(message=message)
 
@@ -119,32 +120,34 @@ class PyEzDriver(Base):
                 self._dev.open()
 
             except ConnectAuthError as err:
-                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+                message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target['uuid'],
                            'status': str(err)}
                 self.emit_message(message=message)
-                c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
+                c.cso_logger.info(
+                    '[{0}][{1}]: Connecting to device failed: {2}'.format(self.target['name'], 'Connect', err))
                 return False
 
             self.isNetConf = True
             self.isConnected = True
-            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target_data['uuid'],
-                       'msg': 'Connected to target: {0}\n'.format(self.target_data['name'])}
+            message = {'action': 'update_session_output', 'task': 'Connect', 'uuid': self.target['uuid'],
+                       'msg': 'Connected to target: {0}\n'.format(self.target['name'])}
             self.emit_message(message=message)
-            c.cso_logger.info('[{0}][{1}]: Connecting to device --> DONE'.format(target['name'], 'Connect'))
+            c.cso_logger.info('[{0}][{1}]: Connecting to device --> DONE'.format(self.target['name'], 'Connect'))
 
         except (RuntimeError, OSError) as err:
-            c.cso_logger.info('[{0}][{1}]: Connecting to device failed: {2}'.format(target['name'], 'Connect', err))
-            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+            c.cso_logger.info(
+                '[{0}][{1}]: Connecting to device failed: {2}'.format(self.target['name'], 'Connect', err))
+            message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target['uuid'],
                        'status': str(err)}
             self.emit_message(message=message)
             return False
 
-        message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target_data['uuid'],
+        message = {'action': 'update_task_status', 'task': 'Connect', 'uuid': self.target['uuid'],
                    'status': 'Done'}
         self.emit_message(message=message)
         return True
 
-    def disconnect(self, target=None):
+    def disconnect(self):
         """
         Disconnect complete telnet session
         :return:
@@ -152,155 +155,156 @@ class PyEzDriver(Base):
 
         self.ws.task = 'Disconnect'
 
-        c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(target['name'], 'Disconnect'))
-        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
+        c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(self.target['name'], 'Disconnect'))
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'Disconnecting...'}
         self.emit_message(message=message)
 
         if self.isRebooted:
-            c.cso_logger.info('[{0}][{1}]: Disconnect from device after reboot'.format(target['name'], 'Disconnect'))
+            c.cso_logger.info(
+                '[{0}][{1}]: Disconnect from device after reboot'.format(self.target['name'], 'Disconnect'))
             self.isRebooted = False
             self.isConnected = False
             # Closing telnet connection
             self._dev.close(skip_logout=True)
             c.cso_logger.info(
-                '[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(target['name'], 'Disconnect'))
+                '[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(self.target['name'], 'Disconnect'))
 
         else:
-            if target['model'] == 'nfx':
+            if self.target['model'] == 'nfx':
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from NFX shell...'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from NFX shell...'.format(self.target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 self._dev.close(skip_logout=True)
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from NFX shell --> DONE'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from NFX shell --> DONE'.format(self.target['name'], 'Disconnect'))
             elif self.isNetConf:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Terminate netconf session...'.format(target['name'], 'Disconnect'))
-                self.disconnect_netconf(target=target)
+                    '[{0}][{1}]: Terminate netconf session...'.format(self.target['name'], 'Disconnect'))
+                self.disconnect_netconf()
                 c.cso_logger.info(
-                    '[{0}][{1}]: Terminate netconf session --> DONE'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Terminate netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
                 self.isNetConf = False
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from shell...'.format(self.target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from shell --> DONE'.format(self.target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
             else:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from shell...'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from shell...'.format(self.target['name'], 'Disconnect'))
                 self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
                 c.cso_logger.info(
-                    '[{0}][{1}]: Logout from shell --> DONE'.format(target['name'], 'Disconnect'))
+                    '[{0}][{1}]: Logout from shell --> DONE'.format(self.target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
 
-        c.cso_logger.info('[{0}][{1}]: Disconnect from device --> DONE'.format(target['name'], 'Disconnect'))
+        c.cso_logger.info('[{0}][{1}]: Disconnect from device --> DONE'.format(self.target['name'], 'Disconnect'))
 
-        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target_data['uuid'],
+        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'Done'}
         self.emit_message(message=message)
 
-    def connect_netconf(self, target=None):
+    def connect_netconf(self):
         self.ws.task = 'Connect'
 
         try:
-            c.cso_logger.info('[{0}][{1}]: Connect to netconf session'.format(target['name'], 'Connect'))
+            c.cso_logger.info('[{0}][{1}]: Connect to netconf session'.format(self.target['name'], 'Connect'))
             self._dev._tty.nc.open(True)
             self.isNetConf = True
-            c.cso_logger.info('[{0}][{1}]: Connect to netconf session --> DONE'.format(target['name'], 'Connect'))
+            c.cso_logger.info('[{0}][{1}]: Connect to netconf session --> DONE'.format(self.target['name'], 'Connect'))
             return True
 
         except (ConnectionResetError, RuntimeError) as err:
             c.cso_logger.info(
-                '[{0}][{1}]: Connect netconf session failed: {2}'.format(target['name'], 'Connect', err))
+                '[{0}][{1}]: Connect netconf session failed: {2}'.format(self.target['name'], 'Connect', err))
             return False
 
-    def disconnect_netconf(self, target=None):
+    def disconnect_netconf(self):
         self.ws.task = 'Disconnect'
-        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session'.format(target['name'], 'Disconnect'))
+        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session'.format(self.target['name'], 'Disconnect'))
         self._dev._tty.nc.close()
         self.isNetConf = False
-        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session --> DONE'.format(target['name'], 'Disconnect'))
+        c.cso_logger.info('[{0}][{1}]: Disconnect netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
 
     def run(self):
 
-        for task in self.target_data['tasks']:
+        for task in self.target['tasks']:
 
             if self.status:
 
                 if task['name'] == 'Connect':
-                    self.status = self.connect(target=self.target_data)
+                    self.status = self.connect()
 
                 elif task['name'] == 'Render':
-                    _status, _data = self.render(target=self.target_data, task=task)
+                    _status, _data = self.render(task=task)
 
                     if _status:
-                        self.push(target=self.target_data, task=task, data=_data)
+                        self.push(task=task, data=_data)
                     else:
                         c.cso_logger.info(
-                            '[{0}][{1}]: Pushing data failed <{2}>'.format(self.target_data['name'], task['name'],
+                            '[{0}][{1}]: Pushing data failed <{2}>'.format(self.target['name'], task['name'],
                                                                            _data))
                         message = {'action': 'update_task_status', 'task': task['name'],
-                                   'uuid': self.target_data['uuid'],
+                                   'uuid': self.target['uuid'],
                                    'status': _data}
                         self.emit_message(message=message)
                         break
 
                 elif task['name'] == 'Zerorize':
-                    self.status = self.zeroize(target=self.target_data, task=task)
+                    self.status = self.zeroize(task=task)
 
                 elif task['name'] == 'Configure':
-                    _status, _data = self.pull(target=self.target_data, task=task)
+                    _status, _data = self.pull(task=task)
 
                     if _status:
-                        self.status = self.configure(target=self.target_data, task=task, data=_data.decode('utf-8'))
+                        self.status = self.configure(task=task, data=_data.decode('utf-8'))
                     else:
                         c.cso_logger.info(
-                            '[{0}][{1}]: Pulling configuration failed <{2}>'.format(self.target_data['name'],
+                            '[{0}][{1}]: Pulling configuration failed <{2}>'.format(self.target['name'],
                                                                                     task['name'],
                                                                                     _data))
                         message = {'action': 'update_task_status', 'task': task['name'],
-                                   'uuid': self.target_data['uuid'],
+                                   'uuid': self.target['uuid'],
                                    'status': _data.decode("utf-8")}
                         self.emit_message(message=message)
                         break
 
                 elif task['name'] == 'Copy':
-                    self.status = self.copy(target=self.target_data, task=task)
+                    self.status = self.copy(task=task)
                 elif task['name'] == 'License':
-                    self.status = self.license(target=self.target_data, task=task)
+                    self.status = self.license(task=task)
                 elif task['name'] == 'Reboot':
-                    self.status = self.reboot(target=self.target_data, task=task)
+                    self.status = self.reboot(task=task)
                 elif task['name'] == 'Disconnect':
-                    self.disconnect(target=self.target_data)
+                    self.disconnect()
 
-                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target_data['uuid'],
-                           'msg': self.gen_task_done_message(target=self.target_data, task=task)}
+                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'msg': self.gen_task_done_message(task=task)}
                 self.emit_message(message=message)
             else:
-                c.cso_logger.info('[{0}][{1}]: Error in last task.'.format(self.target_data['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Error in last task.'.format(self.target['name'], task['name']))
                 break
 
         if self.status:
             # message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
             # self.emit_message(message=message)
-            self.results[self.target_data['name']] = True
+            self.results[self.target['name']] = True
             self.results['overall'] = True
             c.cso_logger.info(
-                '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target_data['name'], self.use_case_name))
+                '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target['name'], self.use_case_name))
         else:
             # message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name}
             # self.emit_message(message=message)
-            self.results[self.target_data['name']] = False
+            self.results[self.target['name']] = False
             self.results['overall'] = False
             c.cso_logger.info(
-                '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target_data['name'], self.use_case_name))
+                '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target['name'], self.use_case_name))
 
-    def render(self, target=None, task=None):
+    def render(self, task=None):
         c.cso_logger.info(
-            '[{0}][{1}]: Render configuration'.format(target['name'], task['name']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            '[{0}][{1}]: Render configuration'.format(self.target['name'], task['name']))
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Render template'}
         self.emit_message(message=message)
 
@@ -311,25 +315,26 @@ class PyEzDriver(Base):
             template = env.get_template(task['template'])
 
         except (TemplateNotFound, IOError) as err:
-            c.cso_logger.info('[{0}][{1}]: Render configuration failed: {2}'.format(target['name'], task['name'], err))
+            c.cso_logger.info(
+                '[{0}][{1}]: Render configuration failed: {2}'.format(self.target['name'], task['name'], err))
             return False, err
 
         with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
             data = yaml.safe_load(fd)
             config = template.render(data)
 
-        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': config + '\n'}
         self.emit_message(message=message)
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
         c.cso_logger.info(
-            '[{0}][{1}]: Render configuration --> DONE'.format(target['name'], task['name']))
+            '[{0}][{1}]: Render configuration --> DONE'.format(self.target['name'], task['name']))
 
         return True, config
 
     def push(self, target=None, task=None, data=None):
-        c.cso_logger.info('[{0}][{1}]: Push configuration to git'.format(target['name'], task['name']))
+        c.cso_logger.info('[{0}][{1}]: Push configuration to git'.format(self.target['name'], task['name']))
         status = self.authenticate()
 
         if status:
@@ -342,7 +347,7 @@ class PyEzDriver(Base):
 
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
                 c.cso_logger.info(
-                    '[{0}][{1}]: Push configuration to git --> DONE'.format(target['name'], task['name']))
+                    '[{0}][{1}]: Push configuration to git --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
 
@@ -352,48 +357,50 @@ class PyEzDriver(Base):
                 return False, 'Failed to get project with error: <0>'.format(gle.message)
 
             _status, _data = self.pull(target=target, task=task)
-            file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+            file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], self.target['name'])
 
             if _status:
-                c.cso_logger.info('[{0}][{1}]: Updating file <{0}>'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Updating file <{0}>'.format(self.target['name'], task['name']))
 
                 file_body = {
                     "branch": c.CONFIG['git_branch'],
                     "content": data,
-                    "commit_message": "Device config {0}".format(target['name'])
+                    "commit_message": "Device config {0}".format(self.target['name'])
                 }
 
                 try:
 
                     _data = project.files.update(file_path=file_path, new_data=file_body)
-                    c.cso_logger.info('[{0}][{1}]: Updating file <{0}> --> DONE'.format(target['name'], task['name']))
+                    c.cso_logger.info(
+                        '[{0}][{1}]: Updating file <{0}> --> DONE'.format(self.target['name'], task['name']))
                     return True, _data
 
                 except (GitlabConnectionError, GitlabError, GitlabHttpError) as gle:
                     return False, 'Failed to update device template with error: <0>'.format(str(gle))
 
             else:
-                c.cso_logger.info('[{0}][{1}]: Creating new file <{0}>'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Creating new file <{0}>'.format(self.target['name'], task['name']))
 
                 file_body = {
                     "file_path": file_path,
                     "branch": c.CONFIG['git_branch'],
                     "content": data,
-                    "commit_message": "Device config {0}".format(target['name'])
+                    "commit_message": "Device config {0}".format(self.target['name'])
                 }
 
                 try:
 
                     _data = project.files.create(file_body)
                     c.cso_logger.info(
-                        '[{0}][{1}]: Creating new file <{0}> --> DONE'.format(target['name'], task['name']))
+                        '[{0}][{1}]: Creating new file <{0}> --> DONE'.format(self.target['name'], task['name']))
                     return True, _data
 
                 except (GitlabConnectionError, GitlabError) as gle:
                     return False, 'Failed to create device template with error: <0>'.format(str(gle))
 
-    def update(self, target=None, task=None, data=None):
-        c.cso_logger.info('[{0}][{1}]: Update device <{0}> configuration in git'.format(target['name'], task['name']))
+    def update(self, task=None, data=None):
+        c.cso_logger.info(
+            '[{0}][{1}]: Update device <{0}> configuration in git'.format(self.target['name'], task['name']))
         status = self.authenticate()
 
         if status:
@@ -405,12 +412,12 @@ class PyEzDriver(Base):
             try:
 
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-                # file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+                # file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], self.target['name'])
 
                 file_body = {
                     "branch": c.CONFIG['git_branch'],
                     "content": data.decode('utf-8'),
-                    "commit_message": "Device config {0}".format(target['name'])
+                    "commit_message": "Device config {0}".format(self.target['name'])
                 }
 
             except (GitlabConnectionError, GitlabError) as gle:
@@ -419,7 +426,7 @@ class PyEzDriver(Base):
             try:
                 _response = project.files.update(file_body)
                 c.cso_logger.info(
-                    '[{0}][{1}]: Update configuration in git --> DONE'.format(target['name'], task['name']))
+                    '[{0}][{1}]: Update configuration in git --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': task['uuid'], 'status': 'Done'}
                 self.emit_message(message=message)
                 return True, _response
@@ -429,37 +436,37 @@ class PyEzDriver(Base):
 
     def pull(self, target=None, task=None):
         c.cso_logger.info(
-            '[{0}][{1}]: Pull file <{0}> from git for use case <{2}>'.format(target['name'], task['name'],
+            '[{0}][{1}]: Pull file <{0}> from git for use case <{2}>'.format(self.target['name'], task['name'],
                                                                              self.use_case_name))
 
         try:
             project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-            _path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], target['name'])
+            _path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], self.target['name'])
 
             try:
                 f = project.files.get(file_path=_path, ref='master')
                 c.cso_logger.info(
-                    '[{0}][{1}]: Pull file <{0}> from git for use case <{2}> --> DONE'.format(target['name'],
+                    '[{0}][{1}]: Pull file <{0}> from git for use case <{2}> --> DONE'.format(self.target['name'],
                                                                                               task['name'],
                                                                                               self.use_case_name))
                 return True, f.decode()
             except GitlabError as ge:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Pull file from git failed: {2}'.format(target['name'], task['name'], ge))
+                    '[{0}][{1}]: Pull file from git failed: {2}'.format(self.target['name'], task['name'], ge))
                 return False, 'Pull file from git failed with error: <{0}>'.format(ge)
 
         except (GitlabConnectionError, GitlabError) as gle:
             return False, 'Failed to get project with error: <0>'.format(gle.message)
 
     def zeroize(self, target=None, task=None):
-        c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(target['name'], task['name']))
+        c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(self.target['name'], task['name']))
         self.ws.task = task['name']
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
 
         if not self.isNetConf:
-            self.connect_netconf(target=target)
+            self.connect_netconf()
 
         resp = self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
@@ -473,10 +480,10 @@ class PyEzDriver(Base):
             try:
                 data = self._dev._tty._tn.read_until(b"\r\n")
             except EOFError as err:
-                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(self.target['name'], task['name'], err))
                 return False
 
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                        'msg': str(data, 'utf-8')}
             self.emit_message(message=message)
@@ -484,11 +491,11 @@ class PyEzDriver(Base):
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
                 self.isRebooted = True
                 self.isZeroized = True
-                self.disconnect(target=target)
+                self.disconnect()
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
-                c.cso_logger.info('[{0}][{1}]: Zerorize device --> DONE'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Zerorize device --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
@@ -499,17 +506,17 @@ class PyEzDriver(Base):
 
     def configure(self, target=None, task=None, data=None):
         self.ws.task = task['name']
-        c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(target['name'], task['name']))
+        c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                    'msg': data}
         self.emit_message(message=message)
 
         if not self.isConnected:
-            self.wait_for_daeomons(target=target, task=task)
-            self.connect(target=target)
+            self.wait_for_daeomons(task=task)
+            self.connect()
 
         if not self.isNetConf:
-            self.connect_netconf(target=target)
+            self.connect_netconf()
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Connecting...'}
@@ -521,19 +528,21 @@ class PyEzDriver(Base):
                        'status': 'Device with auto-image-upgrade. Stopping that...'}
             self.emit_message(message=message)
             c.cso_logger.info(
-                '[{0}][{1}]: Device with auto-image-upgrade. Stopping that...'.format(target['name'], task['name']))
+                '[{0}][{1}]: Device with auto-image-upgrade. Stopping that...'.format(self.target['name'],
+                                                                                      task['name']))
             try:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration'.format(target['name'],
+                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration'.format(self.target['name'],
                                                                                                task['name']))
                 cu.load(c.cfg_aiu, format="text", merge=True)
                 c.cso_logger.info(
-                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration --> DONE'.format(target['name'],
-                                                                                                        task['name']))
+                    '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration --> DONE'.format(
+                        self.target['name'],
+                        task['name']))
 
             except (ConfigLoadError, ConnectClosedError) as err:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Error loading configuration: {2}'.format(target['name'], task['name'], err))
+                    '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Error loading configuration'}
                 self.emit_message(message=message)
@@ -541,21 +550,22 @@ class PyEzDriver(Base):
 
             try:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration'.format(target['name'],
+                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration'.format(self.target['name'],
                                                                                               task['name']))
                 cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
-                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration --> DONE'.format(target['name'],
-                                                                                                       task['name']))
+                    '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration --> DONE'.format(
+                        self.target['name'],
+                        task['name']))
 
             except CommitError as err:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Error committing configuration: {2}'.format(target['name'], task['name'], err))
+                    '[{0}][{1}]: Error committing configuration: {2}'.format(self.target['name'], task['name'], err))
                 return False
 
             c.cso_logger.info(
                 '[{0}][{1}]: Device with auto-image-upgrade. Stopping auto-image-upgrade --> DONE'.format(
-                    target['name'],
+                    self.target['name'],
                     task['name']))
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
@@ -563,13 +573,14 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         try:
-            c.cso_logger.info('[{0}][{1}]: Device loading configuration'.format(target['name'], task['name']))
+            c.cso_logger.info('[{0}][{1}]: Device loading configuration'.format(self.target['name'], task['name']))
             cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'])
-            c.cso_logger.info('[{0}][{1}]: Device loading configuration --> DONE'.format(target['name'], task['name']))
+            c.cso_logger.info(
+                '[{0}][{1}]: Device loading configuration --> DONE'.format(self.target['name'], task['name']))
 
         except ConfigLoadError as err:
             c.cso_logger.info(
-                '[{0}][{1}]: Error loading configuration: {2}'.format(target['name'], task['name'], err))
+                '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
             return False
 
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
@@ -577,18 +588,18 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         try:
-            c.cso_logger.info('[{0}][{1}]: Device commit configuration'.format(target['name'], task['name']))
+            c.cso_logger.info('[{0}][{1}]: Device commit configuration'.format(self.target['name'], task['name']))
             cu.commit(confirm=task['confirm'], sync=task['sync'])
         # NetConf session gets dropped when override config with NetConf service enabled. So we need to catch up here
         # and reconnect.
         except XMLSyntaxError as xse:
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], xse))
-            self.disconnect(target=target)
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], xse))
+            self.disconnect()
             time.sleep(3)
-            self.connect(target=target)
+            self.connect()
 
         c.cso_logger.info(
-            '[{0}][{1}]: Commit configuration on device --> DONE'.format(target['name'], task['name']))
+            '[{0}][{1}]: Commit configuration on device --> DONE'.format(self.target['name'], task['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
         self.emit_message(message=message)
         return True
@@ -597,16 +608,16 @@ class PyEzDriver(Base):
         self.ws.task = task['name']
 
         if not self.isConnected:
-            self.wait_for_daeomons(target=target, task=task)
-            self.connect(target=target)
+            self.wait_for_daeomons(task=task)
+            self.connect()
 
         if self.isNetConf:
-            self.disconnect_netconf(target=target)
+            self.disconnect_netconf()
 
         for item in list(zip(task['src'], task['dst'])):
 
             c.cso_logger.info(
-                '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(target['name'], task['name'], item[0], item[1]))
+                '[{0}][{1}]: Copy file <{2}> to <{3}>'.format(self.target['name'], task['name'], item[0], item[1]))
 
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Copy file {0}'.format(item[0])}
@@ -634,7 +645,7 @@ class PyEzDriver(Base):
                     time.sleep(1)
 
             c.cso_logger.info(
-                '[{0}][{1}]: Copy file <{2}> to <{3}> --> DONE'.format(target['name'], task['name'], task['src'],
+                '[{0}][{1}]: Copy file <{2}> to <{3}> --> DONE'.format(self.target['name'], task['name'], task['src'],
                                                                        task['dst']))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'], 'status': 'Done'}
             self.emit_message(message=message)
@@ -645,17 +656,17 @@ class PyEzDriver(Base):
         self.ws.task = task['name']
 
         c.cso_logger.info(
-            '[{0}][{1}]: Install license <{2}>'.format(target['name'], task['name'], task['file']))
+            '[{0}][{1}]: Install license <{2}>'.format(self.target['name'], task['name'], task['file']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Adding license...'}
         self.emit_message(message=message)
 
         if not self.isConnected:
-            self.wait_for_daeomons(target=target, task=task)
-            self.connect(target=target)
+            self.wait_for_daeomons(task=task)
+            self.connect()
 
         if self.isNetConf:
-            self.disconnect_netconf(target=target)
+            self.disconnect_netconf()
 
         command = 'cli -c "request system license add {0}"'.format(task['file'])
         self._dev._tty._tn.write(command.encode("ascii") + b"\r\n")
@@ -665,10 +676,10 @@ class PyEzDriver(Base):
                 data = self._dev._tty._tn.read_until(b"\r\n")
 
             except EOFError as err:
-                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(self.target['name'], task['name'], err))
                 return False
 
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
             _data = data.decode('utf-8').strip()
             message = {'action': 'update_session_output', 'task': task['name'], 'uuid': target['uuid'],
                        'msg': str(data, 'utf-8')}
@@ -678,14 +689,14 @@ class PyEzDriver(Base):
             term_str = re_pattern.match(_data)
 
             if term_str:
-                c.cso_logger.info('[{0}][{1}]: Adding license --> FAILED'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Adding license --> FAILED'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Failed'}
                 self.emit_message(message=message)
                 return False
 
             elif _data == 'add license complete (no errors)':
-                c.cso_logger.info('[{0}][{1}]: Adding license --> DONE'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Adding license --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
                 self.emit_message(message=message)
@@ -696,17 +707,17 @@ class PyEzDriver(Base):
     def reboot(self, target=None, task=None):
         self.ws.task = task['name']
 
-        c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(target['name'], task['name'], ))
+        c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(self.target['name'], task['name'], ))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                    'status': 'Rebooting...'}
         self.emit_message(message=message)
 
         if not self.isConnected:
-            self.wait_for_daeomons(target=target, task=task)
-            self.connect(target=target)
+            self.wait_for_daeomons(task=task)
+            self.connect()
 
         if not self.isNetConf:
-            self.connect_netconf(target=target)
+            self.connect_netconf()
 
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                    'status': 'waiting'}
@@ -714,17 +725,17 @@ class PyEzDriver(Base):
 
         try:
             resp = self._dev.rpc.request_reboot()
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], resp))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], resp))
 
         except BrokenPipeError as bpErr:
-            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(target['name'], task['name'], bpErr))
+            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(self.target['name'], task['name'], bpErr))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': str(bpErr)}
             self.emit_message(message=message)
             return False
 
         except RpcError as rpcErr:
-            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(target['name'], task['name'], rpcErr))
+            c.cso_logger.info('[{0}][{1}]: Reboot failed: {2}'.format(self.target['name'], task['name'], rpcErr))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': str(rpcErr.message)}
             self.emit_message(message=message)
@@ -734,17 +745,17 @@ class PyEzDriver(Base):
                 data = self._dev._tty._tn.read_until(b"\r\n")
 
             except EOFError as err:
-                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(target['name'], task['name'], err))
+                c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(self.target['name'], task['name'], err))
                 return False
 
-            c.cso_logger.info('[{0}][{1}]: {2}'.format(target['name'], task['name'], str(data, 'utf-8').strip()))
+            c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
             _data = data.decode('utf-8').strip()
-            re_pattern = re.compile(target['name'] + ' ' + r'\(tty.*\)')
+            re_pattern = re.compile(self.target['name'] + ' ' + r'\(tty.*\)')
             term_str = re_pattern.match(_data)
 
             if term_str:
                 self.isRebooted = True
-                c.cso_logger.info('[{0}][{1}]: Rebooting device --> DONE'.format(target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Rebooting device --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': target['uuid'],
                            'status': 'waiting'}
                 self.emit_message(message=message)
@@ -758,18 +769,18 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
             time.sleep(0.2)
 
-    def wait_for_daeomons(self, target=None, task=None):
+    def wait_for_daeomons(self, task=None):
         c.cso_logger.info(
-            "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready...".format(target['name'],
+            "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready...".format(self.target['name'],
                                                                                          task['name']))
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Waiting for daemons to be ready...'}
         self.emit_message(message=message)
         # adding some timeout for telnet session to close properly. Need a better approach here!
         mark_start = datetime.now()
 
-        if target['model'] == 'qfx' or target['model'] == 'nfx':
-            timeout = 30
+        if self.target['model'] == 'qfx' or self.target['model'] == 'nfx':
+            timeout = 20
         else:
             timeout = 120
 
@@ -777,17 +788,17 @@ class PyEzDriver(Base):
 
         while datetime.now() < mark_end:
             timeout -= 1
-            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                        'status': 'Waiting for daemons to be ready... {0}'.format(timeout)}
 
             self.emit_message(message=message)
             c.cso_logger.info(
-                "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready <{2}>".format(target['name'],
+                "[{0}][{1}]: Device was rebooted. Waiting for daemons to be ready <{2}>".format(self.target['name'],
                                                                                                 task['name'],
                                                                                                 timeout))
             time.sleep(1)
 
-    def gen_task_done_message(self, target=None, task=None):
+    def gen_task_done_message(self, task=None):
         header = '{0} TASK {1} DONE {2}'.format(15 * '#', task['name'], 15 * '#')
         return header
 

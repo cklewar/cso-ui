@@ -469,10 +469,10 @@ class PyEzDriver(Base):
             self.connect_netconf()
 
         resp = self._dev.zeroize()
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target[uuid],
+        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Zeroize running'}
         self.emit_message(message=message)
-        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target[uuid], 'msg': resp}
+        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'], 'msg': resp}
         self.emit_message(message=message)
 
         while True:

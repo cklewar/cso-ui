@@ -57,6 +57,7 @@ class PyEzDriver(Base):
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
         self.status = True
+        self.isZeroized = False
         c.jnpr_junos_tty.addHandler(self.ws)
         c.jnpr_junos_tty_netconf.addHandler(self.ws)
         c.jnpr_junos_tty_telnet.addHandler(self.ws)
@@ -482,6 +483,7 @@ class PyEzDriver(Base):
 
             if data.decode('utf-8').strip() in c.TERM_STRINGS:
                 self.isRebooted = True
+                self.isZeroized = True
                 self.disconnect(target=target)
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                            'status': 'Done'}
@@ -514,7 +516,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
         cu = Config(self._dev)
 
-        if target['model'] == 'qfx':
+        if target['model'] == 'qfx' and self.isZeroized:
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': target['uuid'],
                        'status': 'Device with auto-image-upgrade. Stopping that...'}
             self.emit_message(message=message)

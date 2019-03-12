@@ -22,12 +22,8 @@ $( document ).ready(function() {
         return;
       }
 
-    var $message = $('#message');
-
     ws.onopen = function(){
-
-      $message.attr("class", 'label label-success');
-      $message.text('open');
+      console.log('Websocket connection opened');
 
     };
 
@@ -173,11 +169,11 @@ $( document ).ready(function() {
     };
 
     ws.onclose = function(ev){
-      console.log('closed');
+      console.log('Websocket connection closed');
     };
 
     ws.onerror = function(ev){
-      alert("Websocket connection failed: " + evt.type);
+      alert("Websocket connection failed: " + ev.type);
     };
 
     $('#btnCardAdd').on('click', function (event) {

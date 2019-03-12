@@ -1,4 +1,4 @@
-deployed_usecase: useCase2
+deployed_usecase:
 usecases:
   useCase0:
     title: Use Case 0 - Base
@@ -9,7 +9,7 @@ usecases:
     image: dummy.png
     image_deployed: dummy_deployed.png
     delete: false
-    deployed: true
+    deployed: false
 
   useCase1:
     title: Use Case 1 - Local Break Out at Spoke

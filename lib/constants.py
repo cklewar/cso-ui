@@ -40,7 +40,7 @@ chassis {
 }
 system {
     root-authentication {
-        encrypted-password "$6$nCsDlN7N$qTG9G3zHHBcF8wwIkuH3VAwbwU4oV4kdhwv7CSyenNDA/qReSfZ2kuUPGcQWmnON4mfKAwjC323c8hkKr3iWh1"; ## SECRET-DATA
+        encrypted-password "/qReSfZ2kuUPGcQWmnON4mfKAwjC323c8hkKr3iWh1"; ## SECRET-DATA
     }
 }
 """

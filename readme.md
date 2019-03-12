@@ -9,44 +9,6 @@
 
 ## Installation ##
 
-### Standalone ###
-We need __Python 3.7__
-
-- Clone git repo 
-
-```bash
-git clone https://github.com/cklewar/cso-ui.git
-```
-- Change directory into new cloned directory
-
-```bash
-cd cso_ui
-```
-
-- Turn deamon mode on in __constants.py__ by setting option  __DEAMONIZE__ to __True__
-
-```python
-DEAMONIZE = True
-``` 
-
-- Install required packages
-
-```bash
-python3.7 -m pip install -r requirements.txt
-```
-- Start service
-
-```bash
-python3.7 main.py
-```
-
-- Access Landing page with:
-  + URL: http(s)://\<IP>:\<PORT>
-    * User: root / admin
-    * PW: juniper123
-
-This will fork and run as daemon. Currently no startup script for Systemd or SysV Init.
-
 ### Docker ###
 If you want to run cso-ui use case runner in docker environment turn of deamon mode in __config/config.yml__ by setting option 
 __DEAMONIZE__ to __False__.
@@ -55,7 +17,11 @@ __DEAMONIZE__ to __False__.
 DEAMONIZE = False
 ``` 
 
-Set Websocket client IP to docker host IP. Change GIT settings to fit your environment.
+Set Websocket client IP to docker host IP. Change GIT settings to fit your environment.    
+ * *NOTE:*    
+   * The ws_client_ip should be the ip of the host that the docker container is running on.  
+   * The git_host should be the ip of the host that the docker container is running on.
+   * The UI_ADDRESS should be 0.0.0.0.
 
 ```yaml
 ws_client_protocol: ws
@@ -65,6 +31,13 @@ git_protocol: http
 git_host: 192.168.10.5
 git_port: 9080
 git_repo_url: cso_ops/usecases
+
+IS_SSL: False
+DEMONIZE: False
+UI_ADDRESS: 0.0.0.0
+UI_PORT: 8670
+
+
 ```
 
 Create required directories:

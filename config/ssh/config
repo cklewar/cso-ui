@@ -2,3 +2,13 @@ Host 10.10.11.223
    StrictHostKeyChecking no
    UserKnownHostsFile=/dev/null
    IdentityFile /root/.ssh/cso-ui
+
+Host 192.168.10.5
+   StrictHostKeyChecking no
+   UserKnownHostsFile=/dev/null
+   IdentityFile /root/.ssh/cso-ui
+
+Host 127.0.0.1
+   StrictHostKeyChecking no
+   UserKnownHostsFile=/dev/null
+   IdentityFile ~/.ssh/cso-ui

@@ -63,7 +63,8 @@ class TargetQueue(Thread):
             d.join()
 
         if self.results['overall']:
-            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name, 'status': True}
+            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name, 'status': True,
+                       'image': self.use_case_data['image_deployed']}
             self.emit_message(message=message)
             yaml = YAML(typ='rt')
 
@@ -80,7 +81,8 @@ class TargetQueue(Thread):
                 yaml.dump(_data, ofp)
 
         else:
-            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name, 'status': False}
+            message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name, 'status': False,
+                       'image': self.use_case_data['image']}
             self.emit_message(message=message)
             yaml = YAML(typ='rt')
 
@@ -102,4 +104,3 @@ class TargetQueue(Thread):
             self.ws_client.send(json.dumps(message))
         else:
             print('empty message')
-

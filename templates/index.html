@@ -43,10 +43,10 @@
         </ul>
     </div>
 </nav>
-<main role="main" class="container-fluid h-100 scrolly">
-    <div class="row align-items-center">
+<main role="main" class="container-fluid p-1 h-100 scrolly main-container">
+    <div class="row align-items-center main-row">
         <div class="col-12 mx-auto">
-            <div class="jumbotron">
+
                 <div class="grid">
                     {% for item, value in data.cards.items() %}
                     <div class="item" id="{{ item }}" data-id="{{ item }}">
@@ -101,7 +101,7 @@
                         {% endfor %}
                     </div>
                 </div>
-            </div>
+
         </div>
 </main>
 <!-- Modal edit card settings -->
@@ -319,6 +319,13 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- usecase image detail modal -->
+<div id="modalUseCaseImg" class="usecase-modal-img">
+  <span class="btnCloseUseCaseImgDetail">&times;</span>
+  <img class="usecase-modal-img-content" id="useCaseDetailImg">
+  <div id="caption"></div>
 </div>
 
 <!-- CSS spinner loader -->

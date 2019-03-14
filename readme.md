@@ -38,6 +38,13 @@ UI_ADDRESS: 0.0.0.0
 UI_PORT: 8670
 ```
 
+Check UI bind IP:
+
+```yaml
+UI_ADDRESS: 0.0.0.0
+UI_PORT: 8670
+```
+
 Create required directories:
 
 - /tmp/cso-ui/log
@@ -45,8 +52,6 @@ Create required directories:
 
 ```bash
 mkdir -p /tmp/cso-ui/log
-mkdir -p /tmp/cso-ui/data
-
 ```
 
 Run following commands on docker box:

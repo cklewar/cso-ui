@@ -783,6 +783,7 @@ class PyEzDriver(Base):
                        'status': str(rpcErr.message)}
             self.emit_message(message=message)
             self.disconnect()
+            return False
 
         while True:
 

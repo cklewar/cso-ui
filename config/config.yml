@@ -1,5 +1,5 @@
 driver: pyez
-demo_ref_doc_url: static/docs/ASTT-Solutions_-_CSO_generic-testlab-HS26.pdf
+demo_ref_doc_url: static/docs/readthedocs-html-version/index.html
 jtac_url: https://support.juniper.net/support/
 ws_client_protocol: ws
 ws_client_ip: 127.0.0.1
@@ -23,6 +23,3 @@ IS_SSL: False
 DEMONIZE: False
 UI_ADDRESS: 127.0.0.1
 UI_PORT: 8670
-JSNS_URL: https://forums.juniper.net/t5/Security/bg-p/networkingnow
-JTR_URL: https://apacjuniper.net/theshield/
-JTAC_URL: https://support.juniper.net/support/

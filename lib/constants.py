@@ -25,14 +25,14 @@ DRIVER_PYEZ = 'pyez'
 ADMIN_USERS = ('admin', 'root')
 ADMIN_USER_PW = 'juniper123'
 CONFIG = None
-TERM_STRINGS = ["Amnesiac (ttyu0)", "Ubuntu 14.04.1 LTS jdm tty1", "Amnesiac (ttyd0)"]
+TERM_STRINGS = ["Amnesiac (ttyu0)", "Amnesiac (ttyd0)"]
+TERM_STRINGS_QFX = ["Ubuntu 14.04.1 LTS jdm tty1", "* Stopping System V runlevel compatibility[ OK ]"]
 MODEL_NORMAL = ['qfx', 'srx', 'ex', 'mx']
 logger = None
 cso_logger = None
 jnpr_junos_tty = None
 jnpr_junos_tty_netconf = None
 jnpr_junos_tty_telnet = None
-
 
 cfg_aiu = """
 chassis {
@@ -47,13 +47,13 @@ system {
 
 LOG_CONF = {
     'version': 1,
-
     'formatters': {
         'void': {
             'format': ''
         },
         'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
     },
     'handlers': {

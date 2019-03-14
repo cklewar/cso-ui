@@ -29,6 +29,7 @@ import random
 import logging.config
 import uuid
 import shutil
+import re
 
 from git import Repo
 from git.exc import GitCommandError
@@ -216,8 +217,8 @@ class Cards(object):
 
             with open('config/items.yml', 'r') as ifp:
                 yaml = YAML(typ='rt')
-                cards = yaml.load(ifp)['usecases']
-
+                _data = yaml.load(ifp)
+                cards = _data['usecases']
                 update_card = cards[data['cardId']]
                 update_card['title'] = data['title']
                 update_card['playbook'] = data['playbook']
@@ -226,7 +227,7 @@ class Cards(object):
                 cards[data['cardId']] = update_card
 
             with open('config/items.yml', 'w') as ofp:
-                yaml.dump(cards, ofp)
+                yaml.dump(_data, ofp)
 
             return True
 
@@ -484,8 +485,6 @@ if __name__ == '__main__':
         c.CONFIG = yaml.load(_config)
 
     cherrypy.config.update({'log.screen': True,
-                            #'log.access_file': '',
-                            #'log.error_file': '',
                             'engine.autoreload_on': False,
                             'server.socket_host': c.CONFIG['UI_ADDRESS'],
                             'server.socket_port': c.CONFIG['UI_PORT'],
@@ -540,6 +539,7 @@ if __name__ == '__main__':
 
     if c.CONFIG['DEMONIZE']:
         cherrypy.process.plugins.Daemonizer(cherrypy.engine).subscribe()
+
     cherrypy.engine.unsubscribe('graceful', cherrypy.log.reopen_files)
     logging.config.dictConfig(c.LOG_CONF)
     c.logger.info('Base information logged into {0}'.format(c.CONFIG['baselog']))
@@ -548,4 +548,60 @@ if __name__ == '__main__':
     cherrypy.tree.mount(Root(), '/', config=ui_conf)
     cherrypy.tree.mount(Api(), '/api', config=api_conf)
     cherrypy.engine.start()
+    '''
+    test123 = [
+        b' * Starting workaround for missing events in container\x1b[74G[ OK ]\r\n',
+        b' * Stopping load fallback graphics devices\x1b[74G[ OK ]\r\n',
+        b' * Stopping workaround for missing events in container\x1b[74G[ OK ]\r\n',
+        b' * Starting set console font\x1b[74G[ OK ]\r\n',
+        b' * Starting set console font\x1b[74G[\x1b[31mfail\x1b[39;49m]\r\n',
+        b' * Starting userspace bootsplash\x1b[74G[ OK ]\r\n',
+        b' * Starting configure network device security\x1b[74G[ OK ]\r\n',
+        b' * Stopping userspace bootsplash\x1b[74G[ OK ]\r\n',
+        b' * Starting Send an event to indicate plymouth is up\x1b[74G[ OK ]\r\n',
+        b' * Stopping Send an event to indicate plymouth is up\x1b[74G[ OK ]\r\n',
+        b' * Starting mount available cgroup filesystems\x1b[74G[ OK ]\r\n',
+        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Starting Bridge socket events into upstart\x1b[74G[ OK ]\r\n',
+        b' * Starting configure network device\x1b[74G[ OK ]\r\n',
+        b' * Stopping Populate /dev filesystem\x1b[74G[ OK ]\r\n',
+        b' * Starting Signal sysvinit that virtual filesystems are mounted[ OK ]\r\n',
+        b' * Starting Signal sysvinit that virtual filesystems are mounted\x1b[74G[ OK ]\r\n',
+        b' * Starting Signal sysvinit that local filesystems are mounted\x1b[74G[ OK ]\r\n',
+        b' * Starting configure network device security\x1b[74G[ OK ]\r\n',
+        b' * Starting Signal sysvinit that remote filesystems are mounted\x1b[74G[ OK ]\r\n',
+        b' * Stopping Mount filesystems on boot\x1b[74G[ OK ]\r\n',
+        b' * Starting Failsafe Boot Delay\x1b[74G[ OK ]\r\n',
+        b' * Starting flush early job output to logs\x1b[74G[ OK ]\r\n',
+        b' * Stopping flush early job output to logs\x1b[74G[ OK ]\r\n',
+        b' * Starting D-Bus system message bus\x1b[74G[ OK ]\r\n',
+        b' * Starting Bridge file events into upstart\x1b[74G[ OK ]\r\n',
+        b' * Starting SystemD login management service\x1b[74G[ OK ]\r\n',
+        b' * Starting system logging daemon\x1b[74G[ OK ]\r\n',
+        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
+        b' * Stopping Failsafe Boot Delay\x1b[74G[ OK ]\r\n',
+        b' * Starting System V initialisation compatibility\x1b[74G[ OK ]\r\n',
+        b' * Starting configure virtual network devices\x1b[74G[ OK ]\r\n',
+        b' * Stopping System V initialisation compatibility\x1b[74G[ OK ]\r\n',
+        b' * Starting System V runlevel compatibility\x1b[74G[ OK ]\r\n',
+        b' * Starting xinetd daemon\x1b[74G[ OK ]\r\n',
+        b' * Starting save kernel messages\x1b[74G[ OK ]\r\n',
+        b' * Starting ISC DHCP IPv4 server\x1b[74G[ OK ]\r\n',
+        b' * Starting regular background program processing daemon\x1b[74G[ OK ]\r\n',
+        b' * Stopping ISC DHCP IPv6 server\x1b[74G[ OK ]\r\n',
+        b' * Stopping libvirt daemon\x1b[74G[ OK ]\r\n',
+        b' * Stopping save kernel messages\x1b[74G[ OK ]\r\n',
+        b' * Starting ISC DHCP IPv4 server\x1b[74G[ OK ]\r\n',
+    ]
+
+    for line in test123:
+        #print(type(line))
+        #data.decode('utf-8').strip())
+        c.cso_logger.info(escape_ansi(line.decode('utf-8').strip()))
+    '''
+
     cherrypy.engine.block()

@@ -114,7 +114,7 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
-            $("#session_output_" + json.task + '_' + json.uuid).append(json.msg);
+            $("#session_output_" + json.task + '_' + json.uuid).append(json.msg + '\n');
             $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
 
 
@@ -138,7 +138,9 @@ $( document ).ready(function() {
                 });
 
             });
+
         } else if (json.action === 'update_task_status') {
+            console.log(json.status);
             var temp = t_deploy_status.row('#' + json.task + '_' + json.uuid).data();
             temp.status = json.status;
             t_deploy_status.row('#' + json.task + '_' + json.uuid).data(temp).invalidate();
@@ -150,13 +152,14 @@ $( document ).ready(function() {
                 var row = t_deploy_status.row('#' + json.task + '_' + json.uuid).node();
                 $('td', row).eq(2).css('color', 'black');
             }
+
         } else if (json.action === 'update_card_deploy_status'){
 
             if (lastDeployedUseCase !== json.usecase){
                 $('#' + lastDeployedUseCase + ' > div > div').removeClass("deployed");
                 $('#' + lastDeployedUseCase + ' > div > div > img').attr("src", "/static/images/dummy.png");
                 $('#' + json.usecase + ' > div > div').addClass("deployed");
-                $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/dummy_deployed.png");
+                $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/" + json.image);
                 isDeploying = false;
                 lastDeployedUseCase = json.usecase;
 
@@ -228,7 +231,6 @@ $( document ).ready(function() {
         //    deploy(data);
         //}
 
-
         deploy(data);
 
     });
@@ -277,7 +279,17 @@ $( document ).ready(function() {
             }
         });
     });
+
     $('#img_poc_ref').zoom({magnify: 1});
+
+    $('.card-img-top').on('click', function(e){
+        $("#caption").text($(this).attr('alt'));
+        $('#modalUseCaseImg').css("display", "block");
+        $("#useCaseDetailImg").attr("src", $(this).attr('src'));
+        $('.btnCloseUseCaseImgDetail').on('click', function(e){
+            $('#modalUseCaseImg').css("display", "none");
+        });
+    });
 });
 
 function scrollToBottom(elem) {
@@ -532,5 +544,3 @@ function deploy(data){
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
     });
 }
-
-

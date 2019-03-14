@@ -20,6 +20,7 @@
 #
 
 import json
+import html
 from logging import StreamHandler
 
 
@@ -32,6 +33,7 @@ class WSHandler(StreamHandler):
         self.task = None
 
     def emit(self, message):
+        _msg = html.escape(message.msg)
         msg = {'action': 'update_session_output', 'task': self.task, 'uuid': self.target_data['uuid'],
-               'msg': self.format(message) + '\n'}
+               'msg': _msg + '\n'}
         self.ws_client.send(json.dumps(msg))

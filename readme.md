@@ -67,6 +67,13 @@ git_port: 9080
 git_repo_url: cso_ops/usecases
 ```
 
+Check UI bind IP:
+
+```yaml
+UI_ADDRESS: 0.0.0.0
+UI_PORT: 8670
+```
+
 Create required directories:
 
 - /tmp/cso-ui/log
@@ -74,8 +81,6 @@ Create required directories:
 
 ```bash
 mkdir -p /tmp/cso-ui/log
-mkdir -p /tmp/cso-ui/data
-
 ```
 
 Run following commands on docker box:

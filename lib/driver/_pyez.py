@@ -240,15 +240,9 @@ class PyEzDriver(Base):
                     _status, _data = self.render(task=task)
 
                     if _status:
-                        self.push(task=task, data=_data)
+                        self.status = self.push(task=task, data=_data)
                     else:
-                        c.cso_logger.info(
-                            '[{0}][{1}]: Pushing data failed <{2}>'.format(self.target['name'], task['name'],
-                                                                           _data))
-                        message = {'action': 'update_task_status', 'task': task['name'],
-                                   'uuid': self.target['uuid'],
-                                   'status': _data}
-                        self.emit_message(message=message)
+                        self.status = _status
                         break
 
                 elif task['name'] == 'Zerorize':
@@ -260,14 +254,6 @@ class PyEzDriver(Base):
                     if _status:
                         self.status = self.configure(task=task, data=_data.decode('utf-8'))
                     else:
-                        c.cso_logger.info(
-                            '[{0}][{1}]: Pulling configuration failed <{2}>'.format(self.target['name'],
-                                                                                    task['name'],
-                                                                                    _data))
-                        message = {'action': 'update_task_status', 'task': task['name'],
-                                   'uuid': self.target['uuid'],
-                                   'status': _data.decode("utf-8")}
-                        self.emit_message(message=message)
                         break
 
                 elif task['name'] == 'Copy':
@@ -346,11 +332,15 @@ class PyEzDriver(Base):
                     '[{0}][{1}]: Push configuration to git --> DONE'.format(self.target['name'], task['name']))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                            'status': 'Done'}
-
                 self.emit_message(message=message)
 
             except (GitlabConnectionError, GitlabError) as gle:
-                return False, 'Failed to get project with error: <0>'.format(gle.message)
+                c.cso_logger.info(
+                    '[{0}][{1}]:Failed to get project with error: <{2}>'.format(self.target['name'], task['name'], gle))
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'status': str(gle)}
+                self.emit_message(message=message)
+                return False
 
             _status, _data = self.pull(task=task)
             file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], self.target['name'])
@@ -369,10 +359,19 @@ class PyEzDriver(Base):
                     _data = project.files.update(file_path=file_path, new_data=file_body)
                     c.cso_logger.info(
                         '[{0}][{1}]: Updating file <{0}> --> DONE'.format(self.target['name'], task['name']))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': 'Done'}
+                    self.emit_message(message=message)
                     return True, _data
 
                 except (GitlabConnectionError, GitlabError, GitlabHttpError) as gle:
-                    return False, 'Failed to update device template with error: <0>'.format(str(gle))
+                    c.cso_logger.info(
+                        '[{0}][{1}]: Failed to update device template with error: <{2}>'.format(self.target['name'],
+                                                                                                task['name'], gle))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': str(gle)}
+                    self.emit_message(message=message)
+                    return False
 
             else:
                 c.cso_logger.info('[{0}][{1}]: Creating new file <{0}>'.format(self.target['name'], task['name']))
@@ -389,10 +388,19 @@ class PyEzDriver(Base):
                     _data = project.files.create(file_body)
                     c.cso_logger.info(
                         '[{0}][{1}]: Creating new file <{0}> --> DONE'.format(self.target['name'], task['name']))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': 'Done'}
+                    self.emit_message(message=message)
                     return True, _data
 
                 except (GitlabConnectionError, GitlabError) as gle:
-                    return False, 'Failed to create device template with error: <0>'.format(str(gle))
+                    c.cso_logger.info(
+                        '[{0}][{1}]: Failed to create device template with error: <{2}>'.format(self.target['name'],
+                                                                                                task['name'], gle))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': str(gle)}
+                    self.emit_message(message=message)
+                    return False
 
     def update(self, task=None, data=None):
         c.cso_logger.info(
@@ -446,13 +454,26 @@ class PyEzDriver(Base):
                                                                                               task['name'],
                                                                                               self.use_case_name))
                 return True, f.decode()
+
             except GitlabError as ge:
                 c.cso_logger.info(
-                    '[{0}][{1}]: Pull file from git failed: {2}'.format(self.target['name'], task['name'], ge))
+                    '[{0}][{1}]: Pull file from git failed with error: {2}'.format(self.target['name'], task['name'],
+                                                                                   ge))
+                message = {'action': 'update_task_status', 'task': task['name'],
+                           'uuid': self.target['uuid'],
+                           'status': str(ge)}
+                self.emit_message(message=message)
                 return False, 'Pull file from git failed with error: <{0}>'.format(ge)
 
         except (GitlabConnectionError, GitlabError) as gle:
-            return False, 'Failed to get project with error: <0>'.format(gle.message)
+            c.cso_logger.info(
+                '[{0}][{1}]: Failed to get project with error: <{2}>'.format(self.target['name'], task['name'],
+                                                                             gle))
+            message = {'action': 'update_task_status', 'task': task['name'],
+                       'uuid': self.target['uuid'],
+                       'status': str(gle)}
+            self.emit_message(message=message)
+            return False, 'Failed to get project with error: <{0}>'.format(gle.message)
 
     def zeroize(self, task=None):
         c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(self.target['name'], task['name']))
@@ -560,6 +581,7 @@ class PyEzDriver(Base):
                            'status': str(err)}
                 self.emit_message(message=message)
                 self.disconnect()
+
                 return False
 
             try:
@@ -579,6 +601,7 @@ class PyEzDriver(Base):
                            'status': str(err)}
                 self.emit_message(message=message)
                 self.disconnect()
+
                 return False
 
             c.cso_logger.info(

@@ -2,13 +2,13 @@ var grid;
 var imageFileName;
 var t_deploy_status;
 var isDeploying = false;
+var ws = null;
 
 $( document ).ready(function() {
     console.log( "ready function in ui.js" );
     initGrid();
 
     var wsurl = ws_client_protocol + "://" + ws_client_ip + ":" + ws_client_port + "/ws?clientname=" + clientname;
-    var ws;
     console.log(wsurl);
 
     if (window.WebSocket) {
@@ -24,7 +24,7 @@ $( document ).ready(function() {
 
     ws.onopen = function(){
       console.log('Websocket connection opened');
-
+      heartbeat();
     };
 
     ws.onmessage = function(ev){
@@ -140,7 +140,7 @@ $( document ).ready(function() {
             });
 
         } else if (json.action === 'update_task_status') {
-            console.log(json.status);
+
             var temp = t_deploy_status.row('#' + json.task + '_' + json.uuid).data();
             temp.status = json.status;
             t_deploy_status.row('#' + json.task + '_' + json.uuid).data(temp).invalidate();
@@ -173,6 +173,7 @@ $( document ).ready(function() {
 
     ws.onclose = function(ev){
       console.log('Websocket connection closed');
+      alert("Websocket connection closed. Refresh browser session");
     };
 
     ws.onerror = function(ev){
@@ -291,6 +292,17 @@ $( document ).ready(function() {
         });
     });
 });
+
+function heartbeat() {
+  if (!ws){
+    return;
+  }
+  if (ws.readyState !== 1) {
+    return;
+  }
+  ws.send(JSON.stringify({ message: "heartbeat" }));
+  setTimeout(heartbeat, 5000);
+}
 
 function scrollToBottom(elem) {
   $(elem).scrollTop($(elem)[0].scrollHeight);

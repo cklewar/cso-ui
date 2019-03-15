@@ -1,4 +1,4 @@
-deployed_usecase:
+deployed_usecase: useCase0
 usecases:
   useCase0:
     title: Reset QFX to SD-WAN BASIC
@@ -53,7 +53,7 @@ usecases:
     image: UC4.PNG
     image_deployed: UC4.PNG
     delete: false
-    deployed: false
+    deployed: true
 
   useCase5:
     title: Multi-Hub (or Hub-Redundancy)

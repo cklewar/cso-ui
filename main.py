@@ -457,15 +457,19 @@ class WSHandler(WebSocket):
             _data = json.loads(m.data)
 
         except ValueError as ve:
-            print(ve)
+            c.cso_logger.info('[WS] Received data not JSON: <{0}>'.format(ve))
             return None
 
-        all_clients = cherrypy.engine.publish('get-clients')
+        if 'message' in _data:
+            pass
+        else:
 
-        for _clients in all_clients:
-            for _client_name, client_ws in _clients.items():
-                if not client_ws.terminated:
-                    client_ws.send(m.data)
+            all_clients = cherrypy.engine.publish('get-clients')
+
+            for _clients in all_clients:
+                for _client_name, client_ws in _clients.items():
+                    if not client_ws.terminated:
+                        client_ws.send(m.data)
 
     def closed(self, code, reason='Going away'):
 

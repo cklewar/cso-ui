@@ -475,7 +475,6 @@ class PyEzDriver(Base):
 
             try:
                 raw_data = self._dev._tty._tn.read_until(b"\r\n")
-                #print(repr(raw_data))
                 data = self.escape_ansi(line=raw_data.decode().strip())
 
             except EOFError as err:
@@ -489,13 +488,10 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
             if self.target['model'] == 'nfx':
-                print('{0} == {1}'.format(data, "* Stopping System V runlevel compatibility[ OK ]"))
-                print(data == "* Stopping System V runlevel compatibility[ OK ]")
 
                 if data in c.TERM_STRINGS_QFX:
                     self.isRebooted = True
                     self.isZeroized = True
-                    self.disconnect()
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                                'status': 'Done'}
                     self.emit_message(message=message)
@@ -509,7 +505,6 @@ class PyEzDriver(Base):
                 if data in c.TERM_STRINGS:
                     self.isRebooted = True
                     self.isZeroized = True
-                    self.disconnect()
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                                'status': 'Done'}
                     self.emit_message(message=message)

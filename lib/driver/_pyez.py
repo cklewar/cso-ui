@@ -806,11 +806,10 @@ class PyEzDriver(Base):
                 if data in c.TERM_STRINGS_QFX:
                     self.isRebooted = True
                     self.isZeroized = True
-                    self.disconnect()
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                                'status': 'Done'}
                     self.emit_message(message=message)
-                    c.cso_logger.info('[{0}][{1}]: Zerorize device --> DONE'.format(self.target['name'], task['name']))
+                    c.cso_logger.info('[{0}][{1}]: Reboot device --> DONE'.format(self.target['name'], task['name']))
                     message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                                'status': 'waiting'}
                     self.emit_message(message=message)

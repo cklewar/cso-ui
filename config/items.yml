@@ -1,4 +1,4 @@
-deployed_usecase:
+deployed_usecase: useCase1
 usecases:
   useCase0:
     title: Reset QFX to SD-WAN BASIC
@@ -20,7 +20,7 @@ usecases:
     image: UC1.PNG
     image_deployed: UC1.PNG
     delete: false
-    deployed: false
+    deployed: true
 
   useCase2:
     title: Reset SRX-Spoke to lab-default

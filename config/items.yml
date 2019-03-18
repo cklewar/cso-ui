@@ -1,4 +1,4 @@
-deployed_usecase: useCase0
+deployed_usecase: useCase4
 usecases:
   useCase0:
     title: Reset QFX to SD-WAN BASIC
@@ -31,7 +31,7 @@ usecases:
     image: UC2.PNG
     image_deployed: UC2.PNG
     delete: false
-    deployed: false
+    deployed: true
 
   useCase3:
     title: Zeroize NFX250-1 to lab-default
@@ -65,7 +65,7 @@ usecases:
     image: UC5.PNG
     image_deployed: UC5.PNG
     delete: false
-    deployed: false
+    deployed: true
 
   useCase6:
     title: Dual Spoke (HA via NFX250)

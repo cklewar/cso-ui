@@ -157,7 +157,7 @@ $( document ).ready(function() {
 
             if (lastDeployedUseCase !== json.usecase){
                 $('#' + lastDeployedUseCase + ' > div > div').removeClass("deployed");
-                $('#' + lastDeployedUseCase + ' > div > div > img').attr("src", "/static/images/dummy.png");
+                //$('#' + lastDeployedUseCase + ' > div > div > img').attr("src", "/static/images/dummy.png");
                 $('#' + json.usecase + ' > div > div').addClass("deployed");
                 $('#' + json.usecase + ' > div > div > img').attr("src", "/static/images/" + json.image);
                 isDeploying = false;

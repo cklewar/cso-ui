@@ -533,6 +533,7 @@ class PyEzDriver(Base):
                 if data in c.TERM_STRINGS:
                     self.isRebooted = True
                     self.isZeroized = True
+                    self.wait_for_daemons = True
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                                'status': 'Done'}
                     self.emit_message(message=message)
@@ -553,6 +554,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if not self.isConnected:
+            print('Wait for Daemons is: <{0}>'.format(self.wait_for_daemons))
             if self.wait_for_daemons:
                 self.wait_for_daemons_ready(task=task)
             self.connect()
@@ -785,8 +787,8 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
 
         if not self.isConnected:
-            if self.isZeroized:
-                self.wait_for_daemons(task=task)
+            if self.wait_for_daemons:
+                self.wait_for_daemons_ready(task=task)
             self.connect()
 
         if not self.isNetConf:

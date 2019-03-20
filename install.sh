@@ -101,6 +101,14 @@ import() {
     echo "Import repository"
     echo "#########################################################################"
     echo 'grant_type=password&username=root&password=juniper123' > auth.txt
+
+    while ! curl http://${host}:9080
+    do
+      echo "$(date) - still trying"
+      sleep 1
+    done
+    echo "$(date) - connected successfully"
+    sleep 45
     curl --data "@auth.txt" --request POST http://${host}:9080/oauth/token > token.json
 
     if [[ ${VERSION} == "18.04" ]]
@@ -161,13 +169,6 @@ all() {
     prepare
     buildUi
     buildGitlab
-
-    while ! curl http://${host}:9080
-    do
-      echo "$(date) - still trying"
-      sleep 1
-    done
-    echo "$(date) - connected successfully"
     import
 }
 

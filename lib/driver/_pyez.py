@@ -879,10 +879,18 @@ class PyEzDriver(Base):
         # adding some timeout for telnet session to close properly. Need a better approach here!
         mark_start = datetime.now()
 
-        if self.target['model'] == c.MODEL_QFX or self.target['model'] == c.MODEL_NFX:
-            timeout = 20
+        if self.target['model'] == c.MODEL_QFX:
+            timeout = c.QFX_REBOOT_TIMEOUT
+        elif self.target['model'] == c.MODEL_SRX:
+            timeout = c.SRX_REBOOT_TIMEOUT
+        elif self.target['model'] == c.MODEL_NFX:
+            timeout = c.NFX_REBOOT_TIMEOUT
+        elif self.target['model'] == c.MODEL_EX:
+            timeout = c.EX_REBOOT_TIMEOUT
+        elif self.target['model'] == c.MODEL_MX:
+            timeout = c.MX_REBOOT_TIMEOUT
         else:
-            timeout = 120
+            timeout = 300
 
         mark_end = mark_start + timedelta(seconds=timeout)
 

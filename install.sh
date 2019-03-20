@@ -122,9 +122,13 @@ import() {
         TOKEN=$(yq r ./token.json access_token)
     fi
 
-    curl --request POST --header "Authorization: Bearer ${TOKEN}" --form path="test_import_1000" --form "file=@"${file} http://${host}:9080/api/v4/projects/import
+    curl --request POST --header "Authorization: Bearer ${TOKEN}" \
+       --form path="cso_ops" \
+       --form "file=@"${file} http://${host}:9080/api/v4/projects/import
     echo
-    curl --request POST --header "Authorization: Bearer ${TOKEN}" -F "title=cso-ui" -F "key=$(cat config/ssh/cso-ui.pub)" http://${host}:9080/api/v4/user/keys
+    curl --request POST --header "Authorization: Bearer ${TOKEN}" \
+       -F "title=cso-ui" \
+       -F "key=$(cat config/ssh/cso-ui.pub)" http://${host}:9080/api/v4/user/keys
     echo
 }
 
@@ -223,10 +227,8 @@ while getopts "$optspec" opt; do
                 prepare
                 build
                 echo "#########################################################################"
-                echo "Waiting for Gitlab container to be ready (5 minutes)"
+                echo "Need to run import repository to gitlab with --import=<host_ip> manually"
                 echo "#########################################################################"
-                sleep 5m
-                import
                 ;;
             b|build)
                 build

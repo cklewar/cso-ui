@@ -158,11 +158,6 @@ EOF
 }
 
 all() {
-    host=${OPTARG[0]}
-    ws=${OPTARG[1]}
-    file=${OPTARG[1]}
-
-    cleanup
     prepare
     buildUi
     buildGitlab

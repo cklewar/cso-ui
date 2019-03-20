@@ -838,7 +838,6 @@ class PyEzDriver(Base):
             self.emit_message(message=message)
 
             if self.target['model'] == c.MODEL_NFX:
-
                 if data in c.TERM_STRINGS_NFX:
                     self.isRebooted = True
                     self.wait_for_daemons = True
@@ -850,6 +849,7 @@ class PyEzDriver(Base):
                                'status': 'waiting'}
                     self.emit_message(message=message)
                     return True
+
                 else:
                     re_pattern = re.compile('Ubuntu 14.04.1 LTS ' + self.target['name'] + ' ' + r'\(tty.*\)')
                     term_str = re_pattern.match(data)
@@ -867,7 +867,6 @@ class PyEzDriver(Base):
                         self.emit_message(message=message)
                         return True
             else:
-
                 re_pattern = re.compile(self.target['name'] + ' ' + r'\(tty.*\)')
                 term_str = re_pattern.match(data)
 

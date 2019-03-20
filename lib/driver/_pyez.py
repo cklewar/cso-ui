@@ -850,6 +850,22 @@ class PyEzDriver(Base):
                                'status': 'waiting'}
                     self.emit_message(message=message)
                     return True
+                else:
+                    re_pattern = re.compile('Ubuntu 14.04.1 LTS ' + self.target['name'] + ' ' + r'\(tty.*\)')
+                    term_str = re_pattern.match(data)
+
+                    if term_str:
+                        self.isRebooted = True
+                        self.wait_for_daemons = True
+                        c.cso_logger.info(
+                            '[{0}][{1}]: Rebooting device --> DONE'.format(self.target['name'], task['name']))
+                        message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
+                                   'status': 'waiting'}
+                        self.emit_message(message=message)
+                        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                                   'status': 'Done'}
+                        self.emit_message(message=message)
+                        return True
             else:
 
                 re_pattern = re.compile(self.target['name'] + ' ' + r'\(tty.*\)')

@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-all() {
-    host=${OPTARG[0]}
-    ws=${OPTARG[1]}
-    file=${OPTARG[1]}
-
-
-}
-
 buildUi() {
     echo "#########################################################################"
     echo "Build UI container"
@@ -165,6 +157,25 @@ cat <<- EOF > config/ssh/config
 EOF
 }
 
+all() {
+    host=${OPTARG[0]}
+    ws=${OPTARG[1]}
+    file=${OPTARG[1]}
+
+    cleanup
+    prepare
+    buildUi
+    buildGitlab
+
+    while ! curl http://${host}:9080
+    do
+      echo "$(date) - still trying"
+      sleep 1
+    done
+    echo "$(date) - connected successfully"
+    import
+}
+
 usage() {
     echo "Usage:"
     echo " $0 [ --prepare <host_ip> <ws_ip>]"
@@ -233,18 +244,7 @@ while getopts "$optspec" opt; do
                 host=${OPTARG[0]}
                 ws=${OPTARG[1]}
                 file=${OPTARG[2]}
-                cleanup
-                prepare
-                buildUi
-                buildGitlab
-
-                while ! curl http://${OPTARG[0]}:9080
-                    do
-                      echo "$(date) - still trying"
-                      sleep 1
-                    done
-                    echo "$(date) - connected successfully"
-                    import
+                all
                 ;;
             b|build)
                 buildUi

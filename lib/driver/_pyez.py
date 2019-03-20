@@ -171,13 +171,6 @@ class PyEzDriver(Base):
                 '[{0}][{1}]: Disconnect from device after reboot --> DONE'.format(self.target['name'], 'Disconnect'))
 
         else:
-            #if self.target['model'] == c.MODEL_NFX:
-            #    c.cso_logger.info(
-            #        '[{0}][{1}]: Logout from NFX shell...'.format(self.target['name'], 'Disconnect'))
-            #    self._dev._tty._tn.write('exit'.encode("ascii") + b"\r\n")
-            #    self._dev.close(skip_logout=True)
-            #    c.cso_logger.info(
-            #        '[{0}][{1}]: Logout from NFX shell --> DONE'.format(self.target['name'], 'Disconnect'))
             if self.isNetConf:
                 c.cso_logger.info(
                     '[{0}][{1}]: Terminate netconf session...'.format(self.target['name'], 'Disconnect'))
@@ -470,7 +463,8 @@ class PyEzDriver(Base):
 
                 except GitlabError as ge:
                     c.cso_logger.info(
-                        '[{0}][{1}]: Pull file from git failed with error: {2}'.format(self.target['name'], task['name'],
+                        '[{0}][{1}]: Pull file from git failed with error: {2}'.format(self.target['name'],
+                                                                                       task['name'],
                                                                                        ge))
                     message = {'action': 'update_task_status', 'task': task['name'],
                                'uuid': self.target['uuid'],

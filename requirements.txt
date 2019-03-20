@@ -1,5 +1,6 @@
 CherryPy
 jinja2
+lxml
 six
 requests
 ruamel.yaml

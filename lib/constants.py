@@ -28,7 +28,6 @@ ADMIN_USER_PW = 'juniper123'
 CONFIG = None
 TERM_STRINGS = ["Amnesiac (ttyu0)", "Amnesiac (ttyd0)"]
 TERM_STRINGS_NFX = ["Ubuntu 14.04.1 LTS jdm tty1", "* Stopping System V runlevel compatibility[ OK ]"]
-#Ubuntu 14.04.1 LTS nfx250-1 tty1
 MODEL_NFX = 'nfx'
 MODEL_QFX = 'qfx'
 MODEL_EX = 'ex'

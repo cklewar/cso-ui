@@ -1,24 +1,5 @@
 #!/usr/bin/env bash
 
-build() {
-    echo "#########################################################################"
-    echo "Build container"
-    echo "#########################################################################"
-    host=$OPTARG
-    docker build -t cso-ui .
-    docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
-    docker run --detach \
-       --hostname "${host}" \
-       --name gitlab \
-       --restart always \
-       --volume /srv/gitlab/config:/etc/gitlab \
-       --volume /srv/gitlab/logs:/tmp/gitlab/logs \
-       --volume /srv/gitlab/data:/tmp/gitlab/data \
-       --publish 9080:9080 --publish 3022:22 --publish 9443:9443 \
-       --env GITLAB_OMNIBUS_CONFIG="external_url 'http://${host}:9080'; gitlab_rails['gitlab_shell_ssh_port']=3022;" \
-       gitlab/gitlab-ce:latest
-}
-
 buildUi() {
     echo "#########################################################################"
     echo "Build UI container"
@@ -174,8 +155,16 @@ prepare() {
         apt-get install curl git yq --allow-unauthenticated -y
         yq w --inplace config/config.yml ws_client_ip ${ws}
         yq w --inplace config/config.yml git_host ${host}
-    mkdir -p /tmp/cso-ui/log
     fi
+
+    mkdir -p /tmp/cso-ui/log
+
+cat <<- EOF > config/ssh/config
+    Host ${host}
+    StrictHostKeyChecking no
+    UserKnownHostsFile=/dev/null
+    IdentityFile /root/.ssh/cso-ui
+EOF
 }
 
 usage() {
@@ -242,13 +231,15 @@ while getopts "$optspec" opt; do
             a|all)
                 cleanup
                 prepare
-                build
+                buildUi
+                buildGitlab
                 echo "#########################################################################"
                 echo "Need to run import repository to gitlab with --import=<host_ip> manually"
                 echo "#########################################################################"
                 ;;
             b|build)
-                build
+                buildUi
+                buildGitlab
                 ;;
             buildUi)
                 buildUi

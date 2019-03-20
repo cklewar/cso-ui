@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
+all() {
+    host=${OPTARG[0]}
+    ws=${OPTARG[1]}
+    file=${OPTARG[1]}
+
+
+}
+
 buildUi() {
     echo "#########################################################################"
     echo "Build UI container"
     echo "#########################################################################"
-    host=$OPTARG
     mkdir -p /tmp/cso-ui/log
     docker build -t cso-ui .
     docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
@@ -14,9 +21,6 @@ buildGitlab() {
     echo "#########################################################################"
     echo "Build Gitlab container"
     echo "#########################################################################"
-    host=$OPTARG
-    docker build -t cso-ui .
-    docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
     docker run --detach \
        --hostname "${host}" \
        --name gitlab \
@@ -25,7 +29,7 @@ buildGitlab() {
        --volume /srv/gitlab/logs:/tmp/gitlab/logs \
        --volume /srv/gitlab/data:/tmp/gitlab/data \
        --publish 9080:9080 --publish 3022:22 --publish 9443:9443 \
-       --env GITLAB_OMNIBUS_CONFIG="external_url 'http://${host}:9080'; gitlab_rails['gitlab_shell_ssh_port']=3022; gitlab_rails['initial_root_password']='juniper123'"" \
+       --env GITLAB_OMNIBUS_CONFIG="external_url 'http://${host}:9080'; gitlab_rails['gitlab_shell_ssh_port']=3022; gitlab_rails['initial_root_password']='juniper123'" \
        gitlab/gitlab-ce:latest
 }
 
@@ -64,7 +68,6 @@ cleanupUi() {
         echo "Stopping container"
         echo "#########################################################################"
         docker container stop cso-ui
-        #docker container rm cso-ui
         docker images -a | grep "cso-ui" | awk '{print $3}' | xargs docker rmi
         systemctl restart apparmor
     elif [[ ${VERSION} == "16.04" ]]
@@ -73,7 +76,6 @@ cleanupUi() {
         echo "Stopping container"
         echo "#########################################################################"
         docker container stop cso-ui
-        #docker container rm cso-ui
         docker images -a | grep "cso-ui" | awk '{print $3}' | xargs docker rmi
     fi
     rm -Rf /tmp/cso-ui
@@ -106,8 +108,6 @@ import() {
     echo "#########################################################################"
     echo "Import repository"
     echo "#########################################################################"
-    host=${OPTARG[0]}
-    file=${OPTARG[1]}
     echo 'grant_type=password&username=root&password=juniper123' > auth.txt
     curl --data "@auth.txt" --request POST http://${host}:9080/oauth/token > token.json
 
@@ -133,8 +133,6 @@ prepare() {
     echo "#########################################################################"
     echo "Prepare environment"
     echo "#########################################################################"
-    host=${OPTARG[0]}
-    ws=${OPTARG[1]}
 
     if [[ ${VERSION} == "18.04" ]]
     then
@@ -177,7 +175,7 @@ usage() {
     echo " $0 [ --cleanupUi ]"
     echo " $0 [ --cleanupGitlab ]"
     echo " $0 [ --import <host_ip> <file> ]"
-    echo " $0 [ --all <host_ip> <file> ]"
+    echo " $0 [ --all <host_ip> <ws_ip> <file> ]"
     echo " $0 [ --help | -h ]"
     echo
 }
@@ -189,10 +187,13 @@ buildUi=""
 buildGitlab=""
 import=""
 prepare=""
+host=""
+ws=""
+file=""
 VERSION=`lsb_release -rs`
 i=$(($# + 1))
 declare -A longoptspec
-longoptspec=( [all]=2 [build]=1 [buildUi]=1 [buildGitlab]=1 [import]=2 [prepare]=2 )
+longoptspec=( [all]=3 [build]=1 [buildUi]=1 [buildGitlab]=1 [import]=2 [prepare]=2 )
 optspec=":h-:"
 
 while getopts "$optspec" opt; do
@@ -229,22 +230,32 @@ while getopts "$optspec" opt; do
                 continue
                 ;;
             a|all)
+                host=${OPTARG[0]}
+                ws=${OPTARG[1]}
+                file=${OPTARG[2]}
                 cleanup
                 prepare
                 buildUi
                 buildGitlab
-                echo "#########################################################################"
-                echo "Need to run import repository to gitlab with --import=<host_ip> manually"
-                echo "#########################################################################"
+
+                while ! curl http://${OPTARG[0]}:9080
+                    do
+                      echo "$(date) - still trying"
+                      sleep 1
+                    done
+                    echo "$(date) - connected successfully"
+                    import
                 ;;
             b|build)
                 buildUi
                 buildGitlab
                 ;;
             buildUi)
+                host=$OPTARG
                 buildUi
                 ;;
             buildGitlab)
+                host=$OPTARG
                 buildGitlab
                 ;;
             c|cleanup)
@@ -257,6 +268,8 @@ while getopts "$optspec" opt; do
                 cleanupGitlab
                 ;;
             i|import)
+                host=${OPTARG[0]}
+                file=${OPTARG[1]}
                 import
                 ;;
             h|help)
@@ -264,6 +277,8 @@ while getopts "$optspec" opt; do
                 exit 0
                 ;;
             p|prepare)
+                host=${OPTARG[0]}
+                ws=${OPTARG[1]}
                 prepare
                 ;;
             ?)

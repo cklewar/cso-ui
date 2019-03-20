@@ -25,7 +25,7 @@ buildGitlab() {
        --volume /srv/gitlab/logs:/tmp/gitlab/logs \
        --volume /srv/gitlab/data:/tmp/gitlab/data \
        --publish 9080:9080 --publish 3022:22 --publish 9443:9443 \
-       --env GITLAB_OMNIBUS_CONFIG="external_url 'http://${host}:9080'; gitlab_rails['gitlab_shell_ssh_port']=3022;" \
+       --env GITLAB_OMNIBUS_CONFIG="external_url 'http://${host}:9080'; gitlab_rails['gitlab_shell_ssh_port']=3022; gitlab_rails['initial_root_password']='juniper123'"" \
        gitlab/gitlab-ce:latest
 }
 

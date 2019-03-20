@@ -136,7 +136,8 @@ prepare() {
     echo "#########################################################################"
     echo "Prepare environment"
     echo "#########################################################################"
-    host=$OPTARG
+    host=${OPTARG[0]}
+    ws=${OPTARG[1]}
 
     if [[ ${VERSION} == "18.04" ]]
     then
@@ -148,14 +149,14 @@ prepare() {
         apt-get update
         apt-get install docker-ce -y
         snap install yq
-        /snap/bin/yq w --inplace config/config.yml ws_client_ip ${host}
+        /snap/bin/yq w --inplace config/config.yml ws_client_ip ${ws}
         /snap/bin/yq w --inplace config/config.yml git_host ${host}
     elif [[ ${VERSION} == "16.04" ]]
     then
         add-apt-repository ppa:rmescandon/yq
         apt-get update
         apt-get install curl git yq -y
-        yq w --inplace config/config.yml ws_client_ip ${host}
+        yq w --inplace config/config.yml ws_client_ip ${ws}
         yq w --inplace config/config.yml git_host ${host}
     mkdir -p /tmp/cso-ui/log
     fi
@@ -163,7 +164,7 @@ prepare() {
 
 usage() {
     echo "Usage:"
-    echo " $0 [ --prepare=<host_ip> ]"
+    echo " $0 [ --prepare <host_ip> <ws_ip>]"
     echo " $0 [ --build=<host_ip> ]"
     echo " $0 [ --buildUi=<host_ip> ]"
     echo " $0 [ --buildGitlab=<host_ip> ]"
@@ -186,7 +187,7 @@ prepare=""
 VERSION=`lsb_release -rs`
 i=$(($# + 1))
 declare -A longoptspec
-longoptspec=( [all]=2 [build]=1 [buildUi]=1 [buildGitlab]=1 [import]=2 [prepare]=1 )
+longoptspec=( [all]=2 [build]=1 [buildUi]=1 [buildGitlab]=1 [import]=2 [prepare]=2 )
 optspec=":h-:"
 
 while getopts "$optspec" opt; do

@@ -153,9 +153,9 @@ prepare() {
         /snap/bin/yq w --inplace config/config.yml git_host ${host}
     elif [[ ${VERSION} == "16.04" ]]
     then
-        add-apt-repository ppa:rmescandon/yq
+        add-apt-repository ppa:rmescandon/yq -y
         apt-get update
-        apt-get install curl git yq -y
+        apt-get install curl git yq --allow-unauthenticated -y
         yq w --inplace config/config.yml ws_client_ip ${ws}
         yq w --inplace config/config.yml git_host ${host}
     mkdir -p /tmp/cso-ui/log

@@ -24,6 +24,7 @@ buildUi() {
     echo "Build UI container"
     echo "#########################################################################"
     host=$OPTARG
+    mkdir -p /tmp/cso-ui/log
     docker build -t cso-ui .
     docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
 }
@@ -55,6 +56,9 @@ cleanup() {
     if [[ ${VERSION} == "18.04" ]]
     then
         service apparmor teardown
+        echo "#########################################################################"
+        echo "Stopping container"
+        echo "#########################################################################"
         docker container stop $(docker container ps -a -q)
         docker container rm $(docker ps -a -f status=exited -q)
         docker rmi $(docker images -q)
@@ -75,14 +79,20 @@ cleanupUi() {
     if [[ ${VERSION} == "18.04" ]]
     then
         service apparmor teardown
+        echo "#########################################################################"
+        echo "Stopping container"
+        echo "#########################################################################"
         docker container stop cso-ui
-        docker container rm cso-ui
+        #docker container rm cso-ui
         docker images -a | grep "cso-ui" | awk '{print $3}' | xargs docker rmi
         systemctl restart apparmor
     elif [[ ${VERSION} == "16.04" ]]
     then
+        echo "#########################################################################"
+        echo "Stopping container"
+        echo "#########################################################################"
         docker container stop cso-ui
-        docker container rm cso-ui
+        #docker container rm cso-ui
         docker images -a | grep "cso-ui" | awk '{print $3}' | xargs docker rmi
     fi
     rm -Rf /tmp/cso-ui
@@ -92,12 +102,18 @@ cleanupGitlab() {
     if [[ ${VERSION} == "18.04" ]]
     then
         service apparmor teardown
+        echo "#########################################################################"
+        echo "Stopping container"
+        echo "#########################################################################"
         docker container stop gitlab
         docker container rm gitlab
         docker images -a | grep "gitlab/gitlab-ce" | awk '{print $3}' | xargs docker rmi
         systemctl restart apparmor
     elif [[ ${VERSION} == "16.04" ]]
     then
+        echo "#########################################################################"
+        echo "Stopping container"
+        echo "#########################################################################"
         docker container stop gitlab
         docker container rm gitlab
         docker images -a | grep "gitlab/gitlab-ce" | awk '{print $3}' | xargs docker rmi

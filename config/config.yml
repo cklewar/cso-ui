@@ -9,7 +9,7 @@ git_host: 127.0.0.1
 git_http_port: 9080
 git_ssh_port: 3022
 git_login_url: /oauth/token
-git_repo_url: cso-ops/usecases
+git_repo_url: root/cso_ops
 git_device_conf_dir: config
 git_user: root
 git_password: juniper123

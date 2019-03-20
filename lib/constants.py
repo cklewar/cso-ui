@@ -18,6 +18,7 @@
 #
 # Author: cklewar
 #
+import threading
 
 DRIVER_SALTSTACK = 'saltstack'
 DRIVER_ANSIBLE = 'ansible'
@@ -33,6 +34,7 @@ MODEL_QFX = 'qfx'
 MODEL_EX = 'ex'
 MODEL_SRX = 'srx'
 MODEL_MX = 'mx'
+GITLAB_LOCK = threading.Lock()
 logger = None
 cso_logger = None
 jnpr_junos_tty = None

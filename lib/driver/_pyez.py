@@ -350,8 +350,13 @@ class PyEzDriver(Base):
                 }
 
                 try:
+                    c.GITLAB_LOCK.acquire()
 
-                    _data = project.files.update(file_path=file_path, new_data=file_body)
+                    try:
+                        _data = project.files.update(file_path=file_path, new_data=file_body)
+                    finally:
+                        c.GITLAB_LOCK.release()
+
                     c.cso_logger.info(
                         '[{0}][{1}]: Updating file <{0}> --> DONE'.format(self.target['name'], task['name']))
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -381,8 +386,13 @@ class PyEzDriver(Base):
                 }
 
                 try:
+                    c.GITLAB_LOCK.acquire()
 
-                    _data = project.files.create(file_body)
+                    try:
+                        _data = project.files.create(file_body)
+                    finally:
+                        c.GITLAB_LOCK.release()
+
                     c.cso_logger.info(
                         '[{0}][{1}]: Creating new file <{0}> --> DONE'.format(self.target['name'], task['name']))
                     message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],

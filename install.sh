@@ -247,6 +247,7 @@ while getopts "$optspec" opt; do
                 all
                 ;;
             b|build)
+                host=$OPTARG
                 buildUi
                 buildGitlab
                 ;;

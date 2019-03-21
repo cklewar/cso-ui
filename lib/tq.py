@@ -51,10 +51,10 @@ class TargetQueue(Thread):
 
     def run(self):
 
-        for target in self.__data:
-            c.cso_logger.info('[{0}][TQ]: Start deploy usecase <{1}>'.format(target['name'], self.use_case_name))
+        for target, target_data in self.__data.items():
+            c.cso_logger.info('[{0}][TQ]: Start deploy usecase <{1}>'.format(target, self.use_case_name))
             df = DriverFactory(name=c.CONFIG['driver'])
-            driver = df.init_driver(target_data=target, use_case_name=self.use_case_name,
+            driver = df.init_driver(target_data=target_data, use_case_name=self.use_case_name,
                                     use_case_data=self.use_case_data, results=self.results, ws_client=self.ws_client)
             self.tq.append(driver)
             driver.start()

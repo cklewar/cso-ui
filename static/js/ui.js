@@ -219,7 +219,6 @@ $( document ).ready(function() {
     });
 
     $('.btnDeployUseCase').on('click', function (event) {
-        console.log('deploy use case');
         var data = {};
         data.use_case_name = $(this).data('usecase');
 
@@ -486,26 +485,26 @@ function deploy(data){
                                 });
                             });
                             return return_data;
-                        },
-                        "initComplete":function( settings, json){
-                            data.action = 'run';
-                            console.log('Init complete. Run deployment...');
-                            /*$.ajax({
-                                url: '/api/deploy',
-                                type: 'POST',
-                                data: JSON.stringify(data),
-                                cache: false,
-                                processData: true,
-                                dataType: 'json',
-                                contentType: 'application/json',
-                                success: function (response) {
-                                    console.log(response)
-                                },
-                                error : function (data, errorText) {
-                                    $("#errormsg").html(errorText).show();
-                                }
-                            });*/
                         }
+                    },
+                    "initComplete":function( settings, json){
+                        data.action = 'run';
+                        console.log('Init complete. Run deployment...');
+                        $.ajax({
+                            url: '/api/deploy',
+                            type: 'POST',
+                            data: JSON.stringify(data),
+                            cache: false,
+                            processData: true,
+                            dataType: 'json',
+                            contentType: 'application/json',
+                            success: function (response) {
+                                console.log(response)
+                            },
+                            error : function (data, errorText) {
+                                $("#errormsg").html(errorText).show();
+                            }
+                        });
                     },
                     "createdRow": function( row, data, dataIndex ) {
                         $(row).attr('id', data.task + '_' + data.uuid);

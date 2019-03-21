@@ -2,7 +2,7 @@ driver: pyez
 demo_ref_doc_url: static/docs/readthedocs-html-version/index.html
 jtac_url: https://support.juniper.net/support/
 ws_client_protocol: ws
-ws_client_ip: 10.11.111.180
+ws_client_ip: 127.0.0.1
 ws_client_port: 8670
 git_protocol: http
 git_host: 10.11.111.180
@@ -21,5 +21,5 @@ baselog: cso-ui.log
 
 IS_SSL: False
 DEMONIZE: False
-UI_ADDRESS: 0.0.0.0
+UI_ADDRESS: 127.0.0.1
 UI_PORT: 8670

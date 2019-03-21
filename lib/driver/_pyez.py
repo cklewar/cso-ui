@@ -220,7 +220,7 @@ class PyEzDriver(Base):
         c.cso_logger.info('[{0}][{1}]: Disconnect netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
 
     def run(self):
-
+        print(self.target)
         for task in self.target['tasks']:
 
             if self.status:

@@ -39,6 +39,7 @@ NFX_REBOOT_TIMEOUT = 30
 EX_REBOOT_TIMEOUT = 30
 MX_REBOOT_TIMEOUT = 30
 SRX_REBOOT_TIMEOUT = 180
+TARGET_ATTRS = ['model', 'mode', 'address', 'port', 'user', 'password']
 logger = None
 cso_logger = None
 jnpr_junos_tty = None

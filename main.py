@@ -29,7 +29,7 @@ import random
 import logging.config
 import uuid
 import shutil
-import re
+import pprint
 
 from git import Repo
 from git.exc import GitCommandError
@@ -79,23 +79,6 @@ def cors_tool():
         if cherrypy.request.config.get('tools.sessions.on', False):
             cherrypy.session['token'] = True
         return True
-
-
-class WSClient(WebSocketClient):
-    def __init__(self, name=None, url=None):
-        super(WSClient, self).__init__(url=url, protocols=['http-only', 'chat'])
-        self._clientName = name
-
-    def opened(self):
-        pass
-        # print('opened connection')
-
-    def closed(self, code, reason=None):
-        if code != 1000:
-            print('WSClient: Connection closed. Code <{0}>, Reason: <{1}>'.format(code, reason))
-
-    def received_message(self, m):
-        print('WSClient: Client received data. That\'s not what we want at this stage')
 
 
 class RestrictedArea(object):
@@ -255,7 +238,7 @@ class Upload(object):
 class Deploy(object):
 
     def __init__(self):
-        self.__data = list()
+        self.__data = dict()
         self.tmp_dir = c.CONFIG['tmp_dir']
         self._use_case_name = None
         self._use_case_data = None
@@ -303,26 +286,86 @@ class Deploy(object):
             self._use_case_data = use_case_data
             self._use_case_path = '{0}/{1}'.format(self.tmp_dir, self._use_case_data['directory'])
             play = '{0}/{1}'.format(self._use_case_path, self._use_case_data['playbook'])
-            self.__data = list()
+            targets = '{0}/{1}'.format(self.tmp_dir, 'targets.yml')
+            self.__data = dict()
+
+            try:
+                with open(targets, 'r') as fd:
+                    targets_data = _yaml.load(fd)
+
+            except FileNotFoundError as err:
+                c.cso_logger.info('[Target_Tasks]: Targets data no found with error: <{0}>'.format(err))
+                return False, 'Targets data no found'
 
             try:
                 with open(play, 'r') as fd:
                     play_data = _yaml.load(fd)
 
-                for target, value in play_data['targets'].items():
-                    _tmp = {'name': target, **value, 'uuid': str(uuid.uuid4()), 'tasks': list()}
-                    _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting'})
-                    for task, attr in value['tasks'].items():
-                        if attr['enabled']:
-                            _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
-                    _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting'})
-                    self.__data.append(_tmp)
-
-                c.cso_logger.info('[Target_Tasks]: Compute target attached tasks --> DONE')
-                return True, self.__data
             except FileNotFoundError as err:
-                c.cso_logger.info('[Target_Tasks]: Usecase data no found')
+                c.cso_logger.info('[Target_Tasks]: Usecase data no found with error: <{0}>'.format(err))
                 return False, 'Usecase data no found'
+
+            for k in targets_data.keys():
+                if k in play_data['targets']:
+                    if all(key in play_data['targets'][k] for key in c.TARGET_ATTRS):
+                        c.cso_logger.info('[Target_Tasks][{0}]: Using target definition from playbook'.format(k))
+                        _tmp = {'usecase': self._use_case_name, 'name': k, **play_data['targets'].get(k),
+                                'uuid': str(uuid.uuid4()), 'tasks': list()}
+                        _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting', 'enabled': True})
+
+                        for task, attr in play_data['targets'][k]['tasks'].items():
+                            if attr['enabled']:
+                                _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
+                        _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting', 'enabled': True})
+                        self.__data.update({k: _tmp})
+
+                    if not all(key in play_data['targets'][k] for key in c.TARGET_ATTRS):
+                        c.cso_logger.info('[Target_Tasks][{0}]: Using target definition from targets file'.format(k))
+                        _tmp = {'usecase': self._use_case_name, 'name': k, **targets_data.get(k),
+                                'uuid': str(uuid.uuid4()), 'tasks': list()}
+                        _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting', 'enabled': True})
+
+                        for task, attr in play_data['targets'][k]['tasks'].items():
+                            if attr['enabled']:
+                                _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
+                        _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting', 'enabled': True})
+                        self.__data.update({k: _tmp})
+
+            for k in play_data['targets'].keys():
+                if k not in self.__data:
+                    if all(key in play_data['targets'][k] for key in c.TARGET_ATTRS):
+                        _tmp = {'usecase': self._use_case_name, 'name': k, **play_data['targets'].get(k),
+                                'uuid': str(uuid.uuid4()), 'tasks': list()}
+                        _tmp['tasks'].append({'name': 'Connect', 'status': 'waiting', 'enabled': True})
+
+                        for task, attr in play_data['targets'][k]['tasks'].items():
+                            if attr['enabled']:
+                                _tmp['tasks'].append({'name': task, 'status': 'waiting', **attr})
+                        _tmp['tasks'].append({'name': 'Disconnect', 'status': 'waiting', 'enabled': True})
+                        self.__data.update({k: _tmp})
+
+            c.cso_logger.info('[Target_Tasks]: Compute target attached tasks --> DONE')
+            '''
+            __cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
+                                                     c.CONFIG['ws_client_port'])
+            __url = '{0}?clientname=server'.format(__cso_ws_url)
+            c.cso_logger.info('WS Client connect to URL: {0}'.format(__url))
+            from lib.wsclient import WSClient
+            ws_client = WSClient(name='server', url=__url)
+            ws_client.connect()
+            message = {'action': 'update_card_deploy_status', 'usecase': self._use_case_name, 'status': True,
+                       'image': self._use_case_data['image']}
+            
+            ws_client.send(json.dumps(message))
+            ws_client.close()
+            '''
+            return True, self.__data
+
+        elif action == 'render':
+            env = Environment(loader=FileSystemLoader('templates'))
+            tmpl = env.get_template('deploy.html', 'r')
+            modal = tmpl.render(usecase=self._use_case_name)
+            return modal
 
 
 class Api(object):
@@ -552,60 +595,4 @@ if __name__ == '__main__':
     cherrypy.tree.mount(Root(), '/', config=ui_conf)
     cherrypy.tree.mount(Api(), '/api', config=api_conf)
     cherrypy.engine.start()
-    '''
-    test123 = [
-        b' * Starting workaround for missing events in container\x1b[74G[ OK ]\r\n',
-        b' * Stopping load fallback graphics devices\x1b[74G[ OK ]\r\n',
-        b' * Stopping workaround for missing events in container\x1b[74G[ OK ]\r\n',
-        b' * Starting set console font\x1b[74G[ OK ]\r\n',
-        b' * Starting set console font\x1b[74G[\x1b[31mfail\x1b[39;49m]\r\n',
-        b' * Starting userspace bootsplash\x1b[74G[ OK ]\r\n',
-        b' * Starting configure network device security\x1b[74G[ OK ]\r\n',
-        b' * Stopping userspace bootsplash\x1b[74G[ OK ]\r\n',
-        b' * Starting Send an event to indicate plymouth is up\x1b[74G[ OK ]\r\n',
-        b' * Stopping Send an event to indicate plymouth is up\x1b[74G[ OK ]\r\n',
-        b' * Starting mount available cgroup filesystems\x1b[74G[ OK ]\r\n',
-        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Starting Bridge socket events into upstart\x1b[74G[ OK ]\r\n',
-        b' * Starting configure network device\x1b[74G[ OK ]\r\n',
-        b' * Stopping Populate /dev filesystem\x1b[74G[ OK ]\r\n',
-        b' * Starting Signal sysvinit that virtual filesystems are mounted[ OK ]\r\n',
-        b' * Starting Signal sysvinit that virtual filesystems are mounted\x1b[74G[ OK ]\r\n',
-        b' * Starting Signal sysvinit that local filesystems are mounted\x1b[74G[ OK ]\r\n',
-        b' * Starting configure network device security\x1b[74G[ OK ]\r\n',
-        b' * Starting Signal sysvinit that remote filesystems are mounted\x1b[74G[ OK ]\r\n',
-        b' * Stopping Mount filesystems on boot\x1b[74G[ OK ]\r\n',
-        b' * Starting Failsafe Boot Delay\x1b[74G[ OK ]\r\n',
-        b' * Starting flush early job output to logs\x1b[74G[ OK ]\r\n',
-        b' * Stopping flush early job output to logs\x1b[74G[ OK ]\r\n',
-        b' * Starting D-Bus system message bus\x1b[74G[ OK ]\r\n',
-        b' * Starting Bridge file events into upstart\x1b[74G[ OK ]\r\n',
-        b' * Starting SystemD login management service\x1b[74G[ OK ]\r\n',
-        b' * Starting system logging daemon\x1b[74G[ OK ]\r\n',
-        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Starting Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Stopping Mount network filesystems\x1b[74G[ OK ]\r\n',
-        b' * Stopping Failsafe Boot Delay\x1b[74G[ OK ]\r\n',
-        b' * Starting System V initialisation compatibility\x1b[74G[ OK ]\r\n',
-        b' * Starting configure virtual network devices\x1b[74G[ OK ]\r\n',
-        b' * Stopping System V initialisation compatibility\x1b[74G[ OK ]\r\n',
-        b' * Starting System V runlevel compatibility\x1b[74G[ OK ]\r\n',
-        b' * Starting xinetd daemon\x1b[74G[ OK ]\r\n',
-        b' * Starting save kernel messages\x1b[74G[ OK ]\r\n',
-        b' * Starting ISC DHCP IPv4 server\x1b[74G[ OK ]\r\n',
-        b' * Starting regular background program processing daemon\x1b[74G[ OK ]\r\n',
-        b' * Stopping ISC DHCP IPv6 server\x1b[74G[ OK ]\r\n',
-        b' * Stopping libvirt daemon\x1b[74G[ OK ]\r\n',
-        b' * Stopping save kernel messages\x1b[74G[ OK ]\r\n',
-        b' * Starting ISC DHCP IPv4 server\x1b[74G[ OK ]\r\n',
-    ]
-
-    for line in test123:
-        #print(type(line))
-        #data.decode('utf-8').strip())
-        c.cso_logger.info(escape_ansi(line.decode('utf-8').strip()))
-    '''
-
     cherrypy.engine.block()

@@ -46,63 +46,62 @@
 <main role="main" class="container-fluid p-1 h-100 scrolly main-container">
     <div class="row align-items-center main-row">
         <div class="col-12 mx-auto">
-
-                <div class="grid">
-                    {% for item, value in data.cards.items() %}
-                    <div class="item" id="{{ item }}" data-id="{{ item }}">
-                        <div class="item-content">
-                            {% if item == data.deployed_usecase %}
-                            <div class="card card-border deployed">
+            <div class="grid">
+                {% for item, value in data.cards.items() %}
+                <div class="item" id="{{ item }}" data-id="{{ item }}">
+                    <div class="item-content">
+                        {% if item == data.deployed_usecase %}
+                        <div class="card card-border deployed">
+                            {% else %}
+                            <div class="card card-border">
+                                {% endif %}
+                                {% if item == data.deployed_usecase %}
+                                <img class="card-img-top" src="static/images/{{ value.image_deployed }}"
+                                     alt="{{ item }} login">
                                 {% else %}
-                                <div class="card card-border">
-                                    {% endif %}
-                                    {% if item == data.deployed_usecase %}
-                                    <img class="card-img-top" src="static/images/{{ value.image_deployed }}"
-                                         alt="{{ item }} login">
-                                    {% else %}
-                                    <img class="card-img-top" src="static/images/{{ value.image }}"
-                                         alt="{{ item }} login">
-                                    {% endif %}
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ value.title }}</h5>
-                                        <p class="card-text">{{ value.description }}</p>
-                                    </div>
-                                    <div class="card-footer">
-                                        <button class="btn btn-primary btnDeployUseCase" role="button"
-                                                data-toggle="modal" data-usecase="{{ item }}"
-                                                id="btnDeployUseCase_{{ item }}">Deploy
+                                <img class="card-img-top" src="static/images/{{ value.image }}"
+                                     alt="{{ item }} login">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ value.title }}</h5>
+                                    <p class="card-text">{{ value.description }}</p>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary btnDeployUseCase" role="button"
+                                            data-toggle="modal" data-usecase="{{ item }}"
+                                            id="btnDeployUseCase_{{ item }}">Deploy
+                                    </button>
+                                    <div class="dropdown dropup float-right">
+                                        <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
+                                                aria-haspopup="true"
+                                                aria-expanded="false">
+                                            <i class="fas fa-cogs"></i>
                                         </button>
-                                        <div class="dropdown dropup float-right">
-                                            <button class="btn btn-secondary dropdown-toggle" type="button"
-                                                    id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
-                                                    aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                <i class="fas fa-cogs"></i>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ item }}">
+                                            <button class="dropdown-item" type="button" data-toggle="modal"
+                                                    data-target="#cardSettingsModal_{{ item }}">Settings
                                             </button>
-                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuCard_{{ item }}">
-                                                <button class="dropdown-item" type="button" data-toggle="modal"
-                                                        data-target="#cardSettingsModal_{{ item }}">Settings
-                                                </button>
-                                                {% if value.delete %}
-                                                <button class="dropdown-item btnCardDelete" type="button"
-                                                        data-source="{{ item }}">Delete
-                                                </button>
-                                                {% else %}
-                                                <button class="dropdown-item btnCardDelete" type="button"
-                                                        data-source="{{ item }}" disabled>Delete
-                                                </button>
-                                                {% endif %}
-                                            </div>
+                                            {% if value.delete %}
+                                            <button class="dropdown-item btnCardDelete" type="button"
+                                                    data-source="{{ item }}">Delete
+                                            </button>
+                                            {% else %}
+                                            <button class="dropdown-item btnCardDelete" type="button"
+                                                    data-source="{{ item }}" disabled>Delete
+                                            </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
+                    {% endfor %}
                 </div>
-
+            </div>
         </div>
+    </div>
 </main>
 <!-- Modal edit card settings -->
 {% for item, value in data.cards.items() %}
@@ -302,7 +301,7 @@
         </div>
     </div>
 </div>
-<!-- Modal Deploy-->
+<!-- Modal Generic Messages-->
 <div class="modal" id="modalMessage" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -323,9 +322,9 @@
 
 <!-- usecase image detail modal -->
 <div id="modalUseCaseImg" class="usecase-modal-img">
-  <span class="btnCloseUseCaseImgDetail">&times;</span>
-  <img class="usecase-modal-img-content" id="useCaseDetailImg">
-  <div id="caption"></div>
+    <span class="btnCloseUseCaseImgDetail">&times;</span>
+    <img class="usecase-modal-img-content" id="useCaseDetailImg">
+    <div id="caption"></div>
 </div>
 
 <!-- CSS spinner loader -->
@@ -358,6 +357,7 @@
     var ws_client_port = "{{ data.port }}";
     var clientname = "{{ data.clientname }}";
     var lastDeployedUseCase = "{{ data.deployed_usecase }}";
+
 
 </script>
 </html>

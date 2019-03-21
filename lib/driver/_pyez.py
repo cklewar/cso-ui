@@ -262,7 +262,7 @@ class PyEzDriver(Base):
                            'msg': self.gen_task_done_message(task=task)}
                 self.emit_message(message=message)
             else:
-                c.cso_logger.info('[{0}][{1}]: Error in last task.'.format(self.target['name'], task['name']))
+                c.cso_logger.info('[{0}][{1}]: Error in previous task.'.format(self.target['name'], task['name']))
                 break
 
         if self.status:
@@ -755,6 +755,12 @@ class PyEzDriver(Base):
 
             except EOFError as err:
                 c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(self.target['name'], task['name'], err))
+                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'msg': str(err)}
+                self.emit_message(message=message)
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'status': 'Failed'}
+                self.emit_message(message=message)
                 return False
 
             c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'], str(data, 'utf-8').strip()))
@@ -829,6 +835,12 @@ class PyEzDriver(Base):
 
             except EOFError as err:
                 c.cso_logger.info('[{0}][{1}]: Telnet session error {2}'.format(self.target['name'], task['name'], err))
+                message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'msg': str(err)}
+                self.emit_message(message=message)
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'status': 'Failed'}
+                self.emit_message(message=message)
                 return False
 
             c.cso_logger.info('[{0}][{1}]: {2}'.format(self.target['name'], task['name'],

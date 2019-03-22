@@ -566,9 +566,9 @@ class PyEzDriver(Base):
     def configure(self, task=None, data=None):
         self.ws.task = task['name']
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
-        message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
-                   'msg': data}
-        self.emit_message(message=message)
+        #message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+        #           'msg': data}
+        #self.emit_message(message=message)
 
         if not self.isConnected:
             print('Wait for Daemons is: <{0}>'.format(self.wait_for_daemons))
@@ -579,9 +579,9 @@ class PyEzDriver(Base):
         if not self.isNetConf:
             self.connect_netconf()
 
-        message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
-                   'status': 'Connecting...'}
-        self.emit_message(message=message)
+        #message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+        #           'status': 'Connecting...'}
+        #self.emit_message(message=message)
         cu = Config(self._dev)
 
         if self.target['model'] == c.MODEL_QFX and self.isZeroized:

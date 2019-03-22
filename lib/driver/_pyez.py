@@ -937,7 +937,7 @@ class PyEzDriver(Base):
         while datetime.now() < mark_end:
             timeout -= 1
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
-                       'status': 'Waiting for daemons to be ready... {0}'.format(timeout)}
+                       'status': 'Waiting target to be ready: {0} sec'.format(timeout)}
 
             self.emit_message(message=message)
             c.cso_logger.info(

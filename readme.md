@@ -41,7 +41,7 @@ Change into directory __cso-ui__
 cd cso-ui
 ```
 
-Run the installer with
+Start the installer:
 
 ```bash
 root@cso-ui:/home/juniper/cso-ui# ./install.sh --help
@@ -62,15 +62,15 @@ Usage:
 There are several options available within the installer. Since we have a fresh Ubuntu box
 we will go with:
 
+```bash
+./install --all 10.11.111.180 10.11.111.180 cso_ops_usecases_export.tar.gz
+```
+
 * *NOTE:*    
    * The <host_ip> option should be the ip of the host that the docker container is running on.
    * The <ws_ip> option should be the ip of the host that the docker container is running on.
    * The <_file_> option should point to the repo file which should be imported into gitlab. 
      You will find this file inside __<cso_ui>__ directory being called __cso_ops_usecases_export.tar.gz__.
-
-```bash
-./install --all 10.11.111.180 10.11.111.180 cso_ops_usecases_export.tar.gz
-```
 
 Option __--all__ will run through all the required steps to build the environment.
 Example output of running installer:

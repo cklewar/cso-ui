@@ -130,8 +130,7 @@ prepare() {
     if [[ ${VERSION} == "18.04" ]]
     then
         apt-get update
-        apt-get install curl git -y
-        apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+        apt-get install curl git apt-transport-https ca-certificates curl software-properties-common -y
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         apt-get update
@@ -139,13 +138,23 @@ prepare() {
         snap install yq
         /snap/bin/yq w --inplace config/config.yml ws_client_ip ${ws}
         /snap/bin/yq w --inplace config/config.yml git_host ${host}
+        /snap/bin/yq w --inplace config/config.yml DEMONIZE False
+        /snap/bin/yq w --inplace config/config.yml UI_ADDRESS 0.0.0.0
+
     elif [[ ${VERSION} == "16.04" ]]
     then
         add-apt-repository ppa:rmescandon/yq -y
         apt-get update
-        apt-get install curl git yq --allow-unauthenticated -y
+        apt-get install curl git apt-transport-https ca-certificates curl software-properties-common \
+           --allow-unauthenticated -y
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        apt-get update
+        apt-get install docker-ce -y
         yq w --inplace config/config.yml ws_client_ip ${ws}
         yq w --inplace config/config.yml git_host ${host}
+        yq w --inplace config/config.yml DEMONIZE False
+        yq w --inplace config/config.yml UI_ADDRESS 0.0.0.0
     fi
 
     mkdir -p /tmp/cso-ui/log
@@ -154,7 +163,7 @@ cat <<- EOF > config/ssh/config
     Host ${host}
     StrictHostKeyChecking no
     UserKnownHostsFile=/dev/null
-    IdentityFile $(pwd)/.ssh/cso-ui
+    IdentityFile ~/.ssh/cso-ui
 EOF
 }
 

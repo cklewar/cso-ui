@@ -361,12 +361,6 @@ class Deploy(object):
             '''
             return True, self.__data
 
-        elif action == 'render':
-            env = Environment(loader=FileSystemLoader('templates'))
-            tmpl = env.get_template('deploy.html', 'r')
-            modal = tmpl.render(usecase=self._use_case_name)
-            return modal
-
 
 class Api(object):
 

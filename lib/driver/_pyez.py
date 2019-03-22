@@ -675,6 +675,7 @@ class PyEzDriver(Base):
             self.disconnect()
             time.sleep(3)
             self.connect()
+            self.ws.task = task['name']
 
         except CommitError as err:
             c.cso_logger.info(

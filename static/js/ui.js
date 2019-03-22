@@ -115,6 +115,8 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
+            console.log("#session_output_" + json.task + "_" + json.uuid);
+            console.log(json.msg);
             $("#session_output_" + json.task + '_' + json.uuid).append(json.msg + '\n');
             $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
 

@@ -154,7 +154,7 @@ cat <<- EOF > config/ssh/config
     Host ${host}
     StrictHostKeyChecking no
     UserKnownHostsFile=/dev/null
-    IdentityFile /root/.ssh/cso-ui
+    IdentityFile $(pwd)/.ssh/cso-ui
 EOF
 }
 

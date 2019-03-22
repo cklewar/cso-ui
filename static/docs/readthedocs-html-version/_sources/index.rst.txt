@@ -1,4 +1,4 @@
-.. CSO-Reference
+.. CSO-Reference-Lab
 
 Welcome to the CSO Reference Lab documentation!
 ===============================================
@@ -7,13 +7,14 @@ Welcome to the CSO Reference Lab documentation!
 The CPO Solution Team for Cloud Delivered Enterprise proudly presents:
 
 
-Browser version of the original ASTT-Solutions\_\-\_CSO\_generic-testlab-HS26.docx Word-File
---------------------------------------------------------------------------------------------
+Browser version of the original ASTT-Solutions\_-\_CSO\_generic-testlab-HS30.docx Word-File
+-------------------------------------------------------------------------------------------
 
 
 Be **sure** to get the latest version via this `URL`_
 
-.. _URL: https://junipernetworks.sharepoint.com/teams/Sales/Technical_Sales/coe/Solutions%20%20Write%20Ups/Documents/CSOReferenceLab
+.. _URL: https://easylink.juniper.net/CSOReferenceLab
+
 
 .. warning:: Juniper **CONFIDENTIAL** and **INTERNAL** document!
 

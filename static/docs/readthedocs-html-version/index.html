@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to the CSO Reference Lab documentation! &mdash; CSO-Reference-Lab 2.6 to-go documentation</title>
+  <title>Welcome to the CSO Reference Lab documentation! &mdash; CSO-Reference-Lab 3.1-20Mar19 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                2.6
+                3.1
               </div>
             
           
@@ -94,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="readme.html#test-case-execution-related-to-sd-wan-extended-and-full">7. Test case execution related to SD-WAN EXTENDED and FULL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readme.html#appendix">8. Appendix</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readme.html#under-development-not-stable-use-at-own-risk">9. UNDER DEVELOPMENT / NOT STABLE / USE AT OWN RISK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme.html#conclusion">10. Conclusion</a></li>
 </ul>
 
             
@@ -161,9 +162,9 @@
   <div class="section" id="welcome-to-the-cso-reference-lab-documentation">
 <h1>Welcome to the CSO Reference Lab documentation!<a class="headerlink" href="#welcome-to-the-cso-reference-lab-documentation" title="Permalink to this headline">¶</a></h1>
 <p>The CPO Solution Team for Cloud Delivered Enterprise proudly presents:</p>
-<div class="section" id="browser-version-of-the-original-astt-solutions-cso-generic-testlab-hs26-docx-word-file">
-<h2>Browser version of the original ASTT-Solutions_-_CSO_generic-testlab-HS26.docx Word-File<a class="headerlink" href="#browser-version-of-the-original-astt-solutions-cso-generic-testlab-hs26-docx-word-file" title="Permalink to this headline">¶</a></h2>
-<p>Be <strong>sure</strong> to get the latest version via this <a class="reference external" href="https://junipernetworks.sharepoint.com/teams/Sales/Technical_Sales/coe/Solutions%20%20Write%20Ups/Documents/CSOReferenceLab">URL</a></p>
+<div class="section" id="browser-version-of-the-original-astt-solutions-cso-generic-testlab-hs30-docx-word-file">
+<h2>Browser version of the original ASTT-Solutions_-_CSO_generic-testlab-HS30.docx Word-File<a class="headerlink" href="#browser-version-of-the-original-astt-solutions-cso-generic-testlab-hs30-docx-word-file" title="Permalink to this headline">¶</a></h2>
+<p>Be <strong>sure</strong> to get the latest version via this <a class="reference external" href="https://easylink.juniper.net/CSOReferenceLab">URL</a></p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">Juniper <strong>CONFIDENTIAL</strong> and <strong>INTERNAL</strong> document!</p>
@@ -189,8 +190,8 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l2"><a class="reference internal" href="readme.html#lab-access-and-default-passwords">2.8. Lab access and default passwords</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#how-to-access-the-guis">2.9. How to access the GUI’s</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#dynamic-cso-passwords">2.10. Dynamic CSO passwords</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#firmware-and-software-to-use-for-cso-4-0-2">2.11. Firmware and Software to use for CSO 4.0.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#known-bugs-in-cso-4-0-2">2.12. KNOWN BUGs in CSO 4.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#firmware-and-software-to-use-for-cso-4-1-0">2.11. Firmware and Software to use for CSO 4.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#known-bugs-in-cso-4-1-0-frs">2.12. KNOWN BUGs in CSO 4.1.0 FRS</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="readme.html#installation-of-the-lab">3. Installation of the Lab</a><ul>
@@ -206,7 +207,7 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l3"><a class="reference internal" href="readme.html#host-os-preparation-1">3.2.2. Host OS preparation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#install-a-local-dns-and-ntp-server-on-the-host">3.2.3. Install a local DNS and NTP Server on the Host</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#install-a-squid-proxy-for-lab-access-to-other-vms">3.2.4. Install a squid proxy for lab access to other VM’s</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#install-nat-gw-for-the-lab">3.2.5. Install NAT GW for the lab</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#install-nat-gw-for-the-lab-based-on-vsrx-v3-0">3.2.5. Install NAT GW for the lab based on vSRX V3.0</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#start-cso-installation">3.2.6. Start CSO installation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#provision-the-cso-vms">3.2.7. Provision the CSO-VM’s</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#execute-cso-installation">3.2.8. Execute CSO installation</a></li>
@@ -216,13 +217,13 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l3"><a class="reference internal" href="readme.html#create-desktop-vms-to-simulate-clients">3.2.12. Create Desktop VM’s to simulate Clients</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#create-delayvm-for-sd-wan-traffic-manipulation">3.2.13. Create DelayVM for SD-WAN traffic manipulation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#first-login-to-cso">3.2.14. First Login to CSO</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#mantatory-create-a-backup-of-your-cso-installation">3.2.15. MANTATORY create a backup of your CSO installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#mandatory-create-a-backup-of-your-cso-installation">3.2.15. MANDATORY create a backup of your CSO installation</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#lab-switches-routers-and-devices">3.3. Lab Switches, Routers and Devices</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#default-initial-lab-setup">3.3.1. Default/initial Lab setup</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="readme.html#qfx5100-1-default">3.3.1.1. QFX5100-1 default</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#mx80-1-default">3.3.1.2. MX80-1 default</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#mx80-1-default-only-for-vcpe-and-ucpe-needed">3.3.1.2. MX80-1 default (only for vCPE and uCPE needed)</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#vcpe-lab-setup">3.3.2. vCPE Lab setup</a><ul>
@@ -254,34 +255,37 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l1"><a class="reference internal" href="readme.html#test-case-execution-related-to-ucpe-use-cases">5. Test case execution related to uCPE use-cases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readme.html#test-case-execution-related-to-sd-wan-basic-use-cases">6. Test case execution related to SD-WAN BASIC use-cases</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#hub1-srx1500-1-install-for-sd-wan-basic">6.1. Hub1 (srx1500-1) install for SD-WAN BASIC</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#srx345-as-spoke-for-sd-wan-basic">6.2. SRX345 as Spoke for SD-WAN BASIC</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#nfx250-as-spoke-for-sd-wan-basic">6.3. NFX250 as Spoke for SD-WAN BASIC</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#shared-test-cases-for-srx-and-nfx250-as-spoke-devices">6.4. Shared test cases for SRX and NFX250 as Spoke devices</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#mandatory-step-add-review-licenses-for-later-tests">6.4.1. MANDATORY STEP – add/review Licenses for later tests</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#mandatory-step-load-idp-signatures">6.4.2. MANDATORY STEP – Load IDP-Signatures</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#demonstrate-application-detection-for-sd-wan">6.4.3. Demonstrate Application detection for SD-WAN</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#static-sd-wan-policy">6.4.4. Static SD-WAN policy</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#dynamic-sd-wan-policy">6.4.5. Dynamic SD-WAN policy</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#dynamic-policy-with-no-path-preference">6.4.5.1. Dynamic Policy with no path preference</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#optional-dynamic-policy-with-path-preference-and-fallback-enabled">6.4.5.2. (optional) Dynamic Policy with path preference and Fallback enabled</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#create-a-tenant">6.2. Create a Tenant</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#add-the-hub-to-your-tenant">6.3. Add the Hub to your Tenant</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#srx345-as-spoke-for-sd-wan-basic">6.4. SRX345 as Spoke for SD-WAN BASIC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#nfx250-as-spoke-for-sd-wan-basic">6.5. NFX250 as Spoke for SD-WAN BASIC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#shared-test-cases-for-srx-and-nfx250-as-spoke-devices">6.6. Shared test cases for SRX and NFX250 as Spoke devices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#mandatory-step-add-review-licenses-for-later-tests">6.6.1. MANDATORY STEP – add/review Licenses for later tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#mandatory-step-load-idp-signatures">6.6.2. MANDATORY STEP – Load IDP-Signatures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#demonstrate-application-detection-for-sd-wan">6.6.3. Demonstrate Application detection for SD-WAN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#static-sd-wan-policy">6.6.4. Static SD-WAN policy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#dynamic-sd-wan-policy">6.6.5. Dynamic SD-WAN policy</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#dynamic-policy-with-no-path-preference">6.6.5.1. Dynamic Policy with no path preference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#optional-dynamic-policy-with-path-preference-and-fallback-enabled">6.6.5.2. (optional) Dynamic Policy with path preference and Fallback enabled</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#security-feature-related-test-cases-for-sd-wan">6.4.6. Security feature related Test-cases for SD-WAN</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#intend-based-firewall-policy">6.4.6.1. Intend based Firewall Policy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#nat">6.4.6.2. NAT</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#ssl-proxy-test-case">6.4.6.3. SSL-Proxy Test-case</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#utm-filters-test-cases">6.4.6.4. UTM Filters Test cases</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#utm-anti-virus-test-case">6.4.6.5. UTM Anti-Virus Test-case</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#thread-virtualization-more-a-demo-then-a-test-case">6.4.6.6. Thread Virtualization (more a Demo then a Test-case)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-dscp-field-re-writing-and-copying-to-outer-tunnel">6.6.6. (optional) DSCP-Field re-writing and copying to outer Tunnel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#security-feature-related-test-cases-for-sd-wan">6.6.7. Security feature related Test-cases for SD-WAN</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#intend-based-firewall-policy">6.6.7.1. Intend based Firewall Policy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#nat">6.6.7.2. NAT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#ssl-proxy-test-case">6.6.7.3. SSL-Proxy Test-case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#utm-filters-test-cases">6.6.7.4. UTM Filters Test cases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#utm-anti-virus-test-case">6.6.7.5. UTM Anti-Virus Test-case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#thread-virtualization-more-a-demo-then-a-test-case">6.6.7.6. Thread Virtualization (more a Demo then a Test-case)</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#logging-and-report-generation">6.4.7. Logging and Report generation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#logging-and-report-generation">6.6.8. Logging and Report generation</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="readme.html#test-case-execution-related-to-sd-wan-extended-and-full">7. Test case execution related to SD-WAN EXTENDED and FULL</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#local-breakout-at-spoke">7.1. Local-Breakout at Spoke</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#local-breakout-at-spoke-to-internet">7.1. Local-Breakout at Spoke to Internet</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#preparation-on-boarding-first-spoke">7.1.1. Preparation (on boarding first Spoke)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#test-case-local-breakout-to-default-without-sla-policy">7.1.2. Test case local-breakout to default (without SLA-Policy)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#nfx250-as-second-spoke-bring-up">7.1.3. NFX250 as second Spoke bring-up</a></li>
@@ -289,67 +293,85 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l3"><a class="reference internal" href="readme.html#test-case-local-breakout-with-sla-policy">7.1.5. Test case local-breakout with SLA Policy</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#hub-redundancy-aka-hub-multihoming">7.2. Hub-Redundancy aka Hub Multihoming</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#qfx5100-1-changes-to-add-second-hub-device">7.2.1. QFX5100-1 changes to add second Hub Device</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#srx1500-2-initial-configuration">7.2.2. SRX1500-2 initial configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-hub2-to-cso-and-tenant">7.2.3. On-board Hub2 to CSO and Tenant</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-spoke-with-hub-redundancy-configuration">7.2.4. On-board Spoke with Hub Redundancy configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-testcase-with-static-routes-in-the-underlay">7.2.5. Failover Testcase with Static Routes in the Underlay</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-test-case-with-nat-on-the-hubs">7.2.6. Failover Test case with NAT on the Hubs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#local-breakout-at-spoke-towards-zscaler-cloud">7.2. Local-Breakout at Spoke towards (Zscaler-) Cloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#hub-redundancy-aka-hub-multihoming">7.3. Hub-Redundancy aka Hub Multihoming</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#qfx5100-1-changes-to-add-second-hub-device">7.3.1. QFX5100-1 changes to add second Hub Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#srx1500-2-initial-configuration">7.3.2. SRX1500-2 initial configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-hub2-to-cso-and-tenant">7.3.3. On-board Hub2 to CSO and Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-spoke-with-hub-redundancy-configuration">7.3.4. On-board Spoke with Hub Redundancy configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-testcase-with-static-routes-in-the-underlay">7.3.5. Failover Testcase with Static Routes in the Underlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-test-case-with-nat-on-the-hubs">7.3.6. Failover Test case with NAT on the Hubs</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#spoke-redundancy-aka-dual-spoke">7.3. Spoke-Redundancy aka Dual-Spoke</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#nfx250-2-configuration">7.3.1. NFX250-2 configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#qfx5100-1-changes-for-this-lab">7.3.2. QFX5100-1 changes for this lab</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#hub1-re-provision-srx1500-1">7.3.3. Hub1 re-provision (SRX1500-1)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-create-tenant">7.3.4. (optional) Create Tenant</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-the-cloudhub-to-the-tenant">7.3.5. Add the CloudHub to the Tenant</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-both-nfx250-in-ha-cluster-mode">7.3.6. On-board both NFX250 in HA Cluster-mode</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-test-cases-to-be-executed">7.3.7. Failover Test cases to be executed</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#cluster-status-verification">7.3.7.1. Cluster status verification</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#flow-status-verification">7.3.7.2. Flow status verification</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#state-full-failover">7.3.7.3. State full Failover</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#failover-due-to-entire-cpe-lost">7.3.7.4. Failover due to entire CPE lost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#spoke-redundancy-aka-dual-spoke">7.4. Spoke-Redundancy aka Dual-Spoke</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#nfx250-2-configuration">7.4.1. NFX250-2 configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#qfx5100-1-changes-for-this-lab">7.4.2. QFX5100-1 changes for this lab</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#hub1-re-provision-srx1500-1">7.4.3. Hub1 re-provision (SRX1500-1)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-create-tenant">7.4.4. (optional) Create Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-the-cloudhub-to-the-tenant">7.4.5. Add the CloudHub to the Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-both-nfx250-in-ha-cluster-mode">7.4.6. On-board both NFX250 in HA Cluster-mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#failover-test-cases-to-be-executed">7.4.7. Failover Test cases to be executed</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#cluster-status-verification">7.4.7.1. Cluster status verification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#flow-status-verification">7.4.7.2. Flow status verification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#state-full-failover-on-interrupted-lan-side">7.4.7.3. State full Failover on interrupted LAN side</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#failover-due-to-entire-cpe-lost">7.4.7.4. Failover due to entire CPE lost</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#device-rma">7.4. Device RMA</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#modifications-on-the-underlay-qfx5100-configuration">7.4.1. Modifications on the underlay QFX5100 configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#second-nfx-preparation-and-check">7.4.2. Second NFX preparation and check</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#test-case-execution">7.4.3. Test Case execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#device-rma">7.5. Device RMA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#modifications-on-the-underlay-qfx5100-configuration">7.5.1. Modifications on the underlay QFX5100 configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#second-nfx-preparation-and-check">7.5.2. Second NFX preparation and check</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#test-case-execution">7.5.3. Test Case execution</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#real-time-optimized-or-appqoe-sd-wan">7.5. Real-time optimized (or AppQoE) SD-WAN</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#full-mesh">7.6. Full Mesh</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-underlay-support-for-third-spoke-device">7.6.1. Add underlay support for third Spoke Device</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#on-board-hub1">7.6.2. On-Board hub1</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#create-mesh-tenant">7.6.3. Create Mesh Tenant</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-first-mesh-spoke-srx3xx">7.6.4. Add first Mesh Spoke srx3xx</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-second-mesh-spoke-nfx250-1">7.6.5. Add second Mesh Spoke nfx250-1</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-third-mesh-spoke-nfx250-2">7.6.6. Add third Mesh Spoke nfx250-2</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-review-and-check-mesh-configuration">7.6.7. (optional) Review and check Mesh configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-firewall-rule">7.6.8. Add Firewall rule</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#traffic-between-desktop-vms-and-towards-internet">7.6.9. Traffic between Desktop VM’s and towards Internet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#real-time-optimized-or-appqoe-sd-wan">7.6. Real-time optimized (or AppQoE) SD-WAN</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#create-a-new-realtime-tenant">7.6.1. Create a new Realtime Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#onboard-hub-to-tenant">7.6.2. Onboard Hub to Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#onboard-the-spoke-device">7.6.3. Onboard the Spoke Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#test-case-execution-demonstrating-realtime-failovers">7.6.4. Test case execution demonstrating realtime failovers</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#simple-vnf-integration-aka-service-chaining">7.7. Simple VNF integration (aka Service-Chaining)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#sd-wan-endpoint-in-aws-aka-multicloud-scenario">7.8. SD-WAN endpoint in AWS (aka Multicloud-scenario)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#before-the-poc-starts">7.8.1. Before the PoC starts</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#know-or-create-your-vpc-id-and-the-ip-range-for-it">7.8.1.1. Know or create your VPC-ID (and the IP-Range for it)</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#create-2-free-elastic-ips">7.8.1.2. Create 2 free Elastic IP’s</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#create-4-subnets-within-your-vpc">7.8.1.3. Create 4 Subnets within your VPC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#full-mesh-with-local-breakout">7.7. Full Mesh with Local-Breakout</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-underlay-support-for-third-spoke-device">7.7.1. Add underlay support for third Spoke Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#create-cloud-hub1">7.7.2. Create cloud-hub1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-create-realtime-tenant">7.7.3. (optional) Create Realtime Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#onboard-hub-to-tenant-1">7.7.4. Onboard Hub to Tenant</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-the-three-spoke-devices">7.7.5. Add the three Spoke Devices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#optional-review-and-check-mesh-configuration">7.7.6. (optional) Review and check Mesh configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-firewall-rules-and-deploy">7.7.7. Add Firewall rules and deploy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#traffic-between-desktop-vms-and-towards-internet">7.7.8. Traffic between Desktop VM’s and towards Internet</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#changes-and-updates-on-the-devices">7.8.2. Changes and updates on the Devices</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#nat-vm-changes">7.8.2.1. NAT VM changes</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#qfx5100-1-changes">7.8.2.2. QFX5100-1 changes</a></li>
-<li class="toctree-l4"><a class="reference internal" href="readme.html#changes-on-hub">7.8.2.3. Changes on Hub</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#partial-mesh-and-site-gateway">7.8. Partial Mesh AND Site-Gateway</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#changes-on-underlay-to-support-hub2-as-site-gw">7.8.1. Changes on underlay to support hub2 as Site-GW</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-site-gateway">7.8.2. Add Site-Gateway</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#review-change-the-firewall-configuration">7.8.3. Review/change the Firewall configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-your-spokes-to-the-environment">7.8.4. Add your Spokes to the Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#traffic-between-desktop-vms-and-site-gateway">7.8.5. Traffic between Desktop VM’s and Site-Gateway</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#provision-of-the-aws-spoke">7.8.3. Provision of the AWS Spoke</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#aws-spoke-changes-to-cso">7.8.4. AWS Spoke changes to CSO</a></li>
-<li class="toctree-l3"><a class="reference internal" href="readme.html#add-a-desktop-vm-in-aws-vpc-to-test-the-configuration">7.8.5. Add a Desktop VM in AWS-VPC to Test the configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#simple-vnf-integration-aka-service-chaining">7.9. Simple VNF integration (aka Service-Chaining)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#vnf-import-to-cso-and-template-changes">7.9.1. VNF import to CSO and Template changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#vnf-onboarding-to-spoke-and-testing-of-it">7.9.2. VNF onboarding to Spoke and testing of it</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#sd-wan-endpoint-in-aws-aka-multicloud-scenario">7.10. SD-WAN endpoint in AWS (aka Multicloud-scenario)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#before-the-poc-starts">7.10.1. Before the PoC starts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#know-or-create-your-vpc-id-and-the-ip-range-for-it">7.10.1.1. Know or create your VPC-ID (and the IP-Range for it)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#create-2-free-elastic-ips">7.10.1.2. Create 2 free Elastic IP’s</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#create-4-subnets-within-your-vpc">7.10.1.3. Create 4 Subnets within your VPC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#changes-and-updates-on-the-devices">7.10.2. Changes and updates on the Devices</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#nat-vm-changes">7.10.2.1. NAT VM changes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#qfx5100-1-changes">7.10.2.2. QFX5100-1 changes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#changes-on-hub">7.10.2.3. Changes on Hub</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#provision-of-the-aws-spoke">7.10.3. Provision of the AWS Spoke</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#aws-spoke-changes-to-cso">7.10.4. AWS Spoke changes to CSO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-a-desktop-vm-in-aws-vpc-to-test-the-configuration">7.10.5. Add a Desktop VM in AWS-VPC to Test the configuration</a></li>
 </ul>
 </li>
 </ul>
@@ -357,9 +379,9 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l1"><a class="reference internal" href="readme.html#appendix">8. Appendix</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#references-and-videos">8.1. References and Videos</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#raspberry-pi-changes">8.2. Raspberry Pi changes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#vsrx-as-nat-gw-instead-of-ubuntu-vm">8.3. vSRX as NAT-GW instead of Ubuntu VM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#known-stable-ubuntu-vm-as-nat-gw-instead-of-vsrx-v3-0">8.3. Known stable Ubuntu VM as NAT-GW instead of vSRX V3.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#lab-restore-from-backup">8.4. Lab restore from backup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#communication-matrix-pre-cso-4-0">8.5. Communication Matrix pre CSO 4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#cso-behind-nat-firewalling">8.5. CSO behind NAT Firewalling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#locked-cso-admin-account">8.6. Locked CSO Admin account</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#no-data-available-displayed">8.7. “No Data Available” displayed</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#cso-tuning-for-faster-switchover-times">8.8. CSO Tuning for faster switchover times</a></li>
@@ -369,7 +391,15 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l2"><a class="reference internal" href="readme.html#saved-certificates-from-central-msvm">8.12. Saved Certificates from central-msvm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#recover-lost-passwords">8.13. Recover lost passwords</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#traffic-generator-script">8.14. Traffic generator script</a></li>
-<li class="toctree-l2"><a class="reference internal" href="readme.html#automation-of-the-lab-setup">8.15. Automation of the Lab setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#automation-of-the-lab-setup">8.15. Automation of the Lab setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#building-an-vm-for-automation-on-the-cso-host">8.15.1. Building an VM for Automation on the CSO-Host</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#changes-on-the-nat-vm">8.15.2. Changes on the NAT-VM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#build-gitlab-docker-container-and-configure-it">8.15.3. Build Gitlab Docker Container and configure it</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#apply-changes-of-your-local-lab-to-the-configuration">8.15.4. Apply changes of your local Lab to the configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#build-automation-gui-docker-contrainer">8.15.5. Build Automation-Gui Docker Contrainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#useing-the-automation-framework">8.15.6. Useing the automation Framework</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#other-lab-configurations">8.16. Other lab configurations</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#slab-amsterdam">8.16.1. Slab Amsterdam</a></li>
 <li class="toctree-l3"><a class="reference internal" href="readme.html#openlab-dc73">8.16.2. Openlab DC73</a></li>
@@ -383,8 +413,22 @@ Still let us know what you are encountering with this version so that we are hop
 <li class="toctree-l2"><a class="reference internal" href="readme.html#vsrx-as-hub3">9.2. vSRX as Hub3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#public-ip-forwarder-to-local-lab">9.3. Public IP Forwarder to local Lab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="readme.html#peering-between-hub-and-legacy-environment">9.4. Peering between Hub and Legacy environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#aws-spoke-on-cso-byod-openlab-instance">9.5. AWS Spoke on CSO-BYOD-OpenLab instance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#preparations-on-aws-before-the-poc-starts">9.5.1. Preparations on AWS before the PoC starts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#know-or-create-your-vpc-id-and-the-ip-range-for-it-1">9.5.1.1. Know or create your VPC-ID (and the IP-Range for it)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#create-2-free-elastic-ips-1">9.5.1.2. Create 2 free Elastic IP’s</a></li>
+<li class="toctree-l4"><a class="reference internal" href="readme.html#create-4-subnets-within-your-vpc-1">9.5.1.3. Create 4 Subnets within your VPC</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#provision-of-the-aws-spoke-1">9.5.2. Provision of the AWS Spoke</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme.html#add-a-traffic-testing-vm-to-your-aws-vpc">9.5.3. Add a Traffic-Testing VM to your AWS VPC</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#multicloud-demo-with-cc13-slab-environment">9.6. Multicloud Demo with CC13 slab environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#open-automation-items-for-future-enhancements">9.7. Open Automation items (for future enhancements)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="readme.html#conclusion">10. Conclusion</a></li>
 </ul>
 </div>
 </div>
@@ -408,7 +452,7 @@ Still let us know what you are encountering with this version so that we are hop
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Hartmut Schroeder
+        &copy; Copyright 2019, Hartmut Schroeder
 
     </p>
   </div>

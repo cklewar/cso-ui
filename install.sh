@@ -107,7 +107,7 @@ import() {
       echo "$(date) - still trying"
       sleep 1
     done
-    echo "$(date) - connected successfully"
+    echo "$(date) - connected successfully. Waiting for gitlab API being ready..."
     sleep 45
     curl --data "@auth.txt" --request POST http://${host}:9080/oauth/token > token.json
 

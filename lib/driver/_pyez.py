@@ -27,6 +27,7 @@ import requests
 import json
 import time
 import yaml
+import pprint
 
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
@@ -220,7 +221,6 @@ class PyEzDriver(Base):
         c.cso_logger.info('[{0}][{1}]: Disconnect netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
 
     def run(self):
-        print(self.target)
         for task in self.target['tasks']:
 
             if self.status:
@@ -295,9 +295,13 @@ class PyEzDriver(Base):
             return False, err
 
         with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
-            data = yaml.safe_load(fd)
-            config = template.render(data)
+            template_data = yaml.safe_load(fd)
 
+        with open('/tmp/cso-ui/data/globals.yml') as fd:
+            global_data = yaml.safe_load(fd)
+
+        target_data = {**template_data['target'], **self.target}
+        config = template.render({'target': target_data, 'global': global_data})
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': config + '\n'}
         self.emit_message(message=message)

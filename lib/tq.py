@@ -103,4 +103,4 @@ class TargetQueue(Thread):
         if message is not None:
             self.ws_client.send(json.dumps(message))
         else:
-            print('empty message')
+            c.cso_logger.info('[WS_CLIENT]: {0}'.format('Can not send empty message'))

@@ -27,6 +27,7 @@ import requests
 import json
 import time
 import yaml
+import threading
 
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
@@ -57,6 +58,7 @@ class PyEzDriver(Base):
         self.isZeroized = False
         self.wait_for_daemons = False
         self.ws = WSHandler(ws_client=self.ws_client, target_data=self.target)
+        self.ws_lock = threading.Lock
         self.ws.setFormatter(logging.Formatter("%(message)s"))
         self.ws.setLevel(logging.DEBUG)
         c.jnpr_junos_tty.addHandler(self.ws)
@@ -102,7 +104,12 @@ class PyEzDriver(Base):
 
     def connect(self):
         c.cso_logger.info('[{0}][{1}]: Connecting to device'.format(self.target['name'], 'Connect'))
+        #self.ws_lock.acquire()
+
+        #try:
         self.ws.task = 'Connect'
+        #finally:
+        #    c.GITLAB_LOCK.release()
 
         try:
             self._dev = Device(host=self.target['address'], mode=self.target['mode'],
@@ -154,7 +161,6 @@ class PyEzDriver(Base):
         """
 
         self.ws.task = 'Disconnect'
-
         c.cso_logger.info('[{0}][{1}]: Disconnect from device'.format(self.target['name'], 'Disconnect'))
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'Disconnecting...'}
@@ -431,8 +437,6 @@ class PyEzDriver(Base):
             try:
 
                 project = self.gl.projects.get('{0}'.format(c.CONFIG['git_repo_url']))
-                # file_path = '{0}/{1}/{2}'.format(self.use_case_name, c.CONFIG['git_device_conf_dir'], self.target['name'])
-
                 file_body = {
                     "branch": c.CONFIG['git_branch'],
                     "content": data.decode('utf-8'),
@@ -496,7 +500,6 @@ class PyEzDriver(Base):
                 return False, 'Failed to get project with error: <{0}>'.format(gle.message)
 
     def zeroize(self, task=None):
-        self.ws.task = task['name']
         c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(self.target['name'], task['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Zeroize initializing'}
@@ -510,6 +513,7 @@ class PyEzDriver(Base):
         if not self.isNetConf:
             self.connect_netconf()
 
+        self.ws.task = task['name']
         self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Zeroize running'}
@@ -564,7 +568,6 @@ class PyEzDriver(Base):
             time.sleep(0.2)
 
     def configure(self, task=None, data=None):
-        self.ws.task = task['name']
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
         #message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
         #           'msg': data}
@@ -582,6 +585,7 @@ class PyEzDriver(Base):
         #message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
         #           'status': 'Connecting...'}
         #self.emit_message(message=message)
+        self.ws.task = task['name']
         cu = Config(self._dev)
 
         if self.target['model'] == c.MODEL_QFX and self.isZeroized:
@@ -693,7 +697,6 @@ class PyEzDriver(Base):
         return True
 
     def copy(self, task=None):
-        self.ws.task = task['name']
 
         if not self.isConnected:
             if self.wait_for_daemons:
@@ -702,6 +705,8 @@ class PyEzDriver(Base):
 
         if self.isNetConf:
             self.disconnect_netconf()
+
+        self.ws.task = task['name']
 
         for item in list(zip(task['src'], task['dst'])):
 
@@ -743,7 +748,6 @@ class PyEzDriver(Base):
         return True
 
     def license(self, task=None):
-        self.ws.task = task['name']
 
         c.cso_logger.info(
             '[{0}][{1}]: Install license <{2}>'.format(self.target['name'], task['name'], task['file']))
@@ -759,6 +763,7 @@ class PyEzDriver(Base):
         if self.isNetConf:
             self.disconnect_netconf()
 
+        self.ws.task = task['name']
         command = 'cli -c "request system license add {0}"'.format(task['file'])
         self._dev._tty._tn.write(command.encode("ascii") + b"\r\n")
 
@@ -802,7 +807,6 @@ class PyEzDriver(Base):
             time.sleep(0.2)
 
     def reboot(self, task=None):
-        self.ws.task = task['name']
 
         c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(self.target['name'], task['name'], ))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -816,6 +820,8 @@ class PyEzDriver(Base):
 
         if not self.isNetConf:
             self.connect_netconf()
+
+        self.ws.task = task['name']
 
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'waiting'}

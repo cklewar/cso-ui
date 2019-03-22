@@ -27,7 +27,6 @@ import requests
 import json
 import time
 import yaml
-import pprint
 
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
@@ -300,7 +299,17 @@ class PyEzDriver(Base):
         with open('/tmp/cso-ui/data/globals.yml') as fd:
             global_data = yaml.safe_load(fd)
 
-        target_data = {**template_data['target'], **self.target}
+        try:
+            target_data = {**template_data['target'], **self.target}
+        except KeyError as err:
+            c.cso_logger.info(
+                '[{0}][{1}]: Render configuration failed with error: <{2}>'.format(self.target['name'], task['name'], err))
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                       'status': 'KeyError: {0}'.format(str(err))}
+            self.emit_message(message=message)
+            self.disconnect()
+            return False, 'KeyError: {0}'.format(str(err))
+
         config = template.render({'target': target_data, 'global': global_data})
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': config + '\n'}

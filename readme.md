@@ -10,7 +10,7 @@
 ## Installation ##
 
 Install a Ubuntu 16.04 or 18.04 virtual machine and login to this machine via ssh.
-Replace __<USER>__ with user you created during Ubuntu setup and actual __<IP>__ with machines IP.
+Replace __USER__ with user you created during Ubuntu setup and actual __IP__ with machine IP.
 
 ```bash
 ssh -l <USER> <IP> or ssh <USER>@<IP>

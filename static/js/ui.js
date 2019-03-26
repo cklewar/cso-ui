@@ -284,7 +284,6 @@ function heartbeat() {
 }
 
 function scrollToBottom(elem) {
-    console.log(elem);
     elem.scrollTop( elem.prop("scrollHeight"));
 }
 
@@ -471,7 +470,7 @@ function deploy(data){
                             dataType: 'json',
                             contentType: 'application/json',
                             success: function (response) {
-                                console.log(response)
+
                             },
                             error : function (data, errorText) {
                                 $("#errormsg").html(errorText).show();

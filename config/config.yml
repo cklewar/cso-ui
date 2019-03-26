@@ -18,6 +18,7 @@ tmp_dir: /tmp/cso-ui/data
 log_dir: /tmp/cso-ui/log
 usecases_dir: usecases
 baselog: cso-ui.log
+globals: globals.yml
 
 IS_SSL: False
 DEMONIZE: False

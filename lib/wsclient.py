@@ -6,7 +6,7 @@ from ws4py.client.threadedclient import WebSocketClient
 class WSClient(WebSocketClient):
     def __init__(self, name=None, url=None):
 
-        super(WSClient, self).__init__(url=url, protocols=['http-only', 'chat'])
+        super(WSClient, self).__init__(url=url, protocols=['http-only'])
         self._clientName = name
 
     def opened(self):

@@ -21,19 +21,21 @@
 
 import json
 import html
-from logging import StreamHandler
+from logging import Handler
 
 
-class WSHandler(StreamHandler):
+class WSStreamHandler(Handler):
 
-    def __init__(self, ws_client=None, target_data=None):
-        StreamHandler.__init__(self)
+    def __init__(self, ws_client=None, tq=None):
+        Handler.__init__(self)
         self.ws_client = ws_client
-        self.target_data = target_data
-        self.task = None
+        self.tq = tq
+        print('TQ ID in WSStreamHandlerInit: {0}/{1}'.format(id(self.tq), len(self.tq)))
 
-    def emit(self, message):
-        _msg = html.escape(message.msg)
-        msg = {'action': 'update_session_output', 'task': self.task, 'uuid': self.target_data['uuid'],
-               'msg': _msg + '\n'}
-        self.ws_client.send(json.dumps(msg))
+    def emit(self, record):
+        print('TQ ID in EMIT: {0} --> {1} --> {2}'.format(id(self.tq), self.tq[record.threadName], self.tq[record.threadName].current_task))
+        target = self.tq[record.threadName].target
+        _msg = html.escape(record.msg)
+        _msg = {'action': 'update_session_output', 'task': self.tq[record.threadName].current_task,
+                'uuid': target['uuid'], 'target': target['name'], 'msg': _msg + '\n'}
+        self.ws_client.send(json.dumps(_msg))

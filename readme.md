@@ -117,29 +117,7 @@ After installer finishes open browser (preferred browser is Google Chrome) and a
   User: root
   Password: juniper123
 
-### Landing Page Cards ###
-
-Cards are predefined at the moment to change settings manually edit file __config/items.yml__.
-
-```yaml
-useCase1:
-  title: Use Case 1 - Local Break Out at Spoke
-  playbook: pb.yml
-  directory: telnet_junos_get_config/
-  description: Local Break Out at Spoke
-  image: dummy.png
-  delete: false
-
-useCase2:
-  title: Use Case 2 - MultiHoming
-  playbook: pb.yml
-  directory: telnet_junos_get_config/
-  description: MultiHoming
-  image: dummy.png
-  delete: false
-```
-
-### SSL ###
+## SSL ##
 To enable SSL support for web server we need to create private key and a certificate. To do so we will use openssl.
 When asked for common name put in IP address or DNS name of actual host providing landing page.
 Private key and certificate file name are static and should not be changed for now. Both the files have to be placed in

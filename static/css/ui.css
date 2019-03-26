@@ -156,11 +156,13 @@ body {
 .session_output {
  width: 100%;
  height: 400px;
+ display: block;
+ font-family: monospace;
+ white-space: pre-wrap;
+ margin: 1em 0;
  background-color: black;
  color: green;
  font-size: 1em;
- //font-weight: bold;
- //font-family: Verdana, Arial, Helvetica, sans-serif;
  border: 5px solid grey;
  overflow:hidden;
  resize: none;

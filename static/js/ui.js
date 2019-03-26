@@ -115,15 +115,13 @@ $( document ).ready(function() {
             t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
 
         } else if (json.action === 'update_session_output'){
-            console.log("#session_output_" + json.task + "_" + json.uuid);
-            console.log(json.msg);
-            $("#session_output_" + json.task + '_' + json.uuid).append(json.msg + '\n');
-            $('#session_output_' + json.task + '_' + json.uuid).trigger("change");
 
-        } else if (json.action === 'update_task_output'){
-            var output = '<pre class="scrolly-2">' + json.msg + '</pre>'
-            $("#task_detail_info_" + json.task + '_' + json.uuid).append(output);
+            //if (json.task === 'Connect'){
+            //    $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg);
+            //}
 
+            $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg);
+            $('#session_output_' + json.task + '_' + json.uuid.replace(/\-/g, '_')).trigger("change");
 
         } else if (json.action === 'add_tasks'){
             t_deploy_status.clear().draw();
@@ -471,8 +469,9 @@ function deploy(data){
                                             '</div>' +
                                             '<div class="modal-body h-50">' +
                                                 '<div>' +
-                                                    '<textarea readonly spellcheck="false" class="session_output" id="session_output_' + task.name + '_' + target.uuid + '" rows="100" cols="1"></textarea>' +
-                                                '<div>' +
+                                                    '<pre class="session_output" id="session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_') + '">' +
+                                                    '</pre>' +
+                                                '</div>' +
                                             '</div>' +
                                             '<div class="modal-footer">' +
                                                 '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
@@ -523,7 +522,7 @@ function deploy(data){
                         {
                             "data": "status",
                             "defaultContent": "",
-                            "width": "35%"
+                            "width": "40%"
                         },
                     ],
                     "info": false,
@@ -548,6 +547,6 @@ function deploy(data){
     $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
-        scrollToBottom('#session_output_' + data.task + '_' + data.uuid);
+        //scrollToBottom('#session_output_' + data.task + '_' + data.uuid);
     });
 }

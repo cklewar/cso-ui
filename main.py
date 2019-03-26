@@ -29,7 +29,6 @@ import random
 import logging.config
 import uuid
 import shutil
-import pprint
 
 from git import Repo
 from git.exc import GitCommandError
@@ -37,7 +36,6 @@ from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ruamel.yaml import YAML
 from lib.auth import AuthController, require, member_of, name_is
-from ws4py.client.threadedclient import WebSocketClient
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from lib.tq import TargetQueue
 
@@ -269,8 +267,10 @@ class Deploy(object):
 
         elif action == 'run':
 
-            tq = TargetQueue(_data=self.__data, use_case_name=self._use_case_name, use_case_data=self._use_case_data)
-            tq.run()
+            tq = TargetQueue(_data=self.__data, use_case_name=self._use_case_name, use_case_data=self._use_case_data,
+                             name='TQ-MAIN-THREAD')
+            tq.start()
+            tq.join()
 
             return True
 

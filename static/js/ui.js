@@ -284,7 +284,8 @@ function heartbeat() {
 }
 
 function scrollToBottom(elem) {
-  $(elem).scrollTop($(elem)[0].scrollHeight);
+    console.log(elem);
+    elem.scrollTop( elem.prop("scrollHeight"));
 }
 
 function initGrid() {
@@ -450,8 +451,8 @@ function deploy(data){
                                     '</div>' +
                                     '</div>';
                                   $("body").append(modal_task_details);
-                                  $('#session_output_' + task.name + '_' + target.uuid).on('change', function(){
-                                    scrollToBottom('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_'));
+                                  $('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')).on('change', function(){
+                                    scrollToBottom($('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')));
                                   });
                                 });
                             });
@@ -517,6 +518,6 @@ function deploy(data){
     $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
-        scrollToBottom('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_'));
+        scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
     });
 }

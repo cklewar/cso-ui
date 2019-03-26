@@ -30,10 +30,9 @@ class WSStreamHandler(Handler):
         Handler.__init__(self)
         self.ws_client = ws_client
         self.tq = tq
-        print('TQ ID in WSStreamHandlerInit: {0}/{1}'.format(id(self.tq), len(self.tq)))
 
     def emit(self, record):
-        print('TQ ID in EMIT: {0} --> {1} --> {2}'.format(id(self.tq), self.tq[record.threadName], self.tq[record.threadName].current_task))
+
         target = self.tq[record.threadName].target
         _msg = html.escape(record.msg)
         _msg = {'action': 'update_session_output', 'task': self.tq[record.threadName].current_task,

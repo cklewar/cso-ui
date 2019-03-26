@@ -328,7 +328,12 @@ class PyEzDriver(Base):
             self.disconnect()
             return False, 'KeyError: {0}'.format(str(err))
 
-        config = template.render({'target': target_data, 'global': global_data[self.target['name']]})
+        if self.target['name'] in global_data:
+            target_global_data = global_data[self.target['name']]
+        else:
+            target_global_data = None
+
+        config = template.render({'target': target_data, 'global': target_global_data})
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': config + '\n'}
         self.emit_message(message=message)

@@ -116,10 +116,6 @@ $( document ).ready(function() {
 
         } else if (json.action === 'update_session_output'){
 
-            //if (json.task === 'Connect'){
-            //    $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg);
-            //}
-
             $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg);
             $('#session_output_' + json.task + '_' + json.uuid.replace(/\-/g, '_')).trigger("change");
 
@@ -236,32 +232,6 @@ $( document ).ready(function() {
         $("#modalDeployStatus").data("usecase", data.use_case_name);
         deploy(data);
 
-    });
-
-    $('#modalDeployStatus').on('show.bs.modal', function (e) {
-        //title = e.relatedTarget.dataset.usecase + ': Deployment status'
-        //$("#modalDeployStatusTitle").text(title.charAt(0).toUpperCase() + title.slice(1));
-
-        /*
-        if ($("#" + $(e.relatedTarget).data('usecase') + ' > div > div').hasClass("deployed")){
-            // already deployed
-        } else if (isDeploying) {
-            // Do Nothing since deploying
-        } else {
-            t_deploy_status.clear().draw();
-            $("#session_output").val('');
-            $('#session_output').trigger("change");
-        }
-        */
-    });
-
-    $('#modalDeployStatus').on('shown.bs.modal', function (e) {
-
-        /*if ($("#" + $(e.relatedTarget).data('usecase') + ' > div > div').hasClass("deployed")){
-            console.log('Already deployed should we re-deploy? THIS is for column adjust');
-        } else {
-            t_deploy_status.columns.adjust();
-        }*/
     });
 
     $('#modalDeployStatus').on('hidden.bs.modal', function (e) {
@@ -481,7 +451,7 @@ function deploy(data){
                                     '</div>';
                                   $("body").append(modal_task_details);
                                   $('#session_output_' + task.name + '_' + target.uuid).on('change', function(){
-                                    scrollToBottom('#session_output_' + task.name + '_' + target.uuid);
+                                    scrollToBottom('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_'));
                                   });
                                 });
                             });
@@ -547,6 +517,6 @@ function deploy(data){
     $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
-        //scrollToBottom('#session_output_' + data.task + '_' + data.uuid);
+        scrollToBottom('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_'));
     });
 }

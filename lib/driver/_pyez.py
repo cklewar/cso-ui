@@ -30,7 +30,7 @@ import yaml
 from functools import wraps
 from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, UndefinedError
 from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
 from jnpr.junos.exception import ConfigLoadError, CommitError, ConnectClosedError, ConnectAuthError
@@ -206,7 +206,6 @@ class PyEzDriver(Base):
                     '[{0}][{1}]: Logout from shell --> DONE'.format(self.target['name'], 'Disconnect'))
                 self._dev.close(skip_logout=True)
 
-
         c.cso_logger.info('[{0}][{1}]: Disconnect from device --> DONE'.format(self.target['name'], 'Disconnect'))
 
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
@@ -333,7 +332,21 @@ class PyEzDriver(Base):
         else:
             target_global_data = None
 
-        config = template.render({'target': target_data, 'global': target_global_data})
+        try:
+            config = template.render({'target': target_data, 'global': target_global_data})
+        except UndefinedError as err:
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+                       'msg': str(err)}
+            self.emit_message(message=message)
+            message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                       'status': 'Failed'}
+            self.emit_message(message=message)
+            c.cso_logger.info(
+                '[{0}][{1}]: Render configuration failed with error: {0}'.format(self.target['name'], task['name'],
+                                                                                 err))
+            self.disconnect()
+            return False, ""
+
         message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                    'msg': config + '\n'}
         self.emit_message(message=message)
@@ -617,7 +630,7 @@ class PyEzDriver(Base):
                 c.cso_logger.info(
                     '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
                 message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
-                           'status': str(err)}
+                           'status': 'Failed'}
                 self.emit_message(message=message)
                 self.disconnect()
 
@@ -663,7 +676,10 @@ class PyEzDriver(Base):
             c.cso_logger.info(
                 '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
-                       'status': str(err)}
+                       'status': 'Error loading configuration'}
+            self.emit_message(message=message)
+            message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
+                       'msg': str(err)}
             self.emit_message(message=message)
             self.disconnect()
 

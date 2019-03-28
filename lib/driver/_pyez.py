@@ -44,6 +44,7 @@ def check_conn_and_stop_netconf(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         task = kwargs.get('task', None)
+        data = kwargs.get('data', None)
 
         if not self.isConnected:
             if self.wait_for_daemons:
@@ -53,7 +54,10 @@ def check_conn_and_stop_netconf(func):
         if self.isNetConf:
             self.disconnect_netconf()
 
-        return func(self, task=task)
+        if task and data:
+            return func(self, task=task, data=data)
+        else:
+            return func(self, task=task)
 
     return wrapper
 
@@ -62,6 +66,7 @@ def check_conn_and_start_netconf(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         task = kwargs.get('task', None)
+        data = kwargs.get('data', None)
 
         if not self.isConnected:
             if self.wait_for_daemons:
@@ -71,7 +76,10 @@ def check_conn_and_start_netconf(func):
         if not self.isNetConf:
             self.connect_netconf()
 
-        return func(self, task=task)
+        if task and data:
+            return func(self, task=task, data=data)
+        else:
+            return func(self, task=task)
 
     return wrapper
 
@@ -609,15 +617,6 @@ class PyEzDriver(Base):
     @check_conn_and_start_netconf
     def configure(self, task=None, data=None):
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
-
-        if not self.isConnected:
-            if self.wait_for_daemons:
-                self.wait_for_daemons_ready(task=task)
-            self.connect()
-
-        if not self.isNetConf:
-            self.connect_netconf()
-
         cu = Config(self._dev)
 
         if self.target['model'] == c.MODEL_QFX and self.isZeroized:
@@ -684,6 +683,7 @@ class PyEzDriver(Base):
                 '[{0}][{1}]: Device loading configuration --> DONE'.format(self.target['name'], task['name']))
 
         except (ConfigLoadError, RuntimeError, ConnectClosedError) as err:
+            print(err)
             c.cso_logger.info(
                 '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],

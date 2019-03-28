@@ -116,7 +116,7 @@ $( document ).ready(function() {
 
         } else if (json.action === 'update_session_output'){
 
-            $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg);
+            $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg + '\n');
             $('#session_output_' + json.task + '_' + json.uuid.replace(/\-/g, '_')).trigger("change");
 
         } else if (json.action === 'add_tasks'){

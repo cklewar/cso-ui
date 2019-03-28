@@ -40,23 +40,40 @@ from ruamel.yaml import YAML
 from lib.driver.driver import Base
 
 
-def wrapper(method):
-    @wraps(method)
-    def _impl(self, *method_args, **method_kwargs):
-        print('inside decorator')
+def check_conn_and_stop_netconf(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        task = kwargs.get('task', None)
 
-        # if not self.isConnected:
-        #    if self.wait_for_daemons:
-        #        self.wait_for_daemons_ready(task=task)
-        #    self.connect()
+        if not self.isConnected:
+            if self.wait_for_daemons:
+                self.wait_for_daemons_ready(task=task)
+            self.connect()
 
-        # if not self.isNetConf:
-        #    self.connect_netconf()
+        if self.isNetConf:
+            self.disconnect_netconf()
 
-        print(self, *method_args, **method_kwargs)
-        return method(self, *method_args, **method_kwargs)
+        return func(self, task=task)
 
-    return _impl
+    return wrapper
+
+
+def check_conn_and_start_netconf(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        task = kwargs.get('task', None)
+
+        if not self.isConnected:
+            if self.wait_for_daemons:
+                self.wait_for_daemons_ready(task=task)
+            self.connect()
+
+        if not self.isNetConf:
+            self.connect_netconf()
+
+        return func(self, task=task)
+
+    return wrapper
 
 
 class PyEzDriver(Base):
@@ -529,19 +546,12 @@ class PyEzDriver(Base):
                 self.emit_message(message=message)
                 return False, 'Failed to get project with error: <{0}>'.format(gle.message)
 
+    @check_conn_and_start_netconf
     def zeroize(self, task=None):
         c.cso_logger.info('[{0}][{1}]: Initialize zerorize device'.format(self.target['name'], task['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Zeroize initializing'}
         self.emit_message(message=message)
-
-        if not self.isConnected:
-            if self.wait_for_daemons:
-                self.wait_for_daemons_ready(task=task)
-            self.connect()
-
-        if not self.isNetConf:
-            self.connect_netconf()
 
         self._dev.zeroize()
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -596,6 +606,7 @@ class PyEzDriver(Base):
 
             time.sleep(0.2)
 
+    @check_conn_and_start_netconf
     def configure(self, task=None, data=None):
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
 
@@ -721,15 +732,8 @@ class PyEzDriver(Base):
 
         return True
 
+    @check_conn_and_stop_netconf
     def copy(self, task=None):
-
-        if not self.isConnected:
-            if self.wait_for_daemons:
-                self.wait_for_daemons_ready(task=task)
-            self.connect()
-
-        if self.isNetConf:
-            self.disconnect_netconf()
 
         for item in list(zip(task['src'], task['dst'])):
 
@@ -770,6 +774,7 @@ class PyEzDriver(Base):
 
         return True
 
+    @check_conn_and_stop_netconf
     def license(self, task=None):
 
         c.cso_logger.info(
@@ -777,14 +782,6 @@ class PyEzDriver(Base):
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Adding license...'}
         self.emit_message(message=message)
-
-        if not self.isConnected:
-            if self.wait_for_daemons:
-                self.wait_for_daemons_ready(task=task)
-            self.connect()
-
-        if self.isNetConf:
-            self.disconnect_netconf()
 
         command = 'cli -c "request system license add {0}"'.format(task['file'])
         self._dev._tty._tn.write(command.encode("ascii") + b"\r\n")
@@ -828,21 +825,13 @@ class PyEzDriver(Base):
 
             time.sleep(0.2)
 
+    @check_conn_and_start_netconf
     def reboot(self, task=None):
 
         c.cso_logger.info('[{0}][{1}]: Rebooting device...'.format(self.target['name'], task['name'], ))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
                    'status': 'Rebooting...'}
         self.emit_message(message=message)
-
-        if not self.isConnected:
-            if self.wait_for_daemons:
-                self.wait_for_daemons_ready(task=task)
-            self.connect()
-
-        if not self.isNetConf:
-            self.connect_netconf()
-
         message = {'action': 'update_task_status', 'task': 'Disconnect', 'uuid': self.target['uuid'],
                    'status': 'waiting'}
         self.emit_message(message=message)

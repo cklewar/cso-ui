@@ -21,31 +21,9 @@
 
 import abc
 import json
-import logging
 import lib.constants as c
 
 from threading import Thread
-
-'''
-class ContextFilter(logging.Filter):
-    """
-    This is a filter which injects contextual information into the log.
-
-    Rather than use actual contextual information, we just use random
-    data in this demo.
-    """
-
-    def __init__(self, task_name=None, target_data=None):
-        logging.Filter.__init__(self)
-        self.task_name = task_name
-        self.target_data = target_data
-
-    def filter(self, record):
-
-        record.task_name = self.task_name
-        record.uuid = self.target_data['uuid']
-        return True
-'''
 
 
 class Base(Thread):

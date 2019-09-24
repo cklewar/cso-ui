@@ -19,24 +19,26 @@
 # Author: cklewar
 #
 
-import re
-import gitlab
-import lib.constants as c
-import requests
 import json
+import re
 import time
-import yaml
-
-from functools import wraps
-from lxml.etree import XMLSyntaxError
 from datetime import datetime, timedelta
+from functools import wraps
+
+import pprint
+import gitlab
+import requests
+import yaml
+from gitlab.exceptions import GitlabError, GitlabConnectionError, GitlabCreateError, GitlabHttpError
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, UndefinedError
-from jnpr.junos.utils.config import Config
 from jnpr.junos import Device
 from jnpr.junos.exception import ConfigLoadError, CommitError, ConnectClosedError, ConnectAuthError
 from jnpr.junos.exception import RpcError
-from gitlab.exceptions import GitlabError, GitlabDeleteError, GitlabConnectionError, GitlabCreateError, GitlabHttpError
+from jnpr.junos.utils.config import Config
+from lxml.etree import XMLSyntaxError
 from ruamel.yaml import YAML
+
+import lib.constants as c
 from lib.driver.driver import Base
 
 
@@ -85,6 +87,7 @@ def check_conn_and_start_netconf(func):
 
 
 class PyEzDriver(Base):
+    DRIVER_SETTINGS = 'config/driver/pyez.yml'
 
     def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
                  ws_handler=None):
@@ -264,9 +267,9 @@ class PyEzDriver(Base):
             self.current_task = task['name']
 
             if self.status:
-
                 if task['name'] == 'Connect':
-                    self.status = self.connect()
+                    pass
+                    # self.status = self.connect()
 
                 elif task['name'] == 'Render':
                     _status, _data = self.render(task=task)
@@ -296,7 +299,8 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Reboot':
                     self.status = self.reboot(task=task)
                 elif task['name'] == 'Disconnect':
-                    self.status = self.disconnect()
+                    pass
+                    # self.status = self.disconnect()
 
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                            'msg': self.gen_task_done_message(task=task)}
@@ -317,6 +321,7 @@ class PyEzDriver(Base):
                 '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target['name'], self.use_case_name))
 
     def render(self, task=None):
+        pp = pprint.PrettyPrinter()
         c.cso_logger.info(
             '[{0}][{1}]: Render configuration'.format(self.target['name'], task['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -326,22 +331,81 @@ class PyEzDriver(Base):
         try:
             env = Environment(autoescape=False,
                               loader=FileSystemLoader(self.use_case_path), trim_blocks=True, lstrip_blocks=True)
-
             template = env.get_template(task['template'])
 
         except (TemplateNotFound, IOError) as err:
             c.cso_logger.info(
-                '[{0}][{1}]: Render configuration failed: {2}'.format(self.target['name'], task['name'], err))
+                '[{0}][{1}]: Render configuration failed template: {2} not found'.format(self.target['name'],
+                                                                                         task['name'], err))
             return False, err
 
-        with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
-            template_data = yaml.safe_load(fd)
+        try:
+            # Load globals vars as template
+            try:
+                env = Environment(autoescape=False,
+                                  loader=FileSystemLoader(self.tmp_dir), trim_blocks=True, lstrip_blocks=True)
+                globals_as_template = env.get_template(self.globals_file)
 
-        with open('{0}/{1}'.format(self.tmp_dir, self.globals_file)) as fd:
-            global_data = yaml.safe_load(fd)
+            except (TemplateNotFound, IOError) as err:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Render configuration failed template: {2} not found'.format(self.target['name'],
+                                                                                             task['name'], err))
+                return False, err
+
+            # Load globals vars as regular data and render it
+            with open('{0}/{1}'.format(self.tmp_dir, self.globals_file)) as fd:
+                try:
+                    _tmp_data = yaml.safe_load(fd)
+                    global_data = yaml.safe_load(globals_as_template.render(_tmp_data))
+                except yaml.YAMLError as exc:
+                    c.cso_logger.info(
+                        '[{0}][{1}]: Error in global data: {2}'.format(self.target['name'], task['name'], exc))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': 'KeyError: {0}'.format(str(exc))}
+                    self.emit_message(message=message)
+                    return False, exc
+
+            # Load target vars as template and render with global vars
+            try:
+                env = Environment(autoescape=False,
+                                  loader=FileSystemLoader(self.tmp_dir), trim_blocks=True, lstrip_blocks=True)
+                targets_as_template = env.get_template(self.globals_file)
+
+            except (TemplateNotFound, IOError) as err:
+                c.cso_logger.info(
+                    '[{0}][{1}]: Render configuration failed template: {2} not found'.format(self.target['name'],
+                                                                                             task['name'], err))
+                return False, err
+
+            template_data = yaml.safe_load(targets_as_template.render(global_data))
+
+            '''
+            with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
+                pp.pprint(task)
+                pp.pprint(self.target)
+                try:
+                    template_data = yaml.safe_load(fd)
+                    #import pprint
+                    #pp = pprint.PrettyPrinter()
+                    #pp.pprint(template_data)
+                except yaml.YAMLError as exc:
+                    c.cso_logger.info(
+                        '[{0}][{1}]: Error in template data: {2}'.format(self.target['name'], task['name'], exc))
+                    message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                               'status': 'KeyError: {0}'.format(str(exc))}
+                    self.emit_message(message=message)
+                    return False, exc
+            '''
+
+        except IOError as err:
+            c.cso_logger.info(
+                '[{0}][{1}]: Render configuration failed file: {2} not found'.format(self.target['name'],
+                                                                                     task['name'], err))
+            return False, err
 
         try:
-            target_data = {**template_data['target'], **self.target}
+            target_data = {**template_data[self.target['name']], **self.target}
+            pp.pprint(target_data)
         except KeyError as err:
             c.cso_logger.info(
                 '[{0}][{1}]: Render configuration failed with error: <{2}>'.format(self.target['name'], task['name'],
@@ -379,7 +443,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
         c.cso_logger.info(
             '[{0}][{1}]: Render configuration --> DONE'.format(self.target['name'], task['name']))
-
+        
         return True, config
 
     def push(self, task=None, data=None):
@@ -614,7 +678,7 @@ class PyEzDriver(Base):
 
             time.sleep(0.2)
 
-    @check_conn_and_start_netconf
+    #@check_conn_and_start_netconf
     def configure(self, task=None, data=None):
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
         cu = Config(self._dev)
@@ -630,7 +694,9 @@ class PyEzDriver(Base):
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration'.format(self.target['name'],
                                                                                                task['name']))
-                cu.load(c.cfg_aiu, format="text", merge=True)
+                pp = pprint.PrettyPrinter()
+                pp.pprint(self.target)
+                #cu.load(c.cfg_aiu, format=task['format'], merge=True)
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration --> DONE'.format(
                         self.target['name'],
@@ -650,7 +716,7 @@ class PyEzDriver(Base):
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration'.format(self.target['name'],
                                                                                               task['name']))
-                cu.commit(confirm=task['confirm'], sync=task['sync'])
+                #cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration --> DONE'.format(
                         self.target['name'],
@@ -678,12 +744,11 @@ class PyEzDriver(Base):
 
         try:
             c.cso_logger.info('[{0}][{1}]: Device loading configuration'.format(self.target['name'], task['name']))
-            cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'], format="text")
+            # cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'], format=task['format])
             c.cso_logger.info(
                 '[{0}][{1}]: Device loading configuration --> DONE'.format(self.target['name'], task['name']))
 
         except (ConfigLoadError, RuntimeError, ConnectClosedError) as err:
-            print(err)
             c.cso_logger.info(
                 '[{0}][{1}]: Error loading configuration: {2}'.format(self.target['name'], task['name'], err))
             message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -702,7 +767,7 @@ class PyEzDriver(Base):
 
         try:
             c.cso_logger.info('[{0}][{1}]: Device commit configuration'.format(self.target['name'], task['name']))
-            cu.commit(confirm=task['confirm'], sync=task['sync'])
+            # cu.commit(confirm=task['confirm'], sync=task['sync'])
         # NetConf session gets dropped when override config with NetConf service enabled. So we need to catch up here
         # and reconnect.
         except XMLSyntaxError as xse:
@@ -974,7 +1039,7 @@ class PyEzDriver(Base):
     def load_settings(self):
         c.cso_logger.info('Loading driver settings')
 
-        with open('config/driver/pyez.yml', 'r') as fp:
+        with open(PyEzDriver.DRIVER_SETTINGS, 'r') as fp:
             _config = fp.read()
             yaml = YAML(typ='safe')
             config = yaml.load(_config)

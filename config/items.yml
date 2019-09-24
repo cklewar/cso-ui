@@ -1,4 +1,4 @@
-deployed_usecase: useCase9
+deployed_usecase: useCase0
 usecases:
   useCase0:
     title: Reset QFX to SD-WAN BASIC

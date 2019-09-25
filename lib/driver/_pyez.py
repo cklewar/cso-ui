@@ -25,7 +25,6 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 
-import pprint
 import gitlab
 import requests
 import yaml
@@ -268,8 +267,7 @@ class PyEzDriver(Base):
 
             if self.status:
                 if task['name'] == 'Connect':
-                    pass
-                    # self.status = self.connect()
+                    self.status = self.connect()
 
                 elif task['name'] == 'Render':
                     _status, _data = self.render(task=task)
@@ -299,8 +297,7 @@ class PyEzDriver(Base):
                 elif task['name'] == 'Reboot':
                     self.status = self.reboot(task=task)
                 elif task['name'] == 'Disconnect':
-                    pass
-                    # self.status = self.disconnect()
+                    self.status = self.disconnect()
 
                 message = {'action': 'update_session_output', 'task': task['name'], 'uuid': self.target['uuid'],
                            'msg': self.gen_task_done_message(task=task)}
@@ -321,7 +318,6 @@ class PyEzDriver(Base):
                 '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target['name'], self.use_case_name))
 
     def render(self, task=None):
-        pp = pprint.PrettyPrinter()
         c.cso_logger.info(
             '[{0}][{1}]: Render configuration'.format(self.target['name'], task['name']))
         message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
@@ -381,13 +377,8 @@ class PyEzDriver(Base):
 
             '''
             with open('{0}/{1}'.format(self.use_case_path, task['template_data'])) as fd:
-                pp.pprint(task)
-                pp.pprint(self.target)
                 try:
                     template_data = yaml.safe_load(fd)
-                    #import pprint
-                    #pp = pprint.PrettyPrinter()
-                    #pp.pprint(template_data)
                 except yaml.YAMLError as exc:
                     c.cso_logger.info(
                         '[{0}][{1}]: Error in template data: {2}'.format(self.target['name'], task['name'], exc))
@@ -405,7 +396,6 @@ class PyEzDriver(Base):
 
         try:
             target_data = {**template_data[self.target['name']], **self.target}
-            pp.pprint(target_data)
         except KeyError as err:
             c.cso_logger.info(
                 '[{0}][{1}]: Render configuration failed with error: <{2}>'.format(self.target['name'], task['name'],
@@ -443,7 +433,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
         c.cso_logger.info(
             '[{0}][{1}]: Render configuration --> DONE'.format(self.target['name'], task['name']))
-        
+
         return True, config
 
     def push(self, task=None, data=None):
@@ -678,7 +668,7 @@ class PyEzDriver(Base):
 
             time.sleep(0.2)
 
-    #@check_conn_and_start_netconf
+    @check_conn_and_start_netconf
     def configure(self, task=None, data=None):
         c.cso_logger.info('[{0}][{1}]: Commit configuration on device'.format(self.target['name'], task['name']))
         cu = Config(self._dev)
@@ -694,9 +684,7 @@ class PyEzDriver(Base):
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration'.format(self.target['name'],
                                                                                                task['name']))
-                pp = pprint.PrettyPrinter()
-                pp.pprint(self.target)
-                #cu.load(c.cfg_aiu, format=task['format'], merge=True)
+                cu.load(c.cfg_aiu, format=task['format'], merge=True)
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Loading configuration --> DONE'.format(
                         self.target['name'],
@@ -716,7 +704,7 @@ class PyEzDriver(Base):
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration'.format(self.target['name'],
                                                                                               task['name']))
-                #cu.commit(confirm=task['confirm'], sync=task['sync'])
+                cu.commit(confirm=task['confirm'], sync=task['sync'])
                 c.cso_logger.info(
                     '[{0}][{1}]: Device with auto-image-upgrade. Commit configuration --> DONE'.format(
                         self.target['name'],
@@ -744,7 +732,7 @@ class PyEzDriver(Base):
 
         try:
             c.cso_logger.info('[{0}][{1}]: Device loading configuration'.format(self.target['name'], task['name']))
-            # cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'], format=task['format])
+            cu.load(data, merge=task['merge'], overwrite=task['override'], update=task['update'], format=task['format'])
             c.cso_logger.info(
                 '[{0}][{1}]: Device loading configuration --> DONE'.format(self.target['name'], task['name']))
 
@@ -767,7 +755,7 @@ class PyEzDriver(Base):
 
         try:
             c.cso_logger.info('[{0}][{1}]: Device commit configuration'.format(self.target['name'], task['name']))
-            # cu.commit(confirm=task['confirm'], sync=task['sync'])
+            cu.commit(confirm=task['confirm'], sync=task['sync'])
         # NetConf session gets dropped when override config with NetConf service enabled. So we need to catch up here
         # and reconnect.
         except XMLSyntaxError as xse:

@@ -23,7 +23,7 @@ import abc
 import json
 import lib.constants as c
 
-from threading import Thread
+from threading import Thread, Event
 
 
 class Base(Thread):
@@ -48,6 +48,7 @@ class Base(Thread):
         self.results = results
         self.ws_client = ws_client
         self.ws_handler = ws_handler
+        self._stop_event = Event()
 
     @abc.abstractmethod
     def authenticate(self):
@@ -63,3 +64,9 @@ class Base(Thread):
             self.ws_client.send(json.dumps(message))
         else:
             print('empty message')
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()

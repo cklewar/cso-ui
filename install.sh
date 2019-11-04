@@ -6,7 +6,7 @@ buildUi() {
     echo "#########################################################################"
     mkdir -p /tmp/cso-ui/log
     docker build -t cso-ui .
-    docker run -d --rm -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
+    docker run -d -v /tmp/cso-ui:/tmp/cso-ui -p 8670:8670 --name cso-ui cso-ui
 }
 
 buildGitlab() {
@@ -104,7 +104,10 @@ import() {
 
     curl --data "@auth.txt" --request POST http://${host}:9080/oauth/token > token.json
 
-    if [[ ${VERSION} == "18.04" ]]
+    if [[ ${VERSION} == "14.04" ]]
+    then
+        TOKEN=$(/snap/bin/yq r ./token.json access_token)
+    elif [[ ${VERSION} == "18.04" ]]
     then
         TOKEN=$(/snap/bin/yq r ./token.json access_token)
     elif [[ ${VERSION} == "16.04" ]]
@@ -127,7 +130,18 @@ prepare() {
     echo "Prepare environment"
     echo "#########################################################################"
 
-    if [[ ${VERSION} == "18.04" ]]
+
+    if [[ ${VERSION} == "14.04" ]]
+    then
+        apt-get update
+        apt-get install snapd curl git apt-transport-https ca-certificates curl software-properties-common -y
+        snap install yq
+        /snap/bin/yq w --inplace config/config.yml ws_client_ip ${ws}
+        /snap/bin/yq w --inplace config/config.yml git_host ${host}
+        /snap/bin/yq w --inplace config/config.yml DEMONIZE False
+        /snap/bin/yq w --inplace config/config.yml UI_ADDRESS 0.0.0.0
+
+    elif [[ ${VERSION} == "18.04" ]]
     then
         apt-get update
         apt-get install curl git apt-transport-https ca-certificates curl software-properties-common -y
@@ -150,7 +164,7 @@ prepare() {
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         apt-get update
-        apt-get install docker-ce -y
+        apt-get install docker-ce yq -y
         yq w --inplace config/config.yml ws_client_ip ${ws}
         yq w --inplace config/config.yml git_host ${host}
         yq w --inplace config/config.yml DEMONIZE False
@@ -171,10 +185,14 @@ all() {
     prepare
     buildUi
     buildGitlab
+    echo "#########################################################################"
+    echo "Wait 3minutes for gitlab container to get ready"
+    echo "#########################################################################"
+    sleep 3m
     while ! curl http://${host}:9080
     do
       echo "$(date) - still trying"
-      sleep 1
+      sleep 10
     done
     echo "$(date) - connected successfully. Waiting for gitlab API being ready..."
     sleep 45

@@ -20,27 +20,19 @@
 #
 
 import lib.constants as c
-
 from lib.driver._pyez import PyEzDriver
-from lib.driver._ansible import AnsibleDriver
-from lib.driver._saltstack import SaltDriver
 
 
 class DriverFactory(object):
 
     def __init__(self, name=None):
-
         self.name = name
-        self._driver = None
 
-    def init_driver(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None, ws_handler=None):
+    def init_driver(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
+                    ws_handler=None):
 
-        if self.name == c.DRIVER_SALTSTACK:
-            self._driver = SaltDriver()
-        elif self.name == c.DRIVER_ANSIBLE:
-            self._driver = AnsibleDriver()
-        elif self.name == c.DRIVER_PYEZ:
-            self._driver = PyEzDriver(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
-                                      results=results, ws_client=ws_client, ws_handler=ws_handler)
-
-        return self._driver
+        if self.name == c.DRIVER_PYEZ:
+            return PyEzDriver(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
+                              results=results, ws_client=ws_client, ws_handler=ws_handler)
+        else:
+            return None

@@ -1,11 +1,10 @@
 deployed_usecase: useCase0
 usecases:
   useCase0:
-    title: Reset QFX to SD-WAN BASIC
+    title: Reset Underlay Switch to SD-WAN BASIC
     playbook: pb.yml
     directory: useCase0
-    description: Load or reset config of QFX5100 with SD-WAN underlay configuration
-      but do not touch any other Device
+    description: Overload the ENTIRE config of the Underlay Switch with your basic SD-WAN configuration. 
     image: UC0.PNG
     image_deployed: UC0.PNG
     delete: false
@@ -15,8 +14,8 @@ usecases:
     title: Reset Hub1 to lab-default
     playbook: pb.yml
     directory: useCase1
-    description: Load or reset config of Hub1 (SRX1500-1) so that you can load Stage-1
-      config to it but do not touch any other Device
+    description: Overload the existing config of Hub1 (SRX based) with the initial config for this Lab and reboot it.
+      After the Device comes back you can start with ZTP / Provision it.
     image: UC1.PNG
     image_deployed: UC1.PNG
     delete: false
@@ -26,8 +25,8 @@ usecases:
     title: Reset SRX-Spoke to lab-default
     playbook: pb.yml
     directory: useCase2
-    description: Load or reset config of SRX-Spoke (SRX345-1) so that you can start
-      ZTP Provision but do not touch any other Device
+    description: Overload the existing config of Spoke1 (SRX based) with the initial config for this Lab and reboot it.
+      After the Device comes back you can start with ZTP / Provision it.
     image: UC2.PNG
     image_deployed: UC2.PNG
     delete: false
@@ -37,8 +36,7 @@ usecases:
     title: Zeroize NFX250-1 to lab-default
     playbook: pb.yml
     directory: useCase3
-    description: Zeroize NFX250-1 so that you can start ZTP Provision but do not touch
-      any other Device
+    description: Zeroize your Spoke2 (NFX250-1) so that you can start with the ZTP / Provision process.
     image: UC3.PNG
     image_deployed: UC3.PNG
     delete: false
@@ -48,8 +46,7 @@ usecases:
     title: Zeroize NFX250-2 to lab-default
     playbook: pb.yml
     directory: useCase4
-    description: Zeroize NFX250-2 so that you can start ZTP Provision but do not touch
-      any other Device
+    description: Zeroize your Spoke3 (NFX250-2) so that you can start with the ZTP / Provision process.
     image: UC4.PNG
     image_deployed: UC4.PNG
     delete: false
@@ -59,8 +56,8 @@ usecases:
     title: Multi-Hub (or Hub-Redundancy)
     playbook: pb.yml
     directory: useCase5
-    description: This will ADD the second Hub config to the QFX5100 and Zeroise Hub2
-      so that you can load Stage-1. Hub1 and any Spokes are not touched. It is assumed
+    description: This will ADD the second Hub config to the Underlay Switch and init Hub2
+      so that you can start with the ZTP / Provision process of this new Hub. Hub1 and any Spokes are not touched. It is assumed
       that the SD-WAN basic scenario is already loaded.
     image: UC5.PNG
     image_deployed: UC5.PNG
@@ -71,21 +68,20 @@ usecases:
     title: Dual Spoke (HA via NFX250)
     playbook: pb.yml
     directory: useCase6
-    description: This will deactivate the SD-WAN BASIC config on the QFX5100 and load
-      a complete new config for this lab. Hub1 will be resetted so that you can load
-      Stage-1. The two NFX250 that you need for this lab are also Zeroized and brought
-      into a state that you can start ZTP Provision.
+    description: This will MODIFY the existing SD-WAN BASIC config on the Underlay Switch for this Testcase.
+      Hub1 is resetted to the default lab config and the two NFX250 are zeroized.
+      After this has finished you can start with the ZTP / Provision process of these three devices.
     image: UC6.PNG
     image_deployed: UC6.PNG
     delete: false
     deployed: false
 
   useCase7:
-    title: Partial Mesh & Site-GW
+    title: DC-Interconnect & Partial Mesh
     playbook: pb.yml
     directory: useCase7
-    description: This will ADD a Site-GW config for the second Hub config to the QFX5100.
-      It will Zeroise Hub2 so that you can load Stage-1. Hub1 and any Spokes are not
+    description: This will ADD a Enterprise Hub config for the second Hub config to the Underlay Switch.
+      It will reset to lab-default config Hub2 so that you can start with the ZTP / Provision process. Hub1 and any Spokes are not
       touched. It is assumed that the SD-WAN basic scenario is already loaded.
     image: UC7.PNG
     image_deployed: UC7.PNG
@@ -96,10 +92,10 @@ usecases:
     title: Device RMA (via two NFX250)
     playbook: pb.yml
     directory: useCase8
-    description: This will deactivate the SD-WAN BASIC config on the QFX5100 and load
-      a complete new config for this lab. The second NFX250 will be Zeroized so that
-      you can start ZTP as a RMA Device. Hub1 and the NFX250-1 are not touched as
-      they may be already be provisioned from other labs.
+    description: This will MODIFY the existing the SD-WAN BASIC config on the Underlay Switch for this Testcase.
+      The second NFX250 will be Zeroized so that
+      you can start ZTP as a RMA Device. Hub1 and the Spoke2 (NFX250-1) are not touched as
+      they may be already be provisioned from a previous lab.
     image: UC8.PNG
     image_deployed: UC8.PNG
     delete: false
@@ -110,9 +106,45 @@ usecases:
     playbook: pb.yml
     directory: useCase9
     description: This resets the entire LAB (without Hub2). Hub1 and the 3 Spokes
-      are Zeroized and prepared for the Lab. Any EXISTING config of QFX5100 is overwritten
+      are Zeroized and prepared for the Lab. Any EXISTING config of the Underlay Switch is overwritten
       with SD-WAN BASIC configuration and the default lab config.
     image: UC9.PNG
     image_deployed: UC9.PNG
+    delete: false
+    deployed: true
+
+  useCase10:
+    title: Reset NFX150-Spoke to lab-default
+    playbook: pb.yml
+    directory: useCase10
+    description: Overload the existing config of Spoke4 (NFX150 based) with the initial config for this Lab and reboot it.
+      After the Device comes back you can start with ZTP / Provision it.
+      It also does a small change on the Underlay Switch to connect Desktop1.
+    image: UC10.PNG
+    image_deployed: UC10.PNG
+    delete: false
+    deployed: true
+
+  useCase11:
+    title: Lab init for SD-LAN with EX-Only testcase
+    playbook: pb.yml
+    directory: useCase11
+    description: This resets the EX-Switch with the initial config for this Lab and reboot it.
+      It also does a small change on the Underlay Switch to connect Desktop1.
+      Note that you can't use Spoke4 at the same time.
+    image: UC11.PNG
+    image_deployed: UC11.PNG
+    delete: false
+    deployed: true
+
+  useCase12:
+    title: Lab init for SD-LAN with SRX CPE (SDWAN_or_NGFW) + EX + Mist AP
+    playbook: pb.yml
+    directory: useCase12
+    description: This resets SRX as CPE for SD-WAN and NGFW as well as the EX-Switch with the initial config for this Lab and reboots them.
+      It also does a small change on the Underlay Switch to connect Desktop1.
+      Note that you can't use Spoke4 at the same time.
+    image: UC12.PNG
+    image_deployed: UC12.PNG
     delete: false
     deployed: true

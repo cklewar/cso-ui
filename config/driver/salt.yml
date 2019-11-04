@@ -1,9 +1,0 @@
-edi_protocol: http
-edi_ip: 127.0.0.1
-edi_port: 9998
-edi_user: juniper
-edi_pw: juniper123
-edi_auth_module: pam
-edi_runner: cso_deploy_run
-git_ref: master
-git_path: cso_ops/network_parameters/

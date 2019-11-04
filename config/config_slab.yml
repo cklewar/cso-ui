@@ -2,10 +2,10 @@ driver: pyez
 demo_ref_doc_url: static/docs/readthedocs-html-version/index.html
 jtac_url: https://support.juniper.net/support/
 ws_client_protocol: ws
-ws_client_ip: 127.0.0.1
+ws_client_ip: 172.30.52.57
 ws_client_port: 8670
 git_protocol: http
-git_host: 172.30.52.57
+git_host: 192.168.10.10
 git_http_port: 9080
 git_ssh_port: 3022
 git_login_url: /oauth/token

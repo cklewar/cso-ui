@@ -27,7 +27,7 @@ import json
 
 from collections import OrderedDict
 from ruamel.yaml import YAML
-from threading import Thread
+from threading import Thread, Event
 from lib.factory import DriverFactory
 from lib.wsclient import WSClient
 from lib.handler import WSStreamHandler
@@ -37,7 +37,7 @@ class TargetQueue(Thread):
 
     def __init__(self, _data=None, use_case_name=None, use_case_data=None, group=None, target=None, name=None, args=(),
                  kwargs=None, *, daemon=None):
-        super(TargetQueue, self).__init__(group=group, target=target, name=name, daemon=daemon)
+        super(TargetQueue, self).__init__(group=group, target=target, name=name)
         self.__data = _data
         self.use_case_name = use_case_name
         self.use_case_data = use_case_data
@@ -57,6 +57,7 @@ class TargetQueue(Thread):
         c.jnpr_junos_tty.addHandler(self.ws_handler)
         c.jnpr_junos_tty_netconf.addHandler(self.ws_handler)
         c.jnpr_junos_tty_telnet.addHandler(self.ws_handler)
+        self._stop_event = Event()
 
     def run(self):
 
@@ -65,8 +66,12 @@ class TargetQueue(Thread):
             df = DriverFactory(name=c.CONFIG['driver'])
             driver = df.init_driver(target_data=target_data, use_case_name=self.use_case_name,
                                     use_case_data=self.use_case_data, results=self.results, ws_client=self.ws_client,
-                                    ws_handler=self.ws_handler)
+                                    ws_handler=self.ws_handler, event=self._stop_event, daemon=self.daemon)
+            # driver.setDaemon(True)
             self.tq[driver.name] = driver
+            print('DAEMON:', driver.isDaemon())
+
+        print('TQ:', self.tq)
 
         for target, driver in self.tq.items():
             driver.start()
@@ -120,3 +125,9 @@ class TargetQueue(Thread):
             self.ws_client.send(json.dumps(message))
         else:
             c.cso_logger.info('[WS_CLIENT]: {0}'.format('Can not send empty message'))
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()

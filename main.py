@@ -19,24 +19,26 @@
 # Author: cklewar
 #
 
-import lib.constants as c
+import json
+import logging.config
 import os
+import random
+import shutil
+import threading
+import uuid
+import time
+
 import cherrypy
 import six
-import json
-import threading
-import random
-import logging.config
-import uuid
-import shutil
-
 from git import Repo
 from git.exc import GitCommandError
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from ruamel.yaml import YAML
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
-from ruamel.yaml import YAML
-from lib.auth import AuthController, require, member_of, name_is
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+
+import lib.constants as c
+from lib.auth import AuthController, require, member_of
 from lib.tq import TargetQueue
 
 c.logger = logging.getLogger()
@@ -237,6 +239,7 @@ class Deploy(object):
 
     def __init__(self):
         self.__data = dict()
+        self.__tq = None
         self.tmp_dir = c.CONFIG['tmp_dir']
         self._use_case_name = None
         self._use_case_data = None
@@ -267,10 +270,14 @@ class Deploy(object):
 
         elif action == 'run':
 
-            tq = TargetQueue(_data=self.__data, use_case_name=self._use_case_name, use_case_data=self._use_case_data,
-                             name='TQ-MAIN-THREAD')
-            tq.start()
-            tq.join()
+            self.__tq = TargetQueue(_data=self.__data, use_case_name=self._use_case_name,
+                                    use_case_data=self._use_case_data,
+                                    name='{0}-TQ-THREAD'.format(self._use_case_name))
+            self.__tq.start()
+
+            #x = threading.Thread(target=self.thread_function)
+            #x.start()
+            # self.__tq.join()
 
             return True
 
@@ -360,6 +367,18 @@ class Deploy(object):
             ws_client.close()
             '''
             return True, self.__data
+
+        elif action == 'stop_deploy':
+            c.cso_logger.info('Stopping deploy usecase <{0}>'.format(self._use_case_name))
+            self.__tq.stop()
+            c.cso_logger.info('Stopped deploy usecase <{0}>: {1}'.format(self._use_case_name, self.__tq.stopped()))
+
+            return True, 'Stopped deploy usecase {0}'.format(self._use_case_name)
+
+    def thread_function(self):
+        while not self.__tq.stopped():
+            print('Not stopped')
+            time.sleep(1)
 
 
 class Api(object):

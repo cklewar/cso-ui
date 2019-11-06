@@ -29,10 +29,10 @@ class DriverFactory(object):
         self.name = name
 
     def init_driver(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
-                    ws_handler=None):
+                    ws_handler=None, event=None, daemon=None):
 
         if self.name == c.DRIVER_PYEZ:
             return PyEzDriver(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
-                              results=results, ws_client=ws_client, ws_handler=ws_handler)
+                              results=results, ws_client=ws_client, ws_handler=ws_handler, event=event, daemon=daemon)
         else:
             return None

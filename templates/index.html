@@ -71,6 +71,10 @@
                                             data-toggle="modal" data-usecase="{{ item }}"
                                             id="btnDeployUseCase_{{ item }}">Deploy
                                     </button>
+                                    <button class="btn btn-primary btnDeployUseCaseStop" role="button"
+                                            data-toggle="modal" data-usecase="{{ item }}"
+                                            id="btnDeployUseCaseStop_{{ item }}">Stop
+                                    </button>
                                     <div class="dropdown dropup float-right">
                                         <button class="btn btn-secondary dropdown-toggle" type="button"
                                                 id="dropdownMenuCard_{{ item }}" data-toggle="dropdown"
@@ -286,6 +290,7 @@
                     <thead>
                     <tr>
                         <!--<th></th>-->
+                        <th>Details</th>
                         <th>Target</th>
                         <th>Task</th>
                         <th>Status</th>

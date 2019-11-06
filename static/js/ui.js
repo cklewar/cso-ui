@@ -171,6 +171,8 @@ $( document ).ready(function() {
     ws.onclose = function(ev){
       console.log('Websocket connection closed');
       alert("Websocket connection closed. Refresh browser session");
+      window.location.replace("/auth/logout");
+
     };
 
     ws.onerror = function(ev){
@@ -239,6 +241,28 @@ $( document ).ready(function() {
         $.each(modals, function( index, modal ) {
             modal.remove();
         });
+    });
+
+    $('.btnDeployUseCaseStop').on('click', function (event) {
+        var data = {};
+        data.use_case_name = $(this).data('usecase');
+
+        //if ($("#" + data.use_case_name + ' > div > div').hasClass("deployed")) {
+        //   console.log('Already deployed should we re-deploy?');
+        //   isDeploying = false;
+
+        //} else {
+        //    isDeploying = true;
+        //    $('#modalDeployStatus').modal('toggle');
+        //    deploy(data);
+        //}
+        //$( "body" ).data( "foo", 52 );
+        //('#mydiv').data('myval',20);
+        // $("#modalDeployStatus").data("usecase", data.use_case_name);
+        // deploy(data);
+
+        stopDeploy(data);
+
     });
 
     $(function () {
@@ -481,6 +505,13 @@ function deploy(data){
                         $(row).attr('id', data.task + '_' + data.uuid);
                     },
                     "columns": [
+                    	{
+						  "data": null,
+						  "render": function ( data, type, row ) {
+							return '<button class="btnDeployStatusDetail">+</button>';
+						  },
+						  "width": "5%"
+						},
                         {
                             "data": "target",
                             "defaultContent": ""
@@ -514,9 +545,36 @@ function deploy(data){
         }
     });
 
-    $('#t_deploy_status tbody').on('dblclick', 'tr', function () {
+    /*$('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
         scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
+    });*/
+
+    $('#t_deploy_status tbody').on('click', '.btnDeployStatusDetail', function () {
+    	var data = t_deploy_status.row( $(this).parents('tr') ).data();
+        $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
+        scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
     });
+}
+
+function stopDeploy(data){
+	data.action = 'stop_deploy';
+
+	$.ajax({
+		url: '/api/deploy',
+		type: 'POST',
+		data: JSON.stringify(data),
+		cache: false,
+		processData: true,
+		dataType: 'json',
+		contentType: 'application/json',
+		beforeSend: function() {
+			$("#divSpinner").show();
+		},
+		success: function (response) {
+			$("#divSpinner").hide();
+			console.log('Stopped usecase deploy');
+		}
+	});
 }

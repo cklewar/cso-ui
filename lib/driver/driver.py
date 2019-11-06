@@ -29,7 +29,7 @@ from threading import Thread, Event
 class Base(Thread):
 
     def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
-                 ws_handler=None, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
+                 ws_handler=None, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None, event=None):
         super(Base, self).__init__(group=group, target=target, name=name, daemon=daemon)
         self.load_settings()
         self.use_case_name = use_case_name
@@ -48,7 +48,7 @@ class Base(Thread):
         self.results = results
         self.ws_client = ws_client
         self.ws_handler = ws_handler
-        self._stop_event = Event()
+        self.event = event
 
     @abc.abstractmethod
     def authenticate(self):
@@ -58,15 +58,13 @@ class Base(Thread):
     def load_settings(self):
         raise NotImplementedError()
 
+    #def join(self, timeout: float = None):
+    #    self.event.set()
+    #    super(Base, self).join(timeout)
+
     def emit_message(self, message=None):
 
         if message is not None:
             self.ws_client.send(json.dumps(message))
         else:
             print('empty message')
-
-    def stop(self):
-        self._stop_event.set()
-
-    def stopped(self):
-        return self._stop_event.is_set()

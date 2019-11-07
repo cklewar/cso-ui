@@ -33,88 +33,7 @@ $( document ).ready(function() {
         var json = JSON.parse(ev.data);
         //console.log(json);
 
-        if (json.action === 'v2_playbook_on_play_start'){
-
-            if (json.targets) {
-
-                rowNode = t_deploy_status.row.add( {
-                    "target":   json.target,
-                    "task":   json.task,
-                    "status": json.status,
-                } ).draw().node()
-
-                $(rowNode).attr("id", json.target + '_' + json.uuid);
-
-                $( rowNode )
-                .css( 'color', 'black' )
-                .css( 'background-color', '#b7b7b7')
-                .animate( { color: 'black' } );
-
-                $.each( json.targets, function( target, uuid ) {
-
-                    rowNode = t_deploy_status.row.add( {
-                        "target":   target,
-                        "task":   json.task,
-                        "status": json.status,
-                    } ).draw().node()
-
-                    $(rowNode).attr("id", target + '_' + uuid);
-                    $( rowNode )
-                    .css( 'color', 'black' )
-                    .css( 'background-color', '#d6d6d6')
-                    .animate( { color: 'black' } );
-                });
-
-            } else {
-
-                rowNode = t_deploy_status.row.add( {
-                    "target":   json.target,
-                    "task":   json.task,
-                    "status": json.status,
-                } ).draw().node()
-
-                $(rowNode).attr("id", json.target + '_' + json.uuid);
-
-                $( rowNode )
-                .css( 'color', 'black' )
-                .css( 'background-color', '#b7b7b7')
-                .animate( { color: 'black' } );
-            }
-
-        } else if (json.action === 'v2_playbook_on_task_start'){
-
-            rowNode = t_deploy_status.row.add(  {
-                "target": json.target,
-                "task": json.task,
-                "status": json.status,
-            } ).draw().node();
-
-            $(rowNode).attr("id", json.target + '_' + json.uuid);
-
-            $( rowNode )
-            .css( 'color', 'black' )
-            .css( 'background-color', '#d6d6d6')
-            .animate( { color: 'black' } );
-
-        } else if (json.action === 'v2_runner_on_ok'){
-            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
-            temp.target = json.target;
-            temp.status = json.status;
-            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
-
-        } else if (json.action === 'v2_runner_on_failed'){
-            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
-            temp.target = json.target;
-            temp.status = json.status;
-            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
-
-        } else if (json.action === 'v2_play_on_end'){
-            var temp = t_deploy_status.row('#' + json.target + '_' + json.uuid).data();
-            temp.target = json.target;
-            temp.status = json.status;
-            t_deploy_status.row('#' + json.target + '_' + json.uuid).data(temp).invalidate();
-
-        } else if (json.action === 'update_session_output'){
+        if (json.action === 'update_session_output'){
 
             $("#session_output_" + json.task + "_" + json.uuid.replace(/\-/g, '_')).append(json.msg + '\n');
             $('#session_output_' + json.task + '_' + json.uuid.replace(/\-/g, '_')).trigger("change");
@@ -163,6 +82,16 @@ $( document ).ready(function() {
             } else {
                 lastDeployedUseCase = json.usecase;
             }
+        } else if (json.action === 'cleanup_after_deploy'){
+        	console.log('Cleanup after deploy');
+        	//console.log(json);
+			//console.log(($("element").data('bs.modal') || {})._isShown);
+        	/*$('#modalDeployStatus').on('hidden.bs.modal', function (e) {
+				var modals = $('.modal_task_details_' + $('#modalDeployStatus').data('usecase'));
+				$.each(modals, function( index, modal ) {
+					modal.remove();
+        		});
+    		});*/
         } else {
             console.log(json);
         }
@@ -219,50 +148,51 @@ $( document ).ready(function() {
     $('.btnDeployUseCase').on('click', function (event) {
         var data = {};
         data.use_case_name = $(this).data('usecase');
-
-        //if ($("#" + data.use_case_name + ' > div > div').hasClass("deployed")) {
-        //   console.log('Already deployed should we re-deploy?');
-        //   isDeploying = false;
-
-        //} else {
-        //    isDeploying = true;
-        //    $('#modalDeployStatus').modal('toggle');
-        //    deploy(data);
-        //}
-        //$( "body" ).data( "foo", 52 );
-        //('#mydiv').data('myval',20);
         $("#modalDeployStatus").data("usecase", data.use_case_name);
         deploy(data);
-
     });
 
     $('#modalDeployStatus').on('hidden.bs.modal', function (e) {
-        var modals = $('.modal_task_details_' + $('#modalDeployStatus').data('usecase'));
-        $.each(modals, function( index, modal ) {
-            modal.remove();
-        });
-    });
+    	var data = {};
+        data.use_case_name = $(this).data('usecase');
+		data.action = 'deploy_status';
+
+        $.ajax({
+			url: '/api/deploy',
+			type: 'POST',
+			data: JSON.stringify(data),
+			cache: false,
+			processData: true,
+			dataType: 'json',
+			contentType: 'application/json',
+			beforeSend: function() {
+				$("#divSpinner").show();
+			},
+			success: function (response) {
+				$("#divSpinner").hide();
+
+				if (response[0]) {
+					if (response[1] === 'same_tq_running'){
+						//console.log(response[1]);
+					}
+					else {
+						//console.log(response[1]);
+					}
+				} else {
+					//console.log(response[1]);
+					var modals = $('.modal_task_details_' + $('#modalDeployStatus').data('usecase'));
+					$.each(modals, function( index, modal ) {
+						modal.remove();
+					});
+				}
+			}
+		});
+	});
 
     $('.btnDeployUseCaseStop').on('click', function (event) {
         var data = {};
         data.use_case_name = $(this).data('usecase');
-
-        //if ($("#" + data.use_case_name + ' > div > div').hasClass("deployed")) {
-        //   console.log('Already deployed should we re-deploy?');
-        //   isDeploying = false;
-
-        //} else {
-        //    isDeploying = true;
-        //    $('#modalDeployStatus').modal('toggle');
-        //    deploy(data);
-        //}
-        //$( "body" ).data( "foo", 52 );
-        //('#mydiv').data('myval',20);
-        // $("#modalDeployStatus").data("usecase", data.use_case_name);
-        // deploy(data);
-
         stopDeploy(data);
-
     });
 
     $(function () {
@@ -403,159 +333,192 @@ function deleteCard(cardData){
 
 function deploy(data){
 
-    if ($.fn.DataTable.isDataTable("#t_deploy_status")) {
-        $('#t_deploy_status').DataTable().clear().destroy();
-    }
+	data.action = 'deploy_status';
 
-    data.action = 'clone';
+        $.ajax({
+			url: '/api/deploy',
+			type: 'POST',
+			data: JSON.stringify(data),
+			cache: false,
+			processData: true,
+			dataType: 'json',
+			contentType: 'application/json',
+			beforeSend: function() {
+				$("#divSpinner").show();
+			},
+			success: function (response) {
+				$("#divSpinner").hide();
 
-    $.ajax({
-        url: '/api/deploy',
-        type: 'POST',
-        data: JSON.stringify(data),
-        cache: false,
-        processData: true,
-        dataType: 'json',
-        contentType: 'application/json',
-        beforeSend: function() {
-            $("#divSpinner").show();
-        },
-        success: function (response) {
-            $("#divSpinner").hide();
+				if (response[0]) {
+					if (response[1] === 'same_tq_running'){
+						console.log('Same tq running');
+						$('#modalDeployStatus').modal('toggle');
+					}
+					else {
+						console.log(response[1]);
+						alert('Running usecase deploymnet. Wait for completion before starting another one.');
+					}
+				} else {
+					console.log(response[1]);
+					if ($.fn.DataTable.isDataTable("#t_deploy_status")) {
+        				$('#t_deploy_status').DataTable().clear().destroy();
+    				}
 
-            if (response[0]) {
+    				data.action = 'clone';
 
-                $('#modalDeployStatus').modal('toggle');
-                isDeploying = true;
-                data.action = 'target_tasks';
-                t_deploy_status = $('#t_deploy_status').DataTable({
-                    'ajax'       : {
-                        "type"   : "POST",
-                        "url"    : "/api/deploy",
-                        "data": function ( d ) {
-                            return JSON.stringify( data );
-                        },
-                        "contentType": "application/json",
-                        "processData": true,
-                        "dataType": "json",
-                        "destroy": true,
-                        "dataSrc": function (response) {
-                            var return_data = new Array();
-                            var modal_task_details;
-
-                            $.each(response[1], function( data ) {
-                                var target = this;
-                                $.each(target.tasks, function( index, task ) {
-                                    return_data.push({
-                                        'target': target.name,
-                                        'task':  task.name,
-                                        'status': task.status,
-                                        'uuid': target.uuid
-                                    });
-                                    modal_task_details = '<div class="modal modal_task_details_' + target.usecase + '" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
-                                    '<div class="modal-dialog modal-lg" role="document">' +
-                                        '<div class="modal-content">' +
-                                            '<div class="modal-header">' +
-                                                '<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
-                                                '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
-                                                    '<span aria-hidden="true">&times;</span>' +
-                                                '</button>' +
-                                            '</div>' +
-                                            '<div class="modal-body h-50">' +
-                                                '<div>' +
-                                                    '<pre class="session_output" id="session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_') + '">' +
-                                                    '</pre>' +
-                                                '</div>' +
-                                            '</div>' +
-                                            '<div class="modal-footer">' +
-                                                '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
-                                            '</div>' +
-                                        '</div>' +
-                                    '</div>' +
-                                    '</div>';
-                                  $("body").append(modal_task_details);
-                                  $('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')).on('change', function(){
-                                    scrollToBottom($('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')));
-                                  });
-                                });
-                            });
-                            return return_data;
-                        }
-                    },
-                    "initComplete":function( settings, json){
-                        data.action = 'run';
-                        console.log('Init complete. Run deployment...');
-                        $.ajax({
-                            url: '/api/deploy',
-                            type: 'POST',
-                            data: JSON.stringify(data),
-                            cache: false,
-                            processData: true,
-                            dataType: 'json',
-                            contentType: 'application/json',
-                            success: function (response) {
-
-                            },
-                            error : function (data, errorText) {
-                                $("#errormsg").html(errorText).show();
-                            }
-                        });
-                    },
-                    "createdRow": function( row, data, dataIndex ) {
-                        $(row).attr('id', data.task + '_' + data.uuid);
-                    },
-                    "columns": [
-                    	{
-						  "data": null,
-						  "render": function ( data, type, row ) {
-							return '<button class="btnDeployStatusDetail">+</button>';
-						  },
-						  "width": "5%"
+					$.ajax({
+						url: '/api/deploy',
+						type: 'POST',
+						data: JSON.stringify(data),
+						cache: false,
+						processData: true,
+						dataType: 'json',
+						contentType: 'application/json',
+						beforeSend: function() {
+							$("#divSpinner").show();
 						},
-                        {
-                            "data": "target",
-                            "defaultContent": ""
-                        },
-                        {
-                            "data": "task",
-                            "defaultContent": ""
-                        },
-                        {
-                            "data": "status",
-                            "defaultContent": "",
-                            "width": "40%"
-                        },
-                    ],
-                    "info": false,
-                    "ordering": false,
-                    "paging": false,
-                    "scrollY": "350px",
-                    "scrollCollapse": true
-                });
-            } else {
-                $('#modalMessage > div > div > div.modal-body.h-50').text(response[1]);
-                $('#modalMessage').modal('toggle');
-            }
-        },
-        error : function (data, errorText) {
-            $("#errormsg").html(errorText).show();
-        },
-        complete: function() {
-            $("#divSpinner").hide();
-        }
-    });
+						success: function (response) {
+							$("#divSpinner").hide();
+
+							if (response[0]) {
+
+								$('#modalDeployStatus').modal('toggle');
+								isDeploying = true;
+								data.action = 'target_tasks';
+								t_deploy_status = $('#t_deploy_status').DataTable({
+									'ajax'       : {
+										"type"   : "POST",
+										"url"    : "/api/deploy",
+										"data": function ( d ) {
+											return JSON.stringify( data );
+										},
+										"contentType": "application/json",
+										"processData": true,
+										"dataType": "json",
+										"destroy": true,
+										"dataSrc": function (response) {
+											var return_data = new Array();
+											var modal_task_details;
+
+											$.each(response[1], function( data ) {
+												var target = this;
+												$.each(target.tasks, function( index, task ) {
+													return_data.push({
+														'target': target.name,
+														'task':  task.name,
+														'status': task.status,
+														'uuid': target.uuid
+													});
+													modal_task_details = '<div class="modal modal_task_details_' + target.usecase + '" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
+													'<div class="modal-dialog modal-lg" role="document">' +
+														'<div class="modal-content">' +
+															'<div class="modal-header">' +
+																'<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
+																'<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+																	'<span aria-hidden="true">&times;</span>' +
+																'</button>' +
+															'</div>' +
+															'<div class="modal-body h-50">' +
+																'<div>' +
+																	'<pre class="session_output" id="session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_') + '">' +
+																	'</pre>' +
+																'</div>' +
+															'</div>' +
+															'<div class="modal-footer">' +
+																'<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
+															'</div>' +
+														'</div>' +
+													'</div>' +
+													'</div>';
+												  $("body").append(modal_task_details);
+												  $('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')).on('change', function(){
+													scrollToBottom($('#session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_')));
+												  });
+												});
+											});
+											return return_data;
+										}
+									},
+									"initComplete":function( settings, json){
+										data.action = 'run';
+										console.log('Init complete. Run deployment...');
+										$.ajax({
+											url: '/api/deploy',
+											type: 'POST',
+											data: JSON.stringify(data),
+											cache: false,
+											processData: true,
+											dataType: 'json',
+											contentType: 'application/json',
+											success: function (response) {
+
+											},
+											error : function (data, errorText) {
+												$("#errormsg").html(errorText).show();
+											}
+										});
+									},
+									"createdRow": function( row, data, dataIndex ) {
+										$(row).attr('id', data.task + '_' + data.uuid);
+									},
+									"columns": [
+										{
+										  "data": null,
+										  "render": function ( data, type, row ) {
+											return '<button class="btnDeployStatusDetail">+</button>';
+										  },
+										  "width": "5%"
+										},
+										{
+											"data": "target",
+											"defaultContent": ""
+										},
+										{
+											"data": "task",
+											"defaultContent": ""
+										},
+										{
+											"data": "status",
+											"defaultContent": "",
+											"width": "40%"
+										},
+									],
+									"info": false,
+									"ordering": false,
+									"paging": false,
+									"scrollY": "350px",
+									"scrollCollapse": true
+								});
+							} else {
+								$('#modalMessage > div > div > div.modal-body.h-50').text(response[1]);
+								$('#modalMessage').modal('toggle');
+							}
+						},
+						error : function (data, errorText) {
+							$("#errormsg").html(errorText).show();
+						},
+						complete: function() {
+							$("#divSpinner").hide();
+						}
+					});
+				}
+
+				$('#t_deploy_status tbody').on('click', '.btnDeployStatusDetail', function () {
+    				var data = t_deploy_status.row( $(this).parents('tr') ).data();
+    				console.log(data);
+    				console.log('#modalDeployDetail_' + data.task + '_' + data.uuid);
+    				console.log($('#modalDeployDetail_' + data.task + '_' + data.uuid));
+					$('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
+					scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
+    			});
+			}
+		});
 
     /*$('#t_deploy_status tbody').on('dblclick', 'tr', function () {
         var data = t_deploy_status.row( this ).data();
         $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
         scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
     });*/
-
-    $('#t_deploy_status tbody').on('click', '.btnDeployStatusDetail', function () {
-    	var data = t_deploy_status.row( $(this).parents('tr') ).data();
-        $('#modalDeployDetail_' + data.task + '_' + data.uuid).modal('show');
-        scrollToBottom($('#session_output_' + data.task + '_' + data.uuid.replace(/\-/g, '_')));
-    });
 }
 
 function stopDeploy(data){

@@ -19,18 +19,19 @@
 # Author: cklewar
 #
 
-import logging
-import lib.constants as c
-import threading
-import queue as queue
 import json
-
+import logging
+import queue as queue
+import threading
 from collections import OrderedDict
-from ruamel.yaml import YAML
 from threading import Thread, Event
+
+from ruamel.yaml import YAML
+
+import lib.constants as c
 from lib.factory import DriverFactory
-from lib.wsclient import WSClient
 from lib.handler import WSStreamHandler
+from lib.wsclient import WSClient
 
 
 class TargetQueue(Thread):
@@ -42,9 +43,8 @@ class TargetQueue(Thread):
         self.use_case_name = use_case_name
         self.use_case_data = use_case_data
         self.tq = OrderedDict()
-        self.q = queue.Queue()
-        self.e = threading.Event()
-        self.results = {'overall': False}
+        self.queue = queue.Queue()
+        self.event = threading.Event()
         __cso_ws_url = '{0}://{1}:{2}/ws'.format(c.CONFIG['ws_client_protocol'], c.CONFIG['ws_client_ip'],
                                                  c.CONFIG['ws_client_port'])
         __url = '{0}?clientname=server'.format(__cso_ws_url)
@@ -58,6 +58,7 @@ class TargetQueue(Thread):
         c.jnpr_junos_tty_netconf.addHandler(self.ws_handler)
         c.jnpr_junos_tty_telnet.addHandler(self.ws_handler)
         self._stop_event = Event()
+        self.final_result = True
 
     def run(self):
 
@@ -65,21 +66,21 @@ class TargetQueue(Thread):
             c.cso_logger.info('[{0}][TQ]: Start deploy usecase <{1}>'.format(target, self.use_case_name))
             df = DriverFactory(name=c.CONFIG['driver'])
             driver = df.init_driver(target_data=target_data, use_case_name=self.use_case_name,
-                                    use_case_data=self.use_case_data, results=self.results, ws_client=self.ws_client,
-                                    ws_handler=self.ws_handler, event=self._stop_event, daemon=self.daemon)
+                                    use_case_data=self.use_case_data, ws_client=self.ws_client,
+                                    ws_handler=self.ws_handler, event=self._stop_event, daemon=self.daemon,
+                                    queue=self.queue)
             # driver.setDaemon(True)
             self.tq[driver.name] = driver
-            print('DAEMON:', driver.isDaemon())
 
-        print('TQ:', self.tq)
+        _ = {driver.start() for target, driver in self.tq.items()}
+        _ = {driver.join() for target, driver in self.tq.items()}
 
-        for target, driver in self.tq.items():
-            driver.start()
+        while not self.queue.empty():
+            for k,v in self.queue.get().items():
+                if not v:
+                    self.final_result = v
 
-        for target, driver in self.tq.items():
-            driver.join()
-
-        if self.results['overall']:
+        if self.final_result:
             message = {'action': 'update_card_deploy_status', 'usecase': self.use_case_name, 'status': True,
                        'image': self.use_case_data['image_deployed']}
             self.emit_message(message=message)
@@ -115,6 +116,8 @@ class TargetQueue(Thread):
             with open('config/items.yml', 'w+') as ofp:
                 yaml.dump(_data, ofp)
 
+        #message = {'action': 'cleanup_after_deploy', 'usecase': self.use_case_name, 'status': self.final_result}
+        #self.emit_message(message=message)
         c.jnpr_junos_tty.removeHandler(self.ws_handler)
         c.jnpr_junos_tty_netconf.removeHandler(self.ws_handler)
         c.jnpr_junos_tty_telnet.removeHandler(self.ws_handler)

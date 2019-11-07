@@ -1,4 +1,4 @@
-deployed_usecase: useCase10
+deployed_usecase: useCase11
 usecases:
   useCase0:
     title: Reset Underlay Switch to SD-WAN BASIC
@@ -132,7 +132,7 @@ usecases:
     image: UC10.PNG
     image_deployed: UC10.PNG
     delete: false
-    deployed: true
+    deployed: false
 
   useCase11:
     title: Lab init for SD-LAN with EX-Only testcase

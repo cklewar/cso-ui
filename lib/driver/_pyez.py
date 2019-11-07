@@ -69,9 +69,6 @@ def check_conn_and_start_netconf(func):
         task = kwargs.get('task', None)
         data = kwargs.get('data', None)
 
-        print('IS_CONNECTED:', self.isConnected)
-        print('IS_NETCONF:', self.isNetConf)
-
         if not self.isConnected:
             if self.wait_for_daemons:
                 self.wait_for_daemons_ready(task=task)
@@ -92,10 +89,11 @@ class PyEzDriver(Base):
     DRIVER_SETTINGS = 'config/driver/pyez.yml'
 
     def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
-                 ws_handler=None, event=None, daemon=None):
+                 ws_handler=None, event=None, daemon=None, queue=None):
         super().__init__(target_data=target_data, use_case_name=use_case_name, use_case_data=use_case_data,
-                         results=results, ws_client=ws_client, ws_handler=ws_handler,
-                         name='TARGET-THREAD-{0} '.format(target_data['name']), event=event, daemon=daemon)
+                         ws_client=ws_client, ws_handler=ws_handler,
+                         name='TARGET-DRIVER-THREAD-{0}'.format(target_data['name']), event=event, daemon=daemon,
+                         queue=queue)
         c.cso_logger.info('Loading PyEZ driver')
         self.session = None
         self.gl = None
@@ -106,7 +104,16 @@ class PyEzDriver(Base):
         self.isZeroized = False
         self.wait_for_daemons = False
         self.current_task = None
-        self.daemon = daemon
+
+    def test123(self):
+        time.sleep(5)
+        print('TEST123 DONE')
+        return True, 'Done'
+
+    def test124(self):
+        time.sleep(5)
+        print('TEST124 DONE')
+        return True, 'Done'
 
     def authenticate(self):
 
@@ -202,6 +209,7 @@ class PyEzDriver(Base):
         self.emit_message(message=message)
         return True
 
+    '''
     def _logout_state_machine(self, attempt=0):
         if 10 == attempt:
             raise RuntimeError('logout_sm_failure')
@@ -244,6 +252,7 @@ class PyEzDriver(Base):
         else:
             time.sleep(1)
             return self._logout_state_machine(attempt=attempt + 1)
+    '''
 
     def disconnect(self):
         """
@@ -342,10 +351,15 @@ class PyEzDriver(Base):
             '[{0}][{1}]: Disconnect netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
 
     def run(self):
+        #self.test123()
+        #self.status = False
+        #self.test124()
+
         for task in self.target['tasks']:
             self.current_task = task['name']
-            print('EVENT:', self.event.is_set())
+            
             if not self.event.is_set():
+        
                 if self.status:
                     if task['name'] == 'Connect':
                         self.status = self.connect()
@@ -386,7 +400,6 @@ class PyEzDriver(Base):
                 else:
                     c.cso_logger.info('[{0}][{1}]: Error in previous task.'.format(self.target['name'], task['name']))
                     break
-
             else:
                 print(50 * '#')
                 print('STOPPED')
@@ -394,13 +407,11 @@ class PyEzDriver(Base):
                 break
 
         if self.status:
-            self.results[self.target['name']] = True
-            self.results['overall'] = True
+            self.queue.put({self.name: True, self.target['name']: True})
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> DONE'.format(self.target['name'], self.use_case_name))
         else:
-            self.results[self.target['name']] = False
-            self.results['overall'] = False
+            self.queue.put({self.name: False, self.target['name']: False})
             c.cso_logger.info(
                 '[{0}][Run]: Deploy use case <{1}> --> FAILED'.format(self.target['name'], self.use_case_name))
 

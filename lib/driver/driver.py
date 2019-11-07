@@ -21,15 +21,16 @@
 
 import abc
 import json
-import lib.constants as c
+from threading import Thread
 
-from threading import Thread, Event
+import lib.constants as c
 
 
 class Base(Thread):
 
-    def __init__(self, target_data=None, use_case_name=None, use_case_data=None, results=None, ws_client=None,
-                 ws_handler=None, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None, event=None):
+    def __init__(self, target_data=None, use_case_name=None, use_case_data=None, ws_client=None,
+                 ws_handler=None, group=None, target=None, name=None, *, daemon=None, event=None,
+                 queue=None):
         super(Base, self).__init__(group=group, target=target, name=name, daemon=daemon)
         self.load_settings()
         self.use_case_name = use_case_name
@@ -45,10 +46,11 @@ class Base(Thread):
         self.pw = None
         self.usecases_dir = c.CONFIG['usecases_dir']
         self.use_case_path = '{0}/{1}'.format(self.tmp_dir, use_case_data['directory'])
-        self.results = results
         self.ws_client = ws_client
         self.ws_handler = ws_handler
         self.event = event
+        self.daemon = daemon
+        self.queue = queue
 
     @abc.abstractmethod
     def authenticate(self):
@@ -57,10 +59,6 @@ class Base(Thread):
     @abc.abstractmethod
     def load_settings(self):
         raise NotImplementedError()
-
-    #def join(self, timeout: float = None):
-    #    self.event.set()
-    #    super(Base, self).join(timeout)
 
     def emit_message(self, message=None):
 

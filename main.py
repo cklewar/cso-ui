@@ -36,7 +36,7 @@ from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from ruamel.yaml import YAML
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
-
+import ctypes
 import lib.constants as c
 from lib.auth import AuthController, require, member_of
 from lib.tq import TargetQueue
@@ -46,6 +46,21 @@ c.cso_logger = logging.getLogger('cso_ui')
 c.jnpr_junos_tty = logging.getLogger('jnpr.junos.tty')
 c.jnpr_junos_tty_netconf = logging.getLogger('jnpr.junos.tty_netconf')
 c.jnpr_junos_tty_telnet = logging.getLogger('jnpr.junos.tty_telnet')
+
+
+def async_raise(target_tid, exception):
+    """Raises an asynchronous exception in another thread.
+    :param target_tid: target thread identifier
+    :param exception: Exception class to be raised in that thread
+    """
+
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(target_tid), ctypes.py_object(exception))
+
+    if ret == 0:
+        raise ValueError("Invalid thread ID {}".format(target_tid))
+    elif ret > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(target_tid), None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
 def cors_tool():
@@ -79,6 +94,11 @@ def cors_tool():
         if cherrypy.request.config.get('tools.sessions.on', False):
             cherrypy.session['token'] = True
         return True
+
+
+class ThreadError(Exception):
+    """Used for terminating thread by async_raise """
+    pass
 
 
 class RestrictedArea(object):
@@ -274,10 +294,8 @@ class Deploy(object):
                                     use_case_data=self._use_case_data,
                                     name='{0}-TQ-THREAD'.format(self._use_case_name))
             self.__tq.start()
-
-            #x = threading.Thread(target=self.thread_function)
-            #x.start()
-            # self.__tq.join()
+            #self.__tq.join()
+            #print('After Join....')
 
             return True
 
@@ -369,16 +387,36 @@ class Deploy(object):
             return True, self.__data
 
         elif action == 'stop_deploy':
-            c.cso_logger.info('Stopping deploy usecase <{0}>'.format(self._use_case_name))
-            self.__tq.stop()
-            c.cso_logger.info('Stopped deploy usecase <{0}>: {1}'.format(self._use_case_name, self.__tq.stopped()))
+            if self.__tq:
+                c.cso_logger.info('Stopping deploy usecase <{0}>'.format(self._use_case_name))
+                self.__tq.stop()
+                c.cso_logger.info('Stopped deploy usecase <{0}>: {1}'.format(self._use_case_name, self.__tq.stopped()))
+                self.__tq = None
+                return True, 'Stopped deploy usecase {0}'.format(self._use_case_name)
+            else:
+                return False, 'No active queue'
 
-            return True, 'Stopped deploy usecase {0}'.format(self._use_case_name)
+            #async_raise(self.__tq.get_ident(), Error)
+            #for t, d in self.__tq.tq.items():
+            #    print('Killing thread:', d.name)
+            #    async_raise(d.get_ident(), ThreadError)
+            #    while d.is_alive():
+            #        time.sleep(0.1)
+            #    print('Killed thread:', d.name)
 
-    def thread_function(self):
-        while not self.__tq.stopped():
-            print('Not stopped')
-            time.sleep(1)
+        elif action == 'deploy_status':
+            c.cso_logger.info('Getting deploy status for usecase <{0}>'.format(use_case_name))
+            if self.__tq:
+                if self.__tq.is_alive():
+                    if self.__tq.name.split('-')[0] == use_case_name:
+                        if self.__tq.final_result:
+                            return True, 'same_tq_running'
+                    else:
+                        return True, 'other_tq_running'
+                else:
+                    return False, 'tq_not_running'
+            else:
+                return False, 'no_tq'
 
 
 class Api(object):

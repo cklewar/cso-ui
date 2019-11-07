@@ -19,7 +19,7 @@
 # Author: cklewar
 #
 import threading
-
+VERSION = '1.0.041119'
 DRIVER_SALTSTACK = 'saltstack'
 DRIVER_ANSIBLE = 'ansible'
 DRIVER_PYEZ = 'pyez'

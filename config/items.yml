@@ -132,7 +132,7 @@ usecases:
     image: UC10.PNG
     image_deployed: UC10.PNG
     delete: false
-    deployed: false
+    deployed: true
 
   useCase11:
     title: Lab init for SD-LAN with EX-Only testcase

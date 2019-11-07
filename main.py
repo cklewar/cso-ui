@@ -140,6 +140,7 @@ class Root(object):
             data['clientname'] = "Client%d" % random.randint(0, 100)
             data['demo_ref_doc_url'] = c.CONFIG['demo_ref_doc_url']
             data['jtac_url'] = c.CONFIG['jtac_url']
+            data['version'] = c.VERSION
 
             with open("config/items.yml", 'r') as fp:
                 yaml = YAML(typ='rt')
@@ -394,7 +395,7 @@ class Deploy(object):
                 self.__tq = None
                 return True, 'Stopped deploy usecase {0}'.format(self._use_case_name)
             else:
-                return False, 'No active queue'
+                return False, 'No target queue available'
 
             #async_raise(self.__tq.get_ident(), Error)
             #for t, d in self.__tq.tq.items():
@@ -419,11 +420,28 @@ class Deploy(object):
                 return False, 'no_tq'
 
 
+@cherrypy.expose
+@require()
+class Utils(object):
+
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
+    def POST(self):
+
+        action = cherrypy.request.json['action']
+
+        if action == 'restart_service':
+            c.cso_logger.info('Restarting service...')
+            cherrypy.engine.restart()
+            c.cso_logger.info('Restarting service --> DONE')
+            return True, 'Services restarted'
+
+
 class Api(object):
 
     def __init__(self):
         cherrypy.tools.cors_tool = cherrypy.Tool('before_request_body', cors_tool, name='cors_tool', priority=50)
-        self.url_map = {'cards': Cards, 'upload': Upload, 'deploy': Deploy}
+        self.url_map = {'cards': Cards, 'upload': Upload, 'deploy': Deploy, 'utils': Utils}
         self._setattr_url_map()
 
     def _setattr_url_map(self):

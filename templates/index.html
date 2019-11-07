@@ -20,11 +20,14 @@
 <body>
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark justify-content-center">
     <a class="navbar-brand  mr-0" href="#">CSO – SD-WAN POC Demo Use Case Runner</a>
-    <button class="navbar-toggler ml-1" type="button" data-toggle="collapse" data-target="#collapsingNavbarHibiki">
+    <button class="navbar-toggler ml-1" type="button" data-toggle="collapse" data-target="#collapsingNavbarBYOD">
         <span class="navbar-toggler-icon"></span>
     </button>
+    <a style="color:rgba(255,255,255,.5)">&nbsp;&nbsp;(Version&nbsp{{ data.version }})</a>
     <div class="navbar-collapse collapse justify-content-between align-items-center w-100" id="collapsingNavbarHibiki">
+
         <ul class="navbar-nav mx-auto text-center">
+
             <li class="nav-item">
                 <a class="nav-link" data-target="#modalPocRefImg" data-toggle="modal" href="#modalPocRefImg">Demo
                     Reference Setup</a>
@@ -37,6 +40,8 @@
             </li>
         </ul>
         <ul class="nav navbar-nav flex-row justify-content-center flex-nowrap">
+            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#modalRestartService"><i
+                    class="fas fa-sync"></i></a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#modalAddCard"><i
                     class="fas fa-plus"></i></a></li>
             <li class="nav-item"><a class="nav-link" href="auth/logout"><i class="fas fa-sign-out-alt"></i></a></li>
@@ -70,10 +75,6 @@
                                     <button class="btn btn-primary btnDeployUseCase" role="button"
                                             data-toggle="modal" data-usecase="{{ item }}"
                                             id="btnDeployUseCase_{{ item }}">Deploy
-                                    </button>
-                                    <button class="btn btn-primary btnDeployUseCaseStop" role="button"
-                                            data-toggle="modal" data-usecase="{{ item }}"
-                                            id="btnDeployUseCaseStop_{{ item }}">Stop
                                     </button>
                                     <div class="dropdown dropup float-right">
                                         <button class="btn btn-secondary dropdown-toggle" type="button"
@@ -278,14 +279,14 @@
 <!-- Modal Deploy-->
 <div class="modal" id="modalDeployStatus" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 id="modalDeployStatusTitle" class="modal-title">UseCase Deployment status</h5>
+        <div class="modal-content border-dark rounded-0">
+            <div class="modal-header bg-secondary">
+                <h5 id="modalDeployStatusTitle" class="modal-title text-white">UseCase Deployment status</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body h-50">
+            <div class="modal-body h-50 bg-light">
                 <table id="t_deploy_status" class="display" style="width:100%">
                     <thead>
                     <tr>
@@ -300,8 +301,31 @@
                     </tbody>
                 </table>
             </div>
+            <div class="modal-footer bg-secondary">
+                <button class="btn btn-light mr-auto btnDeployUseCaseStop" role="button" data-toggle="modal">Stop
+                </button>
+                <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal restart service-->
+<div class="modal" id="modalRestartService" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalRestartServiceTitle" class="modal-title">Restart Service</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body h-50">
+                <p>Restarting service will lead to loose connection.</p>
+                <p>Do you want to proceed?</p>
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" id="btnRestartService" class="btn btn-danger">Yes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
             </div>
         </div>
     </div>
@@ -362,6 +386,9 @@
     var ws_client_port = "{{ data.port }}";
     var clientname = "{{ data.clientname }}";
     var lastDeployedUseCase = "{{ data.deployed_usecase }}";
+
+
+
 
 
 </script>

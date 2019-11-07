@@ -351,15 +351,14 @@ class PyEzDriver(Base):
             '[{0}][{1}]: Disconnect netconf session --> DONE'.format(self.target['name'], 'Disconnect'))
 
     def run(self):
-        #self.test123()
-        #self.status = False
-        #self.test124()
+        # self.test123()
+        # self.status = False
+        # self.test124()
 
         for task in self.target['tasks']:
             self.current_task = task['name']
-            
+
             if not self.event.is_set():
-        
                 if self.status:
                     if task['name'] == 'Connect':
                         self.status = self.connect()
@@ -401,10 +400,11 @@ class PyEzDriver(Base):
                     c.cso_logger.info('[{0}][{1}]: Error in previous task.'.format(self.target['name'], task['name']))
                     break
             else:
-                print(50 * '#')
-                print('STOPPED')
-                print(50 * '#')
-                break
+                message = {'action': 'update_task_status', 'task': task['name'], 'uuid': self.target['uuid'],
+                           'status': 'Stopped'}
+                self.emit_message(message=message)
+                self.status = False
+                #break
 
         if self.status:
             self.queue.put({self.name: True, self.target['name']: True})

@@ -190,9 +190,32 @@ $( document ).ready(function() {
 	});
 
     $('.btnDeployUseCaseStop').on('click', function (event) {
-        var data = {};
-        data.use_case_name = $(this).data('usecase');
+    	data = {};
+    	data.use_case_name = $("#modalDeployStatus").data("usecase");
         stopDeploy(data);
+    });
+
+    $('#btnRestartService').on('click', function (event) {
+		data = {};
+		data.action = 'restart_service'
+
+		console.log('Restart service...');
+
+    	$.ajax({
+			url: '/api/utils',
+			type: 'POST',
+			data: JSON.stringify(data),
+			cache: false,
+			dataType: 'json',
+			contentType: 'application/json',
+			success: function (response) {
+				console.log(response);
+			},
+			error : function (data, errorText) {
+				$("#errormsg").html(errorText).show();
+			}
+		});
+
     });
 
     $(function () {
@@ -412,20 +435,20 @@ function deploy(data){
 													modal_task_details = '<div class="modal modal_task_details_' + target.usecase + '" id="modalDeployDetail_' + task.name + '_' + target.uuid + '" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">' +
 													'<div class="modal-dialog modal-lg" role="document">' +
 														'<div class="modal-content">' +
-															'<div class="modal-header">' +
-																'<h5 id="modalDeployStatusTitle" class="modal-title">Task: '+ task.name + ' details' + '</h5>' +
+															'<div class="modal-header bg-secondary">' +
+																'<h5 id="modalDeployStatusTitle" class="modal-title text-white">Task: '+ task.name + ' details' + '</h5>' +
 																'<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
 																	'<span aria-hidden="true">&times;</span>' +
 																'</button>' +
 															'</div>' +
-															'<div class="modal-body h-50">' +
+															'<div class="modal-body h-50 bg-light">' +
 																'<div>' +
 																	'<pre class="session_output" id="session_output_' + task.name + '_' + target.uuid.replace(/\-/g, '_') + '">' +
 																	'</pre>' +
 																'</div>' +
 															'</div>' +
-															'<div class="modal-footer">' +
-																'<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
+															'<div class="modal-footer bg-secondary">' +
+																'<button type="button" class="btn btn-light" data-dismiss="modal">Close</button>' +
 															'</div>' +
 														'</div>' +
 													'</div>' +
